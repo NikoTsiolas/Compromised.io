@@ -11,8 +11,10 @@ import {
   ActionLine,
   AiLabel,
   categoryName,
+  DetailsLink,
   DetailsToggle,
   Kicker,
+  MediaMorph,
   SourceNames,
   sourceCount,
   summaryText,
@@ -62,15 +64,17 @@ function Lead({ item, now }: { item: FeedItem; now?: Date }) {
       className="grid grid-cols-1 gap-5 md:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] md:gap-8"
     >
       <div className="md:order-2">
-        <EventMedia
-          image={item.image}
-          logo={item.logo}
-          organization={item.organization}
-          fallbackLabel={categoryName(item) ?? "Security incident"}
-          size="lead"
-          ratio={16 / 10}
-          priority
-        />
+        <MediaMorph id={item.id}>
+          <EventMedia
+            image={item.image}
+            logo={item.logo}
+            organization={item.organization}
+            fallbackLabel={categoryName(item) ?? "Security incident"}
+            size="lead"
+            ratio={16 / 10}
+            priority
+          />
+        </MediaMorph>
       </div>
       <div className="min-w-0 md:order-1">
         <Kicker item={item} />
@@ -110,6 +114,8 @@ function Lead({ item, now }: { item: FeedItem; now?: Date }) {
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <SourceNames item={item} />
             <span aria-hidden>·</span>
+            <DetailsLink item={item} />
+            <span aria-hidden>·</span>
             <DetailsToggle item={item} />
           </div>
         </div>
@@ -126,14 +132,16 @@ function Card({ item, now }: { item: FeedItem; now?: Date }) {
       className="grid grid-cols-[minmax(0,1fr)_96px] gap-x-4 sm:flex sm:flex-col sm:gap-3"
     >
       <div className="col-start-2 row-start-1 sm:order-first">
-        <EventMedia
-          image={item.image}
-          logo={item.logo}
-          organization={item.organization}
-          fallbackLabel={categoryName(item) ?? "Security incident"}
-          size="card"
-          ratio={16 / 10}
-        />
+        <MediaMorph id={item.id}>
+          <EventMedia
+            image={item.image}
+            logo={item.logo}
+            organization={item.organization}
+            fallbackLabel={categoryName(item) ?? "Security incident"}
+            size="card"
+            ratio={16 / 10}
+          />
+        </MediaMorph>
       </div>
       <div className="col-start-1 row-start-1 min-w-0">
         <Kicker item={item} className="mb-1 flex flex-wrap items-baseline gap-x-2 leading-4" />
@@ -162,7 +170,11 @@ function Card({ item, now }: { item: FeedItem; now?: Date }) {
         <ActionLine item={item} />
         <div className="mt-2 flex flex-col gap-1 text-[13px] leading-[18px] text-ink-3">
           <Trust trust={item.trust} />
-          <SourceNames item={item} />
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <SourceNames item={item} />
+            <span aria-hidden>·</span>
+            <DetailsLink item={item} />
+          </div>
         </div>
       </div>
     </article>

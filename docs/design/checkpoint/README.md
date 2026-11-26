@@ -195,3 +195,13 @@ each theme's widget surface: CVD separation ΔE 13.9 (light) and 9.0 (dark), nor
 and 19.4, both above 3:1 on the surface. Its "chroma floor" check flags the grey, which is the
 intended de-emphasis grey of the emphasis form, not a categorical colour. Spike months also carry
 their value above the column, so colour is never the only signal.
+
+## Event page (ticket #11), 2026-11-26
+
+`event-light.png`, `event-dark.png` and `event-phone-light.png`: the page for the real 1Password
+event, which three outlets reported (BleepingComputer, Security Affairs, The Hacker News). A
+production build against a database seeded from every real RSS capture in
+`api/tests/fixtures/real` (no live fetch, no AI summaries, so the summary is the earliest
+publisher's excerpt), as a reader in London sees it. The picture is The Hacker News's own feed
+image, loaded by the browser from the publisher and credited on it. Captured with
+`EVENT_PATH=/events/3 ONLY=event LOOKS=light,dark,phone-light node scripts/capture-checkpoint.mjs`.

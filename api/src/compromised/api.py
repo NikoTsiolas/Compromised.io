@@ -9,6 +9,7 @@ from typing import Annotated
 
 from fastapi import FastAPI, HTTPException, Query, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 from psycopg_pool import ConnectionPool
 from pydantic import BaseModel, PlainSerializer
 
@@ -85,6 +86,11 @@ class EventOut(BaseModel):
     cves: list[str]  # every CVE identifier the sources name, sorted
     threat_actors: list[str]  # groups a source names or a claim source credits
     attack_vector: str | None  # how the attack worked, when a source says; None if not identified
+
+
+class EventDetailOut(EventOut):
+    """One event for its own page (#11): everything the feed sends, including the CVE
+    identifiers its sources name (which #10 added to every event)."""
 
 
 class ScoredSourceOut(BaseModel):
@@ -320,6 +326,24 @@ def create_app(
             ],
         )
 
+    @app.get(
+        "/v1/events/{event_id}",
+        response_model=EventDetailOut,
+        responses={404: {"description": "No such event"}, 308: {"description": "Regrouped"}},
+    )
+    def get_event(request: Request, event_id: int):
+        """One event by its id. Ids are stable: an event keeps its id as sources join it. An
+        event deleted by regrouping answers with a permanent redirect to the event its record
+        joined, so a shared link keeps working."""
+        with request.app.state.pool.connection() as conn:
+            event = storage.get_event(conn, event_id)
+            if event is None:
+                target = storage.event_redirect(conn, event_id)
+                if target is None:
+                    raise HTTPException(status_code=404, detail="Event not found")
+                return RedirectResponse(f"/v1/events/{target}", status_code=308)
+        return EventDetailOut.model_validate(_event_fields(event, settings))
+
     @app.get("/v1/scoring", response_model=ScoringOut)
     def scoring(response: Response):
         response.headers["Cache-Control"] = "public, max-age=300"
@@ -419,20 +443,19 @@ def _utc_day(day: date | None) -> datetime | None:
 
 def _page_out(page, settings: config.Settings) -> EventPageOut:
     return EventPageOut(
-        events=[
-            EventOut.model_validate(
-                {
-                    **asdict(e),
-                    "category_label": CATEGORIES[e.category],
-                    "source_count": len(e.sources),
-                    "trust": _trust(e),
-                    "image": _image(e, settings),
-                }
-            )
-            for e in page.events
-        ],
+        events=[EventOut.model_validate(_event_fields(e, settings)) for e in page.events],
         next_cursor=page.next_cursor,
     )
+
+
+def _event_fields(event, settings: config.Settings) -> dict:
+    return {
+        **asdict(event),
+        "category_label": CATEGORIES[event.category],
+        "source_count": len(event.sources),
+        "trust": _trust(event),
+        "image": _image(event, settings),
+    }
 
 
 def _trust(event) -> dict | None:

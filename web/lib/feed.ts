@@ -1,7 +1,7 @@
 // What a feed row shows, independent of where the values come from (the API, or the clearly
 // labelled sample data on /preview). `undefined` means "this field does not exist yet" and is
 // rendered as a quiet empty state; `null` means "looked for and not known".
-import type { FeedEvent, PublisherImage, Trust, VerificationStatus } from "@/lib/api";
+import type { EventDetail, FeedEvent, PublisherImage, Trust, VerificationStatus } from "@/lib/api";
 
 export type { PublisherImage, Trust, VerificationStatus };
 
@@ -45,7 +45,7 @@ export type FeedItem = {
   live?: boolean;
 };
 
-export function toFeedItem(event: FeedEvent): FeedItem {
+export function toFeedItem(event: FeedEvent | EventDetail): FeedItem {
   const [first] = event.sources;
   return {
     id: String(event.id),

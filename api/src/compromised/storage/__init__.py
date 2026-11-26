@@ -509,6 +509,38 @@ def all_event_ids(conn: psycopg.Connection) -> list[int]:
     return [row[0] for row in conn.execute("select id from events order by id")]
 
 
+def get_event(conn: psycopg.Connection, event_id: int) -> Event | None:
+    """One event with every source (earliest first) and the CVE identifiers they name."""
+    with conn.cursor(row_factory=dict_row) as cur:
+        row = cur.execute(
+            f"select {EVENT_COLUMNS} from events where id = %s", (event_id,)
+        ).fetchone()
+        if row is None:
+            return None
+        return events_from_rows(cur, [row])[0]
+
+
+def event_redirect(conn: psycopg.Connection, event_id: int) -> int | None:
+    """Where a deleted event's address now leads (see 012_event_redirects), or None."""
+    row = conn.execute(
+        "select to_event_id from event_redirects where from_event_id = %s", (event_id,)
+    ).fetchone()
+    return row[0] if row else None
+
+
+def redirect_event(conn: psycopg.Connection, from_event_id: int, to_event_id: int) -> None:
+    """Record that the deleted event ``from_event_id`` now lives on as ``to_event_id``, and move
+    on every older address that pointed at it, so a redirect is always a single hop."""
+    conn.execute(
+        "update event_redirects set to_event_id = %s where to_event_id = %s",
+        (to_event_id, from_event_id),
+    )
+    conn.execute(
+        "insert into event_redirects (from_event_id, to_event_id) values (%s, %s)",
+        (from_event_id, to_event_id),
+    )
+
+
 def list_events(
     conn: psycopg.Connection,
     *,

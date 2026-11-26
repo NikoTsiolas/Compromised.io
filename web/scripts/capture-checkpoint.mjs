@@ -1,7 +1,10 @@
 // Captures the design-checkpoint screenshots in docs/design/checkpoint/.
 //
 //   BASE_URL=http://127.0.0.1:3000 node scripts/capture-checkpoint.mjs
+//   BASE_URL=... EVENT_PATH=/events/3 ONLY=event LOOKS=light,dark,phone-light,phone-dark node ...
 //
+// EVENT_PATH adds one event's page (#11) as "event"; ONLY and LOOKS keep just the named pages
+// and looks.
 // Needs a running web app built with SAMPLE_PREVIEW=1 (for /preview) and an API with real
 // ingested events. Full-page images of the real feed and the sample-data preview, each at
 // desktop, phone and tablet width in light and dark. OUT_DIR writes them elsewhere (to review
@@ -18,11 +21,17 @@ const out =
   path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../docs/design/checkpoint");
 mkdirSync(out, { recursive: true });
 
-const pages = [
-  { name: "feed", path: "/" },
-  { name: "sample-preview", path: "/preview" },
-];
-const looks = [
+const only = (list, names) =>
+  names ? list.filter((x) => names.split(",").includes(x.name)) : list;
+const pages = only(
+  [
+    { name: "feed", path: "/" },
+    { name: "sample-preview", path: "/preview" },
+    ...(process.env.EVENT_PATH ? [{ name: "event", path: process.env.EVENT_PATH }] : []),
+  ],
+  process.env.ONLY,
+);
+const looks = only([
   { name: "light", viewport: { width: 1440, height: 900 }, colorScheme: "light" },
   { name: "dark", viewport: { width: 1440, height: 900 }, colorScheme: "dark" },
   {
@@ -43,7 +52,7 @@ const looks = [
   },
   { name: "tablet-light", viewport: { width: 820, height: 1180 }, colorScheme: "light" },
   { name: "tablet-dark", viewport: { width: 820, height: 1180 }, colorScheme: "dark" },
-];
+], process.env.LOOKS);
 
 const browser = await chromium.launch();
 for (const look of looks) {
