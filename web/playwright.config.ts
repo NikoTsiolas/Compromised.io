@@ -17,7 +17,7 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
-      testIgnore: /new-events\.spec\.ts/,
+      testIgnore: /(new-events|widget-data)\.spec\.ts/,
       use: { ...devices["Desktop Chrome"] },
     },
     {
@@ -25,6 +25,14 @@ export default defineConfig({
       name: "chromium-writes",
       testMatch: /new-events\.spec\.ts/,
       dependencies: ["chromium"],
+      use: { ...devices["Desktop Chrome"] },
+    },
+    {
+      // Loads a KEV catalog and an event, so it runs last: an event it adds would otherwise
+      // show in the new-events bar while that spec is counting.
+      name: "chromium-widget-data",
+      testMatch: /widget-data\.spec\.ts/,
+      dependencies: ["chromium-writes"],
       use: { ...devices["Desktop Chrome"] },
     },
   ],

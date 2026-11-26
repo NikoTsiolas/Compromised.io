@@ -109,6 +109,40 @@ export type IngestionStatus = {
   sources: SourceHealth[];
 };
 
+/** Widget figures (#15). Spike months are decided by the API's `spike_rule`. */
+export type KevMonth = {
+  month: string;
+  count: number;
+  spike: boolean;
+  notable: {
+    cve: string;
+    title: string;
+    organization: string;
+    people_use: boolean;
+    ransomware: boolean;
+  }[];
+};
+
+export type ExploitedByMonth = {
+  months: KevMonth[];
+  spike_rule: string;
+  catalog: {
+    version: string | null;
+    declared_count: number | null;
+    entries: number;
+    fetched_at: string;
+  } | null;
+};
+
+export type RecentlyExploited = {
+  items: { cve: string; product: string; logo_key: string | null; added_on: string }[];
+};
+
+export type MostReported = {
+  window_days: number;
+  items: { name: string; key: string | null; logo_key: string | null; count: number }[];
+};
+
 const API_URL = process.env.API_URL ?? "http://127.0.0.1:8000";
 
 export async function getStatus(): Promise<IngestionStatus> {
@@ -133,6 +167,18 @@ export async function getScoring(): Promise<Scoring> {
 
 export async function listTabs(): Promise<Tab[]> {
   return getJson(new URL("/v1/tabs", API_URL));
+}
+
+export async function getExploitedByMonth(): Promise<ExploitedByMonth> {
+  return getJson(new URL("/v1/widgets/exploited-by-month", API_URL));
+}
+
+export async function getRecentlyExploited(): Promise<RecentlyExploited> {
+  return getJson(new URL("/v1/widgets/recently-exploited", API_URL));
+}
+
+export async function getMostReported(): Promise<MostReported> {
+  return getJson(new URL("/v1/widgets/most-reported", API_URL));
 }
 
 async function getJson<T>(url: URL): Promise<T> {

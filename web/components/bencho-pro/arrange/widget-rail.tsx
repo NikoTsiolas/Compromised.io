@@ -240,7 +240,9 @@ export function WidgetRail({ widgets }: { widgets: RailWidget[] }) {
                 role="region"
                 aria-labelledby={titleId}
                 className={cn(
-                  "gap-0 rounded-[2px] bg-surface py-0 ring-1 ring-rule transition-[box-shadow]",
+                  // overflow-visible: a chart's tooltip may reach past its card (see the
+                  // .home-rail rule in globals.css that lifts the card above its neighbours).
+                  "gap-0 overflow-visible rounded-[2px] bg-surface py-0 ring-1 ring-rule transition-[box-shadow]",
                   isHeld && "ring-ink",
                 )}
               >

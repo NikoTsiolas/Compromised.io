@@ -10,6 +10,7 @@ import { railWidgets } from "@/components/widgets/rail-widgets";
 import { listEvents, listTabs, type EventPage, type Tab } from "@/lib/api";
 import { DEFAULT_TAB, toFeedItem } from "@/lib/feed";
 import { withLogo } from "@/lib/logos";
+import { loadWidgetFigures } from "@/lib/widgets";
 
 export default function Home({ searchParams }: PageProps<"/">) {
   return (
@@ -53,6 +54,8 @@ async function Feed({
   searchParams: PageProps<"/">["searchParams"];
 }) {
   const { cursor, tab: requested } = await searchParams;
+  // Started before the feed is awaited, so the two load side by side; never throws.
+  const figures = loadWidgetFigures();
   let tabs: Tab[];
   let page: EventPage;
   let tab = DEFAULT_TAB;
@@ -73,11 +76,8 @@ async function Feed({
     );
   }
 
-  // Widgets other than source status have no API yet (#15): they get null and say so.
   const widgets = railWidgets({
-    frequency: null,
-    recentlyExploited: null,
-    mostReported: null,
+    ...(await figures),
     sourceStatus: (
       <Suspense fallback={<p className="text-[13px] text-ink-3">Loading sources…</p>}>
         <SourceStatus />

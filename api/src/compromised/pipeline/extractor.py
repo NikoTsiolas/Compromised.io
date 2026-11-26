@@ -45,13 +45,9 @@ def extract(record: SourceRecord) -> Affected | None:
     victim = _text(metadata.get("victim"))
     if victim:
         return _named(victim, cat)
-    for field in ("product", "vendor"):
-        value = _text(metadata.get(field))
-        if value:
-            # Structured product names are longer than aliases ("Juniper Session Smart
-            # Conductor and Session Smart Router"), so look for an alias inside them.
-            entry = cat.by_name(value) or cat.first_in(value)
-            return _from_entry(entry) if entry else Affected(name=value)
+    structured = from_structured(metadata.get("product"), metadata.get("vendor"))
+    if structured:
+        return structured
 
     claim = CLAIM_TITLE.match(record.headline)
     if claim:
@@ -68,6 +64,19 @@ def extract(record: SourceRecord) -> Affected | None:
     speaker = SPEAKER.match(record.headline)
     if speaker and not cat.is_not_organization(speaker["name"]):
         return _named(speaker["name"], cat)
+    return None
+
+
+def from_structured(product, vendor) -> Affected | None:
+    """The affected product named by a structured source's product field, else its vendor
+    field (CISA KEV, MSRC). Also used for the KEV history behind the widgets (#15)."""
+    cat = catalog.load()
+    for value in (_text(product), _text(vendor)):
+        if value:
+            # Structured product names are longer than aliases ("Juniper Session Smart
+            # Conductor and Session Smart Router"), so look for an alias inside them.
+            entry = cat.by_name(value) or cat.first_in(value)
+            return _from_entry(entry) if entry else Affected(name=value)
     return None
 
 

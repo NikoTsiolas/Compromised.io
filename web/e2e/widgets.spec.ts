@@ -1,7 +1,7 @@
 // Browser seam: the widget rail beside the feed. Readers can reorder the widgets and move the
 // rail to the other side, by pointer or keyboard; the arrangement is kept in this browser only.
-// No widget except source status has a real API yet (#15), so the others show a quiet empty
-// state here and are populated only on the sample preview.
+// The seed loads no KEV catalog, so the chart and recently exploited show their empty states
+// here; widget-data.spec.ts fills them and checks the populated widgets.
 import { offline, expect, test, type Page } from "./test";
 
 offline();
@@ -28,17 +28,18 @@ test("the rail sits to the right of the feed with the default widgets", async ({
   expect(railBox.x).toBeGreaterThan(feedBox.x + feedBox.width - 1);
 });
 
-test("widgets without a real data source say so quietly, with no invented figures", async ({
+test("the chart and recently exploited stay quietly empty before the KEV catalog is fetched", async ({
   page,
 }) => {
   await page.goto("/");
 
+  // The seed loads no KEV catalog, so there is no history yet and no invented figure.
   const chart = rail(page).getByRole("region", { name: "Exploited flaws by month" });
   await expect(chart).toContainText("No figures yet");
   await expect(chart.locator("[data-month]")).toHaveCount(0);
   await expect(
-    rail(page).getByRole("region", { name: "Most reported organisations" }),
-  ).toContainText("No figures yet");
+    rail(page).getByRole("region", { name: "Recently exploited" }),
+  ).toContainText("Nothing listed yet.");
 });
 
 test("source status shows each source's last successful check", async ({ page }) => {
@@ -89,12 +90,17 @@ test("a widget can be dragged to a new place by its handle", async ({ page }) =>
 
   const grip = rail(page).getByRole("button", { name: "Move Most reported organisations" });
   const target = rail(page).getByRole("region", { name: "Exploited flaws by month" });
+  const card = (await rail(page).getByRole("region", { name: "Most reported organisations" }).boundingBox())!;
   const from = (await grip.boundingBox())!;
   const to = (await target.boundingBox())!;
+  // The rail places a held card by its own middle, so aim that middle at the target's top:
+  // how far the pointer must travel depends on how tall the (now populated) card is.
+  const gripInCard = from.y + from.height / 2 - card.y;
+  const dropY = Math.max(1, to.y - card.height / 2 + gripInCard);
 
   await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
   await page.mouse.down();
-  await page.mouse.move(from.x + from.width / 2, to.y + 4, { steps: 12 });
+  await page.mouse.move(from.x + from.width / 2, dropY, { steps: 12 });
   await page.mouse.up();
 
   await expect(widgetTitles(page).first()).toHaveText("Most reported organisations");

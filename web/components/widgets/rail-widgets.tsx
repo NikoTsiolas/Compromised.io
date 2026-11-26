@@ -1,5 +1,5 @@
-// The widgets beside the feed, in their default order. The homepage passes null for every
-// figure that has no API yet; the sample preview passes invented values.
+// The widgets beside the feed, in their default order. The homepage passes the API's figures
+// (null when they could not be loaded); the sample preview passes invented values.
 import type { ReactNode } from "react";
 
 import type { RailWidget } from "@/components/bencho-pro/arrange/widget-rail";
@@ -14,13 +14,11 @@ export function railWidgets({
   recentlyExploited,
   mostReported,
   sourceStatus,
-  now,
 }: {
   frequency: MonthFigure[] | null;
   recentlyExploited: ExploitedFlaw[] | null;
   mostReported: OrganisationFigure[] | null;
   sourceStatus: ReactNode;
-  now?: Date;
 }): RailWidget[] {
   return [
     {
@@ -33,7 +31,7 @@ export function railWidgets({
       id: "recently-exploited",
       title: "Recently exploited",
       description: "Newest flaws known to be used in attacks",
-      body: <RecentlyExploited items={recentlyExploited} now={now} />,
+      body: <RecentlyExploited items={recentlyExploited} />,
     },
     {
       id: "most-reported",

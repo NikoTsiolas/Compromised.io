@@ -60,7 +60,6 @@ export default function SamplePreview() {
             recentlyExploited: SAMPLE_RECENTLY_EXPLOITED,
             mostReported: SAMPLE_MOST_REPORTED,
             sourceStatus: <SourceList status={SAMPLE_STATUS} now={SAMPLE_NOW} />,
-            now: SAMPLE_NOW,
           })}
           now={SAMPLE_NOW}
           polling={false}
