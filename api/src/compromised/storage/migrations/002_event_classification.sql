@@ -1,6 +1,6 @@
 -- Category, commentary flag, affected organization and feed scope (#6).
 -- Events stored before this migration get defaults that put them in no tab; run
--- `python -m compromised.pipeline.scope` (pnpm db:reclassify) to classify them.
+-- `pnpm db:reclassify` (python -m compromised.reclassify) to classify them.
 alter table events
     add column category text not null default 'other',
     add column commentary boolean not null default false,

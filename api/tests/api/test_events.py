@@ -7,41 +7,143 @@ from fastapi.testclient import TestClient
 
 from compromised.api import create_app
 from compromised.pipeline import ingest
-from compromised.sources import BLEEPINGCOMPUTER
-from tests.samples import real_sample
+from tests.samples import real_sample, sample_source, synthetic_sample
+
+FETCHED_AT = datetime(2026, 11, 26, 14, 54, 7, tzinfo=UTC)
+FLIGHT_CENTRE = (
+    "Australia’s Flight Centre Data Breach Exposes Customer Records and Passport Details"
+)
+ONEPASSWORD_SA = "1Password Hacked: Customer Names and Emails Copied, Vaults Untouched"
+ONEPASSWORD_BC = "1Password customer data stolen after employee GitHub account breach"
+FIFA = "FIFA says hackers accessed ‘limited set of personal and business information’"
+DOTNET = "Attackers Target .NET Developers With Poisoned Job Assessments"
+WINDOWS_ZERO_DAY = "[Synthetic test item] Windows zero-day exploited in attacks"
+CHROME_CRITICAL = "[Synthetic test item] Critical Chrome flaw fixed in security update"
 
 
 @pytest.fixture
 def client(conn, database_url):
+    for source_id in ("bleepingcomputer", "therecord", "securityaffairs", "darkreading"):
+        body = real_sample(f"{source_id}.xml")
+        ingest(conn, sample_source(source_id), body, fetched_at=FETCHED_AT)
     ingest(
         conn,
-        BLEEPINGCOMPUTER,
-        real_sample("bleepingcomputer.xml"),
-        fetched_at=datetime(2026, 11, 26, 14, 54, 7, tzinfo=UTC),
+        sample_source("ransomware-live"),
+        real_sample("ransomware-live.xml"),
+        fetched_at=FETCHED_AT,
+    )
+    ingest(
+        conn,
+        sample_source("securityweek"),
+        synthetic_sample("vulnerability-gate.xml"),
+        fetched_at=FETCHED_AT,
     )
     with TestClient(create_app(database_url=database_url)) as test_client:
         yield test_client
 
 
-def test_events_are_listed_newest_first_and_the_cursor_reaches_the_rest(client):
+def titles(response):
+    assert response.status_code == 200, response.text
+    return [e["title"] for e in response.json()["events"]]
+
+
+def test_the_default_listing_is_the_all_tab_newest_first_and_the_cursor_keeps_the_tab(client):
     first = client.get("/v1/events", params={"limit": 2})
-    assert first.status_code == 200
-    page = first.json()
-    assert [e["title"] for e in page["events"]] == [
-        "SYS010 malware abuses browser management to spy on Gmail, Outlook",
-        "Palo Alto Networks warns of Fragnesia flaw exploited in PAN-OS attacks",
+    assert titles(first) == [FLIGHT_CENTRE, ONEPASSWORD_SA]
+
+    second = client.get("/v1/events", params={"limit": 2, "cursor": first.json()["next_cursor"]})
+    assert titles(second) == [ONEPASSWORD_BC, FIFA]
+
+    third = client.get("/v1/events", params={"limit": 2, "cursor": second.json()["next_cursor"]})
+    # The synthetic items are dated 2 November, older than every real one.
+    assert titles(third) == [DOTNET, WINDOWS_ZERO_DAY]
+    assert titles(client.get("/v1/events", params={"tab": "all"})) == [
+        FLIGHT_CENTRE,
+        ONEPASSWORD_SA,
+        ONEPASSWORD_BC,
+        FIFA,
+        DOTNET,
+        WINDOWS_ZERO_DAY,
+        CHROME_CRITICAL,
     ]
-    assert page["events"][0]["published_at"] == "2026-11-26T11:50:17Z"
-    assert page["events"][0]["sources"][0]["publisher"] == "BleepingComputer"
-    assert page["events"][0]["sources"][0]["url"].startswith(
-        "https://www.bleepingcomputer.com/news/security/sys010-"
+
+
+def test_each_tab_filters_the_feed(client):
+    def tab(name):
+        return titles(client.get("/v1/events", params={"tab": name}))
+
+    assert tab("breaches") == [FLIGHT_CENTRE, ONEPASSWORD_SA, ONEPASSWORD_BC, FIFA]
+    assert tab("ransomware") == [
+        "🏴‍☠️ Metaencryptor has just published a new victim : Exceptional Healthcare Inc.",
+        (
+            "🏴‍☠️ Orova has just published a new victim : Technology Investment Joint Stock"
+            " CompanyTACORP"
+        ),
+        "🏴‍☠️ Orova has just published a new victim : E Xing Precision Design",
+    ]
+    assert tab("under-attack") == [WINDOWS_ZERO_DAY]
+    assert tab("update-now") == [WINDOWS_ZERO_DAY, CHROME_CRITICAL]
+    assert tab("research") == [
+        "SYS010 malware abuses browser management to spy on Gmail, Outlook",
+        "Cyprus Becomes Espionage Target for Iranian Hackers",
+        "Microsoft: China’s Salt Typhoon hackers are using Artex",
+    ]
+    # Ranked by its own ticket (#10); empty until then.
+    assert tab("trending") == []
+
+
+def test_commentary_appears_in_no_tab(client):
+    commentary = {
+        "UK’s long-awaited National Cyber Action Plan delayed until December",
+        "It's a Bot World. We're Just Living in It",
+    }
+    for tab in ("all", "breaches", "ransomware", "under-attack", "update-now", "research"):
+        assert not commentary & set(titles(client.get("/v1/events", params={"tab": tab})))
+
+
+def test_events_carry_category_commentary_flag_organization_and_logo_key(client):
+    [event] = [
+        e
+        for e in client.get("/v1/events", params={"tab": "breaches"}).json()["events"]
+        if e["title"] == ONEPASSWORD_BC
+    ]
+    assert {k: event[k] for k in event if k not in {"id", "sources", "published_at"}} == {
+        "title": ONEPASSWORD_BC,
+        "first_seen_at": "2026-11-26T14:54:07Z",
+        "category": "data_breach",
+        "category_label": "Data breach",
+        "commentary": False,
+        "affected_organization": "1Password",
+        "organization_key": "1password",
+        "logo_key": "1password",
+        "tabs": ["all", "breaches"],
+    }
+
+    claim = client.get("/v1/events", params={"tab": "ransomware", "limit": 1}).json()["events"][0]
+    assert (claim["affected_organization"], claim["organization_key"], claim["logo_key"]) == (
+        "Exceptional Healthcare Inc.",
+        None,
+        None,
     )
 
-    second = client.get("/v1/events", params={"limit": 2, "cursor": page["next_cursor"]}).json()
-    assert [e["title"] for e in second["events"]] == [
-        "1Password customer data stolen after employee GitHub account breach"
+
+def test_the_tabs_are_listed_in_reading_order_with_their_labels(client):
+    response = client.get("/v1/tabs")
+
+    assert response.status_code == 200
+    assert response.json() == [
+        {"id": "all", "label": "All"},
+        {"id": "breaches", "label": "Breaches"},
+        {"id": "ransomware", "label": "Ransomware"},
+        {"id": "under-attack", "label": "Under attack"},
+        {"id": "update-now", "label": "Update now"},
+        {"id": "research", "label": "Research"},
+        {"id": "trending", "label": "Trending"},
     ]
-    assert second["next_cursor"] is None
+
+
+def test_an_unknown_tab_is_a_client_error(client):
+    assert client.get("/v1/events", params={"tab": "everything"}).status_code == 422
 
 
 def test_a_malformed_cursor_is_a_client_error(client):

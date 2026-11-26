@@ -353,3 +353,22 @@ def test_every_bleepingcomputer_event_gets_a_category_a_commentary_flag_and_an_o
         "Gmail",
         ["research"],
     )
+
+
+def test_events_stored_before_classification_existed_are_classified_by_a_refresh(conn):
+    ingest(conn, BLEEPINGCOMPUTER, real_sample("bleepingcomputer.xml"), fetched_at=FETCHED_AT)
+    # What migration 002 leaves on events the walking skeleton stored.
+    conn.execute(
+        "update events set category = 'other', organization = null, organization_key = null,"
+        " logo_key = null, tabs = '{}'"
+    )
+    assert storage.list_events(conn, tab="all").events == []
+
+    assert scope.refresh_all(conn) == 3
+
+    [event] = storage.list_events(conn, tab="all").events
+    assert (event.title, event.organization_key, event.logo_key) == (
+        "1Password customer data stolen after employee GitHub account breach",
+        "1password",
+        "1password",
+    )
