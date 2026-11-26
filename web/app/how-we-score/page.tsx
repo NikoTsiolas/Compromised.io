@@ -122,6 +122,15 @@ async function Rules() {
         <li>&ldquo;Disputed&rdquo;: a later source denied or retracted it.</li>
         <li>&ldquo;Under investigation&rdquo;: reserved; no rule sets it yet.</li>
       </ul>
+
+      <h2 className={H2}>Trending</h2>
+      <p className={P}>
+        Trending ranks events by how many independent sources covered them recently. Every news
+        outlet or official source that reported an event in the last {s.trending.window_hours}{" "}
+        hours adds one point, halved for every {s.trending.half_life_hours} hours since its latest
+        report on it. Attackers&apos; own claims add nothing. Nothing else counts: Compromised
+        does not track views, clicks or shares.
+      </p>
     </>
   );
 }

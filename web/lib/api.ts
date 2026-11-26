@@ -77,6 +77,8 @@ export type Scoring = {
   official_and_press: number;
   disputed: number;
   sources: { name: string; tier: SourceHealth["tier"]; weight: number }[];
+  /** Trending's recency decay (#10). */
+  trending: { window_hours: number; half_life_hours: number };
 };
 
 export type Tab = {

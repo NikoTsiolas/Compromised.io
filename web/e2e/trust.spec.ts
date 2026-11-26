@@ -62,4 +62,7 @@ test("'How we score' states the formula's numbers", async ({ page }) => {
   await expect(
     page.getByRole("row", { name: "The Record News outlet 50" }),
   ).toBeVisible();
+  // Trending's formula (#10), from the API's own constants.
+  await expect(page.getByText(/reported an event in the last 72 hours adds one point, halved for every 24 hours/)).toBeVisible();
+  await expect(page.getByText(/does not track views, clicks or shares/)).toBeVisible();
 });

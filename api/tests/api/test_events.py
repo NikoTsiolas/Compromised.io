@@ -234,7 +234,7 @@ def test_the_scoring_rules_state_the_formulas_numbers_and_every_sources_weight(c
     assert response.status_code == 200
     rules = response.json()
     # The anchors agreed in docs/wiki/trust-labels-and-score.md.
-    assert {k: v for k, v in rules.items() if k != "sources"} == {
+    assert {k: v for k, v in rules.items() if k not in {"sources", "trending"}} == {
         "claim_only": 20,
         "one_outlet": 50,
         "per_extra_outlet": 10,
@@ -247,6 +247,8 @@ def test_the_scoring_rules_state_the_formulas_numbers_and_every_sources_weight(c
     assert {"name": "Ransomware.live", "tier": "attacker_claim", "weight": 20} in rules["sources"]
     assert {"name": "The Record", "tier": "press", "weight": 50} in rules["sources"]
     assert {"name": "CISA", "tier": "official", "weight": 90} in rules["sources"]
+    # Trending (#10): the window and half-life of its recency decay.
+    assert rules["trending"] == {"window_hours": 72, "half_life_hours": 24}
 
 
 # --- publisher images (#9) ----------------------------------------------------------------------

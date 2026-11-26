@@ -93,6 +93,13 @@ class ScoredSourceOut(BaseModel):
     weight: int
 
 
+class TrendingRuleOut(BaseModel):
+    """Trending's recency decay: each source adds 0.5 ^ (hours since its report / half-life)."""
+
+    window_hours: int
+    half_life_hours: int
+
+
 class ScoringOut(BaseModel):
     """The confidence formula's numbers, as the code uses them ("How we score")."""
 
@@ -104,6 +111,7 @@ class ScoringOut(BaseModel):
     official_and_press: int
     disputed: int
     sources: list[ScoredSourceOut]
+    trending: TrendingRuleOut
 
 
 class TabOut(BaseModel):
@@ -273,6 +281,10 @@ def create_app(
             sources=[
                 ScoredSourceOut(name=s.name, tier=str(s.tier), weight=s.weight) for s in REGISTRY
             ],
+            trending=TrendingRuleOut(
+                window_hours=int(search_storage.TRENDING_WINDOW.total_seconds() // 3600),
+                half_life_hours=search_storage.TRENDING_HALF_LIFE_HOURS,
+            ),
         )
 
     @app.get("/v1/tabs", response_model=list[TabOut])
