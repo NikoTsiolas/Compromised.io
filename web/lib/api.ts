@@ -1,4 +1,5 @@
 // Client for the Compromised API. Server-side only: API_URL is not exposed to the browser.
+import { cache } from "react";
 
 export type EventSource = {
   record_id: number;
@@ -61,6 +62,10 @@ export type FeedEvent = {
   cves?: string[];
   attack_vector?: string | null;
 };
+
+/** One event for its own page (GET /v1/events/{id}): the feed's shape plus the CVE identifiers
+ * its sources name. */
+export type EventDetail = FeedEvent & { cves: string[] };
 
 export type PublisherImage = {
   url: string;
@@ -125,6 +130,53 @@ export async function listEvents(
   if (cursor) url.searchParams.set("cursor", cursor);
   if (limit) url.searchParams.set("limit", String(limit));
   return getJson(url);
+}
+
+/**
+ * One event by id, or null when there is none. Ids are stable; the old id of an event that
+ * regrouping deleted is followed (the API redirects) to the event that took its story, so the
+ * caller compares the returned id with the one it asked for.
+ */
+export const getEvent = cache(async (id: string): Promise<EventDetail | null> => {
+  if (!isEventId(id)) return null;
+  const url = new URL(`/v1/events/${id}`, API_URL);
+  const response = await fetch(url, { cache: "no-store" });
+  if (response.status === 404) return null;
+  if (!response.ok) {
+    throw new Error(`${url.pathname} request failed: HTTP ${response.status}`);
+  }
+  return response.json();
+});
+
+export type EventLookup =
+  | { kind: "found" }
+  | { kind: "missing" }
+  | { kind: "moved"; id: string }
+  /** The API could not be asked; the page itself shows that it could not load. */
+  | { kind: "unknown" };
+
+/** Whether an event address leads anywhere, without reading the event (for Proxy). */
+export async function lookUpEvent(id: string): Promise<EventLookup> {
+  if (!isEventId(id)) return { kind: "missing" };
+  try {
+    const response = await fetch(new URL(`/v1/events/${id}`, API_URL), {
+      cache: "no-store",
+      redirect: "manual",
+    });
+    // Read, not cancelled: a cancelled body never settles inside Next.js's Proxy.
+    await response.arrayBuffer();
+    if (response.status === 404) return { kind: "missing" };
+    const moved = response.headers.get("location")?.match(/^\/v1\/events\/(\d+)$/);
+    if (response.status === 308 && moved) return { kind: "moved", id: moved[1] };
+    return response.ok ? { kind: "found" } : { kind: "unknown" };
+  } catch {
+    return { kind: "unknown" };
+  }
+}
+
+/** Event ids are positive integers that fit the database's bigint. */
+function isEventId(id: string): boolean {
+  return /^[1-9]\d{0,17}$/.test(id);
 }
 
 export async function getScoring(): Promise<Scoring> {

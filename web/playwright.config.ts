@@ -17,13 +17,13 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
-      testIgnore: /new-events\.spec\.ts/,
+      testIgnore: /(new-events|event-regrouped)\.spec\.ts/,
       use: { ...devices["Desktop Chrome"] },
     },
     {
       // Adds events to the shared test database, so it runs only after every read-only test.
       name: "chromium-writes",
-      testMatch: /new-events\.spec\.ts/,
+      testMatch: /(new-events|event-regrouped)\.spec\.ts/,
       dependencies: ["chromium"],
       use: { ...devices["Desktop Chrome"] },
     },

@@ -1,9 +1,14 @@
 // The pieces every story shows, shared by the featured lead, the cards and the feed rows, so
 // the trust label, the "AI summary" label, "Advice from source" and the technical details read
 // the same wherever an event appears. Every string from the API is rendered as React text.
+import Link from "next/link";
+import { ViewTransition, type ReactNode } from "react";
+
 import { TechnicalDetails } from "@/components/bencho-pro/technical-details";
 import { LocalTime } from "@/components/feed/local-time";
+import { eventPath, hasEventPage } from "@/lib/event";
 import { categoryLabel, type FeedItem } from "@/lib/feed";
+import { cn } from "@/lib/utils";
 
 export function categoryName(item: FeedItem): string | null {
   if (!item.category) return null;
@@ -111,20 +116,65 @@ export function SourceNames({ item }: { item: FeedItem }) {
   );
 }
 
+/**
+ * The small "Details" link to the event's own page (#11). The headline keeps opening the
+ * publisher. Its name is just "Details": every story is an article named by its headline, which
+ * gives the link its context (and keeps the headline the only link named after it).
+ * Sample events on /preview have no page and show no link.
+ */
+export function DetailsLink({ item }: { item: FeedItem }) {
+  if (!hasEventPage(item.id)) return null;
+  return (
+    <Link
+      href={eventPath(item.id)}
+      className="-my-3 inline-flex min-h-11 items-center text-[13px] leading-[18px] text-ink-3 underline-offset-4 hover:text-ink hover:underline sm:my-0 sm:min-h-0"
+    >
+      Details
+    </Link>
+  );
+}
+
+/**
+ * Names an event's picture for view transitions, so following "Details" carries the picture
+ * from the story into the event page (the shared motion tokens in globals.css time it).
+ */
+export function MediaMorph({ id, children }: { id: string; children: ReactNode }) {
+  return (
+    <ViewTransition name={`event-media-${id}`} share="auto" default="none">
+      {children}
+    </ViewTransition>
+  );
+}
+
 export function DetailsToggle({ item }: { item: FeedItem }) {
   return (
     <TechnicalDetails>
-      <Details item={item} />
+      <TechnicalFacts item={item} />
     </TechnicalDetails>
   );
 }
 
-function Details({ item }: { item: FeedItem }) {
+/** CVEs, attack vector, category and (unless the page lists them itself) every source. */
+export function TechnicalFacts({
+  item,
+  sources = true,
+  className = "mt-3 mb-1 border-t border-rule pt-3",
+}: {
+  item: FeedItem;
+  sources?: boolean;
+  /** Spacing and rule above the list; the expand inside a story draws a hairline. */
+  className?: string;
+}) {
   const term =
     "text-[11px] leading-[18px] font-medium tracking-[0.06em] text-ink-3 uppercase";
   const category = categoryName(item);
   return (
-    <dl className="mt-3 mb-1 grid grid-cols-1 gap-x-6 gap-y-2 border-t border-rule pt-3 text-[13px] leading-[18px] sm:grid-cols-[140px_minmax(0,1fr)]">
+    <dl
+      className={cn(
+        "grid grid-cols-1 gap-x-6 gap-y-2 text-[13px] leading-[18px] sm:grid-cols-[140px_minmax(0,1fr)]",
+        className,
+      )}
+    >
       <dt className={term}>CVE identifiers</dt>
       <dd className="font-mono text-xs text-ink">
         {item.cves === undefined ? (
@@ -153,6 +203,8 @@ function Details({ item }: { item: FeedItem }) {
         )}
       </dd>
 
+      {sources && (
+        <>
       <dt className={term}>Sources</dt>
       <dd>
         <ol className="flex flex-col gap-2">
@@ -175,6 +227,8 @@ function Details({ item }: { item: FeedItem }) {
           ))}
         </ol>
       </dd>
+        </>
+      )}
     </dl>
   );
 }

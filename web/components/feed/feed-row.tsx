@@ -10,8 +10,10 @@ import {
   ActionLine,
   AiLabel,
   categoryName,
+  DetailsLink,
   DetailsToggle,
   Kicker,
+  MediaMorph,
   SourceNames,
   summaryText,
 } from "@/components/feed/story-parts";
@@ -29,14 +31,16 @@ export function FeedRow({ item, now }: { item: FeedItem; now?: Date }) {
       className="grid grid-cols-[minmax(0,1fr)_96px] grid-rows-[auto_1fr] items-start gap-x-4 gap-y-0 rounded-none border-0 px-0 py-4 sm:grid-cols-[200px_minmax(0,1fr)] sm:gap-x-6 sm:py-5"
     >
       <div className="col-start-2 row-start-1 sm:col-start-1 sm:row-span-2">
-        <EventMedia
-          image={item.image}
-          logo={item.logo}
-          organization={item.organization}
-          fallbackLabel={categoryName(item) ?? "Security incident"}
-          size="thumb"
-          ratio={4 / 3}
-        />
+        <MediaMorph id={item.id}>
+          <EventMedia
+            image={item.image}
+            logo={item.logo}
+            organization={item.organization}
+            fallbackLabel={categoryName(item) ?? "Security incident"}
+            size="thumb"
+            ratio={4 / 3}
+          />
+        </MediaMorph>
       </div>
 
       <div className="col-start-1 row-start-1 min-w-0 sm:col-start-2">
@@ -75,6 +79,8 @@ export function FeedRow({ item, now }: { item: FeedItem; now?: Date }) {
           <Trust trust={item.trust} />
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
             <SourceNames item={item} />
+            <span aria-hidden>·</span>
+            <DetailsLink item={item} />
             <span aria-hidden>·</span>
             <DetailsToggle item={item} />
           </div>
