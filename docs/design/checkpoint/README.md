@@ -1,5 +1,16 @@
 # Homepage design checkpoint (ticket #9), white and smooth revision
 
+## Widgets with real figures (ticket #15), 2026-11-26
+
+`widgets-light.png` (desktop, 1440 wide, full page), `widgets-spike-hover-light.png` (desktop,
+pointer on September 2026) and `widgets-phone-light.png` (iPhone 13, full page): the real
+homepage from a development server against a database filled by one fetch of 13 feeds on
+2026-11-26 (Google Threat Intelligence unreachable, CISA advisories 403, MSRC 400) and the CISA
+KEV catalog fetched once that day (version 2026.11.25, 1,805 entries). The chart shows 341 flaws
+in 12 months with September (43) and November (39) as spike months; recently exploited lists
+Chrome, WordPress, Windows, Chrome, Windows; most reported organisations counts All-tab events
+over 30 days. Times are London time, light theme.
+
 **Screenshots replaced on 2026-11-26 after merging #7 (trust labels) with #9.** Every row now
 shows the API's own trust label, its 0-100 score and the sources it counted, in the designed
 trust line (status square, label, score, "Sources: ..."); commentary carries none. The real feed

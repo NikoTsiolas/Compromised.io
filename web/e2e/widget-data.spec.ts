@@ -3,7 +3,8 @@
 // playwright.config.ts runs it after every other spec. Every entry is dated relative to today,
 // so the 12-month window always holds them, and the catalog entries are all older than the
 // KEV adapter's 30-day backfill, so none becomes a feed event. CVE numbers use the impossible
-// year 0000; names start with "[Synthetic test entry]".
+// year 0000 and descriptions start with "[Synthetic test entry]"; names follow CISA's
+// "<vendor> <product> <weakness>" shape, which the API shortens for the tooltip.
 import { execFileSync } from "node:child_process";
 import { writeFileSync } from "node:fs";
 import path from "node:path";
@@ -54,9 +55,9 @@ function syntheticCatalog(): string {
     cveID: cve,
     vendorProject: vendor,
     product,
-    vulnerabilityName: `[Synthetic test entry] ${vendor} ${product} ${weakness}`,
+    vulnerabilityName: `${vendor} ${product} ${weakness}`,
     dateAdded: dayIn(ago, day),
-    shortDescription: "Synthetic test entry. Not a real vulnerability.",
+    shortDescription: "[Synthetic test entry] Not a real vulnerability.",
     requiredAction: "Synthetic test entry: no action.",
     dueDate: dayIn(ago, day),
     knownRansomwareCampaignUse: ransomware,
@@ -127,10 +128,26 @@ test("the chart shows twelve real months with the API's spike month and its nota
   await expect(tip).toContainText("Notable");
   // Newest three of the flaws in products people use or known to be used by ransomware.
   await expect(tip.getByRole("listitem")).toHaveText([
-    "Windows: [Synthetic test entry] Microsoft Windows Use-After-Free Vulnerability",
-    "FortiOS: [Synthetic test entry] Fortinet FortiOS Heap Overflow Vulnerability",
-    "iOS: [Synthetic test entry] Apple iOS Memory Corruption Vulnerability",
+    "Windows: Use-After-Free Vulnerability",
+    "FortiOS: Heap Overflow Vulnerability",
+    "iOS: Memory Corruption Vulnerability",
   ]);
+  // The whole tooltip is readable: its last entry is the topmost element where it is drawn,
+  // not cut off by the card or covered by the widget below.
+  // Polled: while the page's reveal transition runs, its overlay answers for every point.
+  const last = (await tip.getByRole("listitem").last().boundingBox())!;
+  await expect
+    .poll(() =>
+      page.evaluate(
+        ([x, y]) => {
+          // The tooltip ignores the pointer, which elementFromPoint honours: lift that here.
+          document.querySelector<HTMLElement>("[role=tooltip]")!.style.pointerEvents = "auto";
+          return !!document.elementFromPoint(x, y)?.closest("[role=tooltip]");
+        },
+        [last.x + last.width / 2, last.y + last.height - 2],
+      ),
+    )
+    .toBe(true);
 });
 
 test("recently exploited lists the newest flaws in products people use, by day", async ({

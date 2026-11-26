@@ -35,7 +35,8 @@ MOST_REPORTED_DAYS = 30
 @dataclass(frozen=True)
 class Notable:
     cve: str
-    title: str  # CISA's vulnerabilityName, unchanged
+    title: str  # the weakness: CISA's name without the vendor and product it starts with
+    name: str  # CISA's vulnerabilityName, unchanged
     organization: str  # the product as the feed names it (catalog name, else CISA's product)
     people_use: bool  # the product is on the curated "people use" list
     ransomware: bool  # CISA marks it as known to be used in ransomware campaigns
@@ -93,6 +94,15 @@ def exploitation_history(conn: psycopg.Connection, *, now: datetime, months: int
     return History(months=out, catalog=CatalogInfo(**info))
 
 
+def short_title(name: str, vendor: str, product: str) -> str:
+    """CISA names a flaw "<vendor> <product> <weakness>"; beside the organisation, the weakness
+    is enough (and keeps the chart's tooltip short). A name in another shape is kept whole."""
+    for prefix in (f"{vendor} {product} ", f"{vendor} "):
+        if vendor and name.startswith(prefix) and len(name) > len(prefix):
+            return name[len(prefix) :]
+    return name
+
+
 def _notable(conn: psycopg.Connection, month: date) -> list[Notable]:
     """A spike month's entries in a product people use or known to be used by ransomware,
     newest added first, at most ``NOTABLE_PER_MONTH``."""
@@ -105,7 +115,8 @@ def _notable(conn: psycopg.Connection, month: date) -> list[Notable]:
         out.append(
             Notable(
                 cve=e["cve"],
-                title=e["name"],
+                title=short_title(e["name"], e["vendor"], e["product"]),
+                name=e["name"],
                 organization=affected.name if affected else e["vendor"],
                 people_use=people_use,
                 ransomware=e["known_ransomware_use"],

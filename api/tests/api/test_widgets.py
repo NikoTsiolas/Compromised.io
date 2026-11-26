@@ -59,7 +59,8 @@ def test_exploited_by_month_gives_twelve_months_with_the_spike_and_its_notable_e
     march = body["months"][8]
     assert march["notable"][0] == {
         "cve": "CVE-0000-0306",
-        "title": "[Synthetic test entry] Microsoft Windows Use-After-Free Vulnerability",
+        "title": "Use-After-Free Vulnerability",
+        "name": "Microsoft Windows Use-After-Free Vulnerability",
         "organization": "Windows",
         "people_use": True,
         "ransomware": True,

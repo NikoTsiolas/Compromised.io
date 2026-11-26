@@ -148,28 +148,33 @@ def test_spike_months_carry_their_notable_entries_newest_first_capped_at_three(c
     # March's notable entries: in a product people use (Windows, iOS, Chrome) or known to be
     # used by ransomware (Windows, FortiOS). Four qualify; the newest three are kept. The
     # Danfoss and Ivanti entries are neither.
+    # The title drops CISA's leading vendor and product, which the organisation already names;
+    # the full name is kept beside it.
     assert [
-        (n.cve, n.organization, n.title, n.people_use, n.ransomware)
+        (n.cve, n.organization, n.title, n.name, n.people_use, n.ransomware)
         for n in flagged["2026-03"].notable
     ] == [
         (
             "CVE-0000-0306",
             "Windows",
-            "[Synthetic test entry] Microsoft Windows Use-After-Free Vulnerability",
+            "Use-After-Free Vulnerability",
+            "Microsoft Windows Use-After-Free Vulnerability",
             True,
             True,
         ),
         (
             "CVE-0000-0305",
             "FortiOS",
-            "[Synthetic test entry] Fortinet FortiOS Heap Overflow Vulnerability",
+            "Heap Overflow Vulnerability",
+            "Fortinet FortiOS Heap Overflow Vulnerability",
             False,
             True,
         ),
         (
             "CVE-0000-0303",
             "iOS",
-            "[Synthetic test entry] Apple iOS Memory Corruption Vulnerability",
+            "Memory Corruption Vulnerability",
+            "Apple iOS Memory Corruption Vulnerability",
             True,
             False,
         ),
@@ -186,6 +191,47 @@ def test_the_real_samples_month_is_a_spike_with_nothing_notable(conn):
     # Danfoss controller are not on the "people use" list and none is marked "Known" ransomware.
     assert november.month == "2026-11"
     assert november.notable == []
+
+
+@pytest.mark.parametrize(
+    ("name", "vendor", "product", "title"),
+    [
+        # Real CISA names (the real KEV sample and the live catalog of 2026-11-25).
+        (
+            (
+                "Hewlett Packard Enterprise (HPE) Juniper Session Smart Conductor and Session Smart"
+                " Router OS Command Injection Vulnerability"
+            ),
+            "Hewlett Packard Enterprise (HPE)",
+            "Juniper Session Smart Conductor and Session Smart Router",
+            "OS Command Injection Vulnerability",
+        ),
+        (
+            "Google Chromium V8 Out of Bounds Write Vulnerability",
+            "Google",
+            "Chromium V8",
+            "Out of Bounds Write Vulnerability",
+        ),
+        (
+            (
+                "WordPress WordPress Core Time-of-check Time-of-use (TOCTOU) Race Condition"
+                " Vulnerability"
+            ),
+            "WordPress",
+            "WordPress Core",
+            "Time-of-check Time-of-use (TOCTOU) Race Condition Vulnerability",
+        ),
+        # Hand-written: a name that does not start with its vendor is kept whole.
+        (
+            "Log4j Remote Code Execution Vulnerability",
+            "Apache",
+            "Log4j2",
+            "Log4j Remote Code Execution Vulnerability",
+        ),
+    ],
+)
+def test_a_notable_title_drops_the_vendor_and_product_cisa_puts_first(name, vendor, product, title):
+    assert widgets.short_title(name, vendor, product) == title
 
 
 # --- recently exploited -------------------------------------------------------------------------

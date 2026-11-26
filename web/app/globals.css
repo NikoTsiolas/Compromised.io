@@ -212,6 +212,12 @@
    active the others step back by mixing toward the surface, never fading. */
 :root { --chart-grey: color-mix(in srgb, var(--c-ink) 48%, var(--c-surface)); }
 .dark { --chart-grey: color-mix(in srgb, var(--c-ink) 38%, var(--c-surface)); }
+/* While a chart's tooltip is showing, its widget sits above the widgets after it, so a tooltip
+   holding real (long) notable entries can reach past the card instead of being cut off. */
+.home-rail li:has(.xchart[data-scrub]) {
+  position: relative;
+  z-index: 3;
+}
 .xchart-bar {
   border-radius: 4px 4px 0 0;
   background: var(--chart-grey);

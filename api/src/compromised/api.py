@@ -126,7 +126,8 @@ class StatusOut(BaseModel):
 
 class NotableOut(BaseModel):
     cve: str
-    title: str
+    title: str  # the weakness, without the vendor and product CISA puts first
+    name: str  # CISA's full vulnerabilityName
     organization: str
     people_use: bool
     ransomware: bool  # CISA: known to be used in ransomware campaigns
