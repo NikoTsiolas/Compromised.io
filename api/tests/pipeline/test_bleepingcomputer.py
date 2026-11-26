@@ -5,8 +5,7 @@ from datetime import UTC, datetime
 from compromised import storage
 from compromised.pipeline import ingest
 from compromised.sources import BLEEPINGCOMPUTER
-
-from .conftest import real_sample
+from tests.samples import real_sample
 
 FETCHED_AT = datetime(2026, 11, 26, 14, 54, 7, tzinfo=UTC)
 

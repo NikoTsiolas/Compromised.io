@@ -1,0 +1,73 @@
+name: CI
+
+# Every branch push runs CI (pull requests in this repo come from its own branches).
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  # Matches the Postgres service below; same major version as Railway and local Homebrew.
+  TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/compromised_test
+  E2E_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/compromised_test
+
+jobs:
+  api:
+    name: Pipeline and API seams
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: compromised_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    defaults:
+      run:
+        working-directory: api
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: astral-sh/setup-uv@v10.4.0
+      - run: uv sync --locked
+      - run: uv run ruff check . && uv run ruff format --check .
+      - name: Pipeline seam
+        run: uv run pytest tests/pipeline
+      - name: API seam
+        run: uv run pytest tests/api
+
+  browser:
+    name: Browser seam
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: compromised_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: astral-sh/setup-uv@v10.4.0
+      - uses: pnpm/action-setup@v6.1.1
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: 25
+          cache: pnpm
+      - run: uv sync --locked --directory api
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter web lint && pnpm --filter web typecheck
+      - run: pnpm --filter web exec playwright install --with-deps chromium
+      - name: Browser seam
+        run: pnpm test:e2e
+      - uses: actions/upload-artifact@v7.0.2
+        if: failure()
+        with:
+          name: playwright-report
+          path: web/test-results/
+          retention-days: 7

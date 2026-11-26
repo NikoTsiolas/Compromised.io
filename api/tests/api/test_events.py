@@ -8,8 +8,7 @@ from fastapi.testclient import TestClient
 from compromised.api import create_app
 from compromised.pipeline import ingest
 from compromised.sources import BLEEPINGCOMPUTER
-
-from .conftest import real_sample
+from tests.samples import real_sample
 
 
 @pytest.fixture

@@ -4,8 +4,7 @@ import httpx
 
 from compromised import storage
 from compromised.worker import run_once
-
-from .conftest import real_sample
+from tests.samples import real_sample
 
 
 async def test_one_pass_fetches_the_registry_endpoint_politely_and_stores_events(conn):

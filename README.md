@@ -3,3 +3,46 @@
 Know what's been compromised. A plain-language feed of publicly reported security incidents.
 
 Decisions and findings are recorded in [docs/wiki](docs/wiki/index.md).
+
+## Layout
+
+- `api/`: Python (uv). One codebase, two processes: the read-only HTTP API (FastAPI) and the
+  ingestion worker. SQL migrations live in `api/src/compromised/storage/migrations/`.
+- `web/`: Next.js App Router, TypeScript, Tailwind CSS, shadcn/ui (pnpm).
+
+## Local development
+
+Needs Homebrew PostgreSQL 17, uv, Python 3.12, Node 25 and pnpm.
+
+One-time setup:
+
+```sh
+brew services start postgresql@17
+createdb compromised
+createdb compromised_test
+pnpm install
+uv sync --directory api
+cp .env.example .env        # optional: every value has a working local default
+```
+
+Start the API (http://127.0.0.1:8000), the worker and the web app (http://localhost:3000):
+
+```sh
+pnpm dev
+```
+
+`pnpm dev` applies pending migrations first. The worker fetches each source immediately and then
+on its own interval (BleepingComputer: every 10 minutes). `pnpm worker:once` runs a single pass.
+
+## Tests
+
+```sh
+pnpm test:api     # pipeline seam (api/tests/pipeline) and API seam (api/tests/api), on compromised_test
+pnpm test:e2e     # browser seam (web/e2e), Playwright; seeds compromised_test itself
+```
+
+The tests empty `compromised_test`; never point `TEST_DATABASE_URL` or `E2E_DATABASE_URL` at
+real data. CI (`.github/workflows/ci.yml`) runs all three suites against Postgres 17.
+
+Real captured feed samples used by the tests are in `api/tests/fixtures/real/` with their capture
+dates; hand-written inputs are in `api/tests/fixtures/synthetic/` and labelled as such.

@@ -1,0 +1,21 @@
+{
+  "name": "compromised",
+  "private": true,
+  "description": "Root scripts that run the Python service (api/) and the web app (web/) together.",
+  "scripts": {
+    "dev": "dotenv -e .env -- sh -c 'pnpm db:migrate && concurrently --kill-others-on-fail --names api,worker,web --prefix-colors blue,magenta,green \"pnpm dev:api\" \"pnpm dev:worker\" \"pnpm dev:web\"'",
+    "dev:api": "uv run --directory api uvicorn compromised.api:create_app --factory --reload --port 8000",
+    "dev:worker": "uv run --directory api python -m compromised.worker",
+    "dev:web": "pnpm --filter web dev",
+    "db:migrate": "uv run --directory api python -m compromised.storage migrate",
+    "worker:once": "dotenv -e .env -- uv run --directory api python -m compromised.worker --once",
+    "test": "pnpm test:api && pnpm test:e2e",
+    "test:api": "uv run --directory api pytest",
+    "test:e2e": "pnpm --filter web test:e2e"
+  },
+  "devDependencies": {
+    "concurrently": "10.0.7",
+    "dotenv-cli": "11.1.0"
+  },
+  "packageManager": "pnpm@12.23.0"
+}

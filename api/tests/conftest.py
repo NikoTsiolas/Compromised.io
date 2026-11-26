@@ -1,18 +1,13 @@
+"""Shared fixtures. Suites: tests/pipeline (pipeline seam) and tests/api (HTTP API seam)."""
+
 import os
-from pathlib import Path
 
 import psycopg
 import pytest
 
 from compromised import storage
 
-FIXTURES = Path(__file__).parent / "fixtures"
 TEST_DATABASE_URL = os.environ.get("TEST_DATABASE_URL", "postgresql:///compromised_test")
-
-
-def real_sample(name: str) -> bytes:
-    """Bytes of a real captured feed response (see fixtures/real/README.md)."""
-    return (FIXTURES / "real" / name).read_bytes()
 
 
 @pytest.fixture(scope="session")
