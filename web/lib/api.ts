@@ -28,11 +28,7 @@ export type Trust = {
   sources: string[];
 };
 
-/**
- * One event as the API returns it. The optional fields at the end (CVEs, attack vector) are
- * filled by later tickets; until the API sends them they are absent and the page shows a quiet
- * empty state.
- */
+/** One event as the API returns it. */
 export type FeedEvent = {
   id: number;
   title: string;
@@ -58,8 +54,12 @@ export type FeedEvent = {
   trust: Trust | null;
   /** The publisher's own feed image, or null (none, or images switched off). */
   image?: PublisherImage | null;
+  /** Every CVE identifier the sources name, sorted (#10). */
   cves?: string[];
+  /** How the attack worked, when a source says; null when not identified (#10). */
   attack_vector?: string | null;
+  /** Groups a source names or a claim source credits (#10). */
+  threat_actors?: string[];
 };
 
 export type PublisherImage = {
@@ -88,6 +88,32 @@ export type EventPage = {
   events: FeedEvent[];
   next_cursor: string | null;
 };
+
+/** One value a search filter accepts, with its reader-facing label (GET /v1/filters). */
+export type FilterOption = { id: string; label: string };
+
+export type SearchFilters = {
+  tabs: FilterOption[];
+  categories: FilterOption[];
+  sources: FilterOption[];
+  statuses: FilterOption[];
+};
+
+/** A search as the URL and the API both spell it: every key optional, empty means "any". */
+export type SearchQuery = {
+  q?: string;
+  category?: string;
+  source?: string;
+  status?: string;
+  from?: string;
+  to?: string;
+  cursor?: string;
+};
+
+export const SEARCH_KEYS = ["q", "category", "source", "status", "from", "to"] as const;
+
+/** Thrown when the API refuses a search's values (a hand-edited URL, say): HTTP 400 or 422. */
+export class RefusedSearch extends Error {}
 
 export type IngestionState = "starting" | "live" | "degraded" | "down";
 export type SourceState = "pending" | "ok" | "failing" | "stale";
@@ -125,6 +151,22 @@ export async function listEvents(
   if (cursor) url.searchParams.set("cursor", cursor);
   if (limit) url.searchParams.set("limit", String(limit));
   return getJson(url);
+}
+
+/** Published events matching the query and filters, newest first (GET /v1/search). */
+export async function searchEvents(query: SearchQuery): Promise<EventPage> {
+  const url = new URL("/v1/search", API_URL);
+  for (const [key, value] of Object.entries(query)) {
+    if (value) url.searchParams.set(key, value);
+  }
+  const response = await fetch(url, { cache: "no-store" });
+  if (response.status === 400 || response.status === 422) throw new RefusedSearch();
+  if (!response.ok) throw new Error(`/v1/search request failed: HTTP ${response.status}`);
+  return response.json();
+}
+
+export async function getFilters(): Promise<SearchFilters> {
+  return getJson(new URL("/v1/filters", API_URL));
 }
 
 export async function getScoring(): Promise<Scoring> {

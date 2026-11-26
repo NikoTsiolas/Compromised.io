@@ -39,6 +39,7 @@ export type FeedItem = {
   sources: FeedSource[];
   cves?: string[];
   attackVector?: string | null;
+  threatActors?: string[];
   actionLine?: string | null;
   /** Under active attack right now: earns the red LIVE kicker. */
   live?: boolean;
@@ -70,6 +71,7 @@ export function toFeedItem(event: FeedEvent): FeedItem {
     })),
     cves: event.cves,
     attackVector: event.attack_vector,
+    threatActors: event.threat_actors,
     actionLine: event.action_line,
   };
 }

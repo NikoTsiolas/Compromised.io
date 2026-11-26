@@ -202,7 +202,7 @@ test("type is Helvetica Neue first, with monospace for times", async ({
   expect(timeFont).toMatch(/monospace/);
 });
 
-test("fields that later tickets fill show a quiet empty state, never invented values", async ({
+test("technical details show the extracted fields or a quiet empty state, never invented values", async ({
   page,
 }) => {
   await page.goto("/");
@@ -210,10 +210,13 @@ test("fields that later tickets fill show a quiet empty state, never invented va
   // Trust is filled now (#7): the API's own label, never a placeholder or an invented value.
   await expect(lead(page)).not.toContainText("Not yet assessed");
   await expect(lead(page).getByLabel("Trust")).toContainText("Reported by 3 news outlets");
-  // CVEs and the attack vector are still to come: quiet empty states under the details.
+  // Search terms (#10): what the sources say, and "None named" where they name nothing.
   await lead(page).getByRole("button", { name: "Technical details" }).click();
-  await expect(lead(page)).toContainText("Not extracted yet");
-  await expect(lead(page)).toContainText("Not identified yet");
+  // The employee's GitHub account "was hacked", so the attack vector is a compromised account.
+  await expect(lead(page)).toContainText("Compromised account");
+  await expect(lead(page)).toContainText("CVE identifiersNone named");
+  await expect(lead(page)).toContainText("Threat actorNone named");
+  await expect(lead(page)).not.toContainText("Not extracted yet");
   await expect(page.getByText("Sample data")).toHaveCount(0);
 });
 
@@ -254,9 +257,9 @@ test("section tabs come from the API, each with its own URL, and filter the feed
     SYNTHETIC_SLACK,
   ]);
 
+  // Trending's order depends on the clock: see search.spec.ts and the API seam.
   await tab("Trending").click();
-  await expect(eventRows(page)).toHaveCount(0);
-  await expect(page.getByText("Nothing under Trending yet")).toBeVisible();
+  await expect(page).toHaveURL(/\?tab=trending$/);
 
   await tab("All").click();
   await expect(page).toHaveURL(/\/$/);

@@ -138,7 +138,13 @@ function Details({ item }: { item: FeedItem }) {
 
       <dt className={term}>Attack vector</dt>
       <dd className={item.attackVector ? "text-ink" : "text-ink-3"}>
-        {item.attackVector ?? "Not identified yet"}
+        {item.attackVector ??
+          (item.attackVector === null ? "Not identified" : "Not identified yet")}
+      </dd>
+
+      <dt className={term}>Threat actor</dt>
+      <dd className={item.threatActors?.length ? "text-ink" : "text-ink-3"}>
+        {item.threatActors?.length ? item.threatActors.join(", ") : "None named"}
       </dd>
 
       <dt className={term}>Category</dt>
