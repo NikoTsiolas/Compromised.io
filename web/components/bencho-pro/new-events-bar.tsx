@@ -19,7 +19,10 @@ const OUT = [0.22, 1, 0.36, 1] as const;
 export function NewEventsBar({
   newestId,
   newestPublishedAt,
+  tab,
 }: {
+  /** Count only events in this feed tab (the Feed's categories); all events when absent. */
+  tab?: string;
   /** The event at the top of what the reader is looking at. */
   newestId: string | null;
   newestPublishedAt: string | null;
@@ -38,6 +41,7 @@ export function NewEventsBar({
           id: newestId,
           published_at: newestPublishedAt,
         });
+        if (tab) params.set("tab", tab);
         const response = await fetch(`/api/new-events?${params}`, {
           cache: "no-store",
         });
@@ -53,7 +57,7 @@ export function NewEventsBar({
       cancelled = true;
       window.clearInterval(timer);
     };
-  }, [newestId, newestPublishedAt]);
+  }, [newestId, newestPublishedAt, tab]);
 
   const show = () => {
     startTransition(() => {

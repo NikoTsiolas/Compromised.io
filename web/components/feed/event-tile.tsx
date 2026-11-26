@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 
 const TINTS = 5;
 
-function tintFor(name: string): number {
+export function tintFor(name: string): number {
   let h = 0;
   for (const ch of name) h = (h * 31 + ch.codePointAt(0)!) >>> 0;
   return (h % TINTS) + 1;
@@ -31,7 +31,7 @@ export function EventTile({
   logo: Logo | null | undefined;
   /** Shown when there is no organisation: the category's plain-language name. */
   fallbackLabel: string;
-  size: "lead" | "card" | "thumb";
+  size: "lead" | "card" | "thumb" | "post";
   className?: string;
 }) {
   const key = organization ?? fallbackLabel;
@@ -84,7 +84,7 @@ export function EventTile({
           aria-hidden
           className={cn(
             "max-w-[80%] truncate text-center font-bold tracking-[-0.01em] text-ink-2 @max-[160px]:hidden",
-            size === "lead" ? "text-[15px]" : "text-[12px]",
+            size === "lead" || size === "post" ? "text-[15px]" : "text-[12px]",
           )}
         >
           {caption}

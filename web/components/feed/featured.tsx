@@ -108,8 +108,12 @@ function Lead({ item, now }: { item: FeedItem; now?: Date }) {
         <div className="mt-4 flex flex-col gap-2 border-t border-rule pt-3 text-[13px] leading-[18px] text-ink-3">
           <Trust trust={item.trust} />
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <SourceNames item={item} />
-            <span aria-hidden>·</span>
+            {!item.trust && (
+              <>
+                <SourceNames item={item} />
+                <span aria-hidden>·</span>
+              </>
+            )}
             <DetailsToggle item={item} />
           </div>
         </div>

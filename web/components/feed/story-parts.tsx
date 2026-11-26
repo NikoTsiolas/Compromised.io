@@ -95,20 +95,27 @@ export function sourceCount(item: FeedItem): number {
   return Math.max(1, item.sources.length);
 }
 
-/** "BleepingComputer +2 sources": the publisher always named beside the trust label. */
+/**
+ * Where the sources are named when the trust line cannot name them. The trust line already
+ * names every source it counted ("Sources: ..."), so an event with trust names them there and
+ * nowhere else; only an event with no trust (commentary) names its publishers here, once each.
+ */
 export function SourceNames({ item }: { item: FeedItem }) {
-  const others = item.sources.length - 1;
+  if (item.trust) return null;
+  const names = [...new Set(item.sources.map((s) => s.publisher).filter(Boolean))];
+  if (names.length === 0 && item.publisher) names.push(item.publisher);
+  if (names.length === 0) return null;
   return (
-    <span>
-      <span className="text-ink-2">{item.publisher}</span>
-      {others > 0 && (
-        <span>
-          {" "}
-          +{others} {others === 1 ? "source" : "sources"}
-        </span>
-      )}
+    <span data-slot="source-names">
+      {names.length === 1 ? "Source: " : "Sources: "}
+      <span className="text-ink-2">{names.join(", ")}</span>
     </span>
   );
+}
+
+/** Number of distinct publishers that reported the event (never fewer than one). */
+export function outletCount(item: FeedItem): number {
+  return Math.max(1, new Set(item.sources.map((s) => s.publisher)).size);
 }
 
 export function DetailsToggle({ item }: { item: FeedItem }) {
@@ -119,7 +126,8 @@ export function DetailsToggle({ item }: { item: FeedItem }) {
   );
 }
 
-function Details({ item }: { item: FeedItem }) {
+/** The technical details themselves: CVEs, attack vector, category and every source. */
+export function Details({ item }: { item: FeedItem }) {
   const term =
     "text-[11px] leading-[18px] font-medium tracking-[0.06em] text-ink-3 uppercase";
   const category = categoryName(item);

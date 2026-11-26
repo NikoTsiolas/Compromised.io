@@ -11,7 +11,7 @@ import { SiteHeader } from "@/components/site/site-header";
 import { railWidgets } from "@/components/widgets/rail-widgets";
 import { withLogo } from "@/lib/logos";
 
-import { SAMPLE_ITEMS, SAMPLE_NOW, SAMPLE_TABS } from "./sample-events";
+import { SAMPLE_ITEMS, SAMPLE_NOW } from "./sample-events";
 import {
   SAMPLE_FREQUENCY,
   SAMPLE_MOST_REPORTED,
@@ -41,6 +41,7 @@ export default function SamplePreview() {
         </p>
       </div>
       <SiteHeader
+        current="featured"
         status={
           <IngestionBadge
             status={SAMPLE_STATUS.status}
@@ -52,9 +53,6 @@ export default function SamplePreview() {
       <main className="mx-auto max-w-[1240px] px-4 pb-16 sm:px-6 lg:px-10">
         <HomeView
           items={SAMPLE_ITEMS.map(withLogo)}
-          tabs={SAMPLE_TABS}
-          tab="all"
-          withFeatured
           widgets={railWidgets({
             frequency: SAMPLE_FREQUENCY,
             recentlyExploited: SAMPLE_RECENTLY_EXPLOITED,

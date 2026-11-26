@@ -53,7 +53,14 @@ const LIQUID = { type: "spring" as const, stiffness: 220, damping: 20, mass: 0.5
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
-export function WidgetRail({ widgets }: { widgets: RailWidget[] }) {
+export function WidgetRail({
+  widgets,
+  sideSwitch = true,
+}: {
+  widgets: RailWidget[];
+  /** Off on the Feed, whose left column is the navigation (#16). */
+  sideSwitch?: boolean;
+}) {
   const ids = widgets.map((w) => w.id);
   const byId = new Map(widgets.map((w) => [w.id, w]));
   const still = useReducedMotion();
@@ -207,6 +214,7 @@ export function WidgetRail({ widgets }: { widgets: RailWidget[] }) {
         <p className="font-mono text-[11px] leading-4 tracking-[0.06em] text-ink-3 uppercase">
           At a glance
         </p>
+        {sideSwitch && (
         <button
           type="button"
           onClick={switchSide}
@@ -215,6 +223,7 @@ export function WidgetRail({ widgets }: { widgets: RailWidget[] }) {
           <ArrowLeftRight aria-hidden className="size-3.5" strokeWidth={1.75} />
           Move widgets to the {otherSide}
         </button>
+        )}
       </div>
       <ul className="relative flex flex-col gap-4">
         {arrangement.order.map((id) => {

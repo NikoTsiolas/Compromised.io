@@ -1,0 +1,108 @@
+/* ══ Bottom tab bar (bottom-tab-bar.tsx) ═════════════════════════════════════
+   From the Bencho "Tab bar" block (Pro licence, see README.md): icons on a
+   softened-square bar; the chosen item opens to show its name and one light
+   tile slides under it (moved by the component). Mapped onto our tokens. */
+.tbb-dock {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 30;
+  display: flex;
+  justify-content: center;
+  padding: 8px 12px calc(10px + env(safe-area-inset-bottom));
+  pointer-events: none;
+}
+/* Desktop has the left column instead. */
+@media (min-width: 1024px) {
+  .tbb-dock {
+    display: none;
+  }
+}
+.tbb {
+  --tbb-pad: 5px;
+  --tbb-r: 16px;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: var(--tbb-pad);
+  border-radius: var(--tbb-r);
+  /* a step darker than the page, in either theme */
+  background: color-mix(in srgb, var(--c-ink) 9%, var(--c-bg));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--c-ink) 8%, transparent),
+    0 6px 24px -8px color-mix(in srgb, var(--c-ink) 30%, transparent);
+  user-select: none;
+  -webkit-user-select: none;
+  pointer-events: auto;
+}
+.tbb-tile {
+  position: absolute;
+  top: var(--tbb-pad);
+  bottom: var(--tbb-pad);
+  left: 0;
+  width: 0;
+  border-radius: max(6px, calc(var(--tbb-r) - var(--tbb-pad)));
+  background: var(--c-bg);
+  will-change: transform, width;
+}
+.tbb-tab {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 12px;
+  border-radius: max(6px, calc(var(--tbb-r) - var(--tbb-pad)));
+  color: var(--c-ink);
+  transition:
+    color 220ms ease,
+    padding 600ms var(--ease-out);
+}
+.tbb-tab[data-on] {
+  padding: 0 16px 0 12px;
+}
+.tbb-tab:focus-visible {
+  outline: 2px solid var(--c-focus);
+  outline-offset: -2px;
+}
+.tbb-icon {
+  flex: none;
+}
+.tbb-name {
+  display: grid;
+  grid-template-columns: 0fr;
+  transition: grid-template-columns 600ms var(--ease-out);
+}
+.tbb-name > span {
+  overflow: hidden;
+  white-space: nowrap;
+  padding-left: 0;
+  font-size: 14px;
+  font-weight: 500;
+  opacity: 0;
+  translate: -8px 0;
+  letter-spacing: -0.01em;
+  transition:
+    opacity 160ms ease,
+    translate 420ms var(--ease-out),
+    padding 600ms var(--ease-out);
+}
+.tbb-tab[data-on] .tbb-name {
+  grid-template-columns: 1fr;
+}
+.tbb-tab[data-on] .tbb-name > span {
+  padding-left: 8px;
+  opacity: 1;
+  translate: 0 0;
+  transition:
+    opacity 420ms ease 160ms,
+    translate 600ms var(--ease-out) 160ms,
+    padding 600ms var(--ease-out);
+}
+@media (prefers-reduced-motion: reduce) {
+  .tbb-tab,
+  .tbb-name,
+  .tbb-name > span {
+    transition: none;
+  }
+}
