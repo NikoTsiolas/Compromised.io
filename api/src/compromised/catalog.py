@@ -57,10 +57,8 @@ class Catalog:
         return [a for a in self.threat_actors if _whole_word(a.name).search(text)]
 
     def is_not_organization(self, name: str) -> bool:
-        folded = name.strip().casefold()
-        return folded in {n.casefold() for n in self.not_organizations} or any(
-            a.name.casefold() == folded for a in self.threat_actors
-        )
+        """True for reporters, agencies, countries and threat actors."""
+        return name.strip().casefold() in _excluded_names(self)
 
 
 @cache
@@ -100,6 +98,14 @@ def _index(catalog: Catalog) -> dict[str, Organization]:
 @cache
 def _alias_index(catalog: Catalog) -> dict[str, Organization]:
     return {alias.casefold(): o for o in catalog.organizations for alias in o.aliases}
+
+
+@cache
+def _excluded_names(catalog: Catalog) -> frozenset[str]:
+    return frozenset(
+        [n.casefold() for n in catalog.not_organizations]
+        + [a.name.casefold() for a in catalog.threat_actors]
+    )
 
 
 @cache
