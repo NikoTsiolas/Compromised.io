@@ -105,7 +105,9 @@ def test_events_carry_category_commentary_flag_organization_and_logo_key(client)
         if e["title"] == ONEPASSWORD_BC
     ]
     assert {
-        k: event[k] for k in event if k not in {"id", "sources", "source_count", "published_at"}
+        k: event[k]
+        for k in event
+        if k not in {"id", "sources", "source_count", "published_at", "trust"}
     } == {
         "title": ONEPASSWORD_BC,
         "first_seen_at": "2026-11-26T14:54:07Z",
@@ -187,3 +189,58 @@ def test_a_malformed_cursor_is_a_client_error(client):
 def test_page_size_is_bounded(client):
     assert client.get("/v1/events", params={"limit": 0}).status_code == 422
     assert client.get("/v1/events", params={"limit": 101}).status_code == 422
+
+
+# --- trust (#7) ---------------------------------------------------------------------------------
+
+
+def test_every_event_carries_its_label_score_and_source_names_together(client):
+    events = client.get("/v1/events", params={"limit": 100, "tab": "all"}).json()["events"]
+    events += client.get("/v1/events", params={"tab": "ransomware"}).json()["events"]
+
+    assert "score" not in events[0]  # never a bare top-level score
+    for event in events:
+        trust = event["trust"]
+        assert set(trust) == {"status", "label", "score", "sources"}
+        assert trust["label"] and trust["sources"] and 0 <= trust["score"] <= 100
+
+
+def test_an_events_trust_is_its_status_label_score_and_the_outlets_counted(client):
+    by_title = {
+        e["title"]: e for e in client.get("/v1/events", params={"limit": 100}).json()["events"]
+    }
+
+    assert by_title[ONEPASSWORD_BC]["trust"] == {
+        "status": "reported",
+        "label": "Reported by 2 news outlets",
+        "score": 60,
+        "sources": ["BleepingComputer", "Security Affairs"],
+    }
+    claim = client.get("/v1/events", params={"tab": "ransomware", "limit": 1}).json()["events"][0]
+    assert claim["trust"] == {
+        "status": "claimed",
+        "label": "Claimed by attackers, not confirmed",
+        "score": 20,
+        "sources": ["Ransomware.live"],
+    }
+
+
+def test_the_scoring_rules_state_the_formulas_numbers_and_every_sources_weight(client):
+    response = client.get("/v1/scoring")
+
+    assert response.status_code == 200
+    rules = response.json()
+    # The anchors agreed in docs/wiki/trust-labels-and-score.md.
+    assert {k: v for k, v in rules.items() if k != "sources"} == {
+        "claim_only": 20,
+        "one_outlet": 50,
+        "per_extra_outlet": 10,
+        "press_cap": 80,
+        "official": 90,
+        "official_and_press": 100,
+        "disputed": 10,
+    }
+    assert len(rules["sources"]) == 14
+    assert {"name": "Ransomware.live", "tier": "attacker_claim", "weight": 20} in rules["sources"]
+    assert {"name": "The Record", "tier": "press", "weight": 50} in rules["sources"]
+    assert {"name": "CISA", "tier": "official", "weight": 90} in rules["sources"]

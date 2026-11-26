@@ -59,6 +59,12 @@ class Event:
     summary: str | None = None  # plain-language summary written by the model (#8)
     action_line: str | None = None  # only when a source states the action
     enrichment: str = "rules"  # "ai" once the model's reply was accepted, else "rules"
+    # Trust (#7): set together or not at all; a score is never shown without its label and
+    # sources. None until the event is assessed.
+    status: str | None = None  # confirmed | reported | claimed | investigating | disputed
+    status_label: str | None = None  # the reader-facing wording
+    score: int | None = None  # 0-100 from the published formula
+    score_sources: tuple[str, ...] = ()  # publishers the score counted
 
 
 @dataclass(frozen=True)

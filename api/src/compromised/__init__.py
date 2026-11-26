@@ -11,6 +11,7 @@ add them as their tickets land rather than growing existing modules past their j
 - ``pipeline.extractor``       which organization or product a record is about (#6)
 - ``pipeline.classifier``      rule-based category, commentary flag, exploited/critical (#6)
 - ``pipeline.scope``           which feed tabs an event appears in (#6)
+- ``pipeline.verifier``        verification status, trust label and 0-100 score (#7)
 - ``pipeline.deduplicator``    source record -> event (grouping: #5)
 - ``pipeline.ingest``          runs the pipeline for one source response and stores the result
 - ``pipeline.enricher``        one LLM call per new event; schema-checked, rules as fallback
@@ -21,5 +22,4 @@ add them as their tickets land rather than growing existing modules past their j
 - ``api``                      read-only HTTP API (FastAPI)
 - ``worker``                   ingestion worker process
 - ``seed``                     loads captured samples for browser tests (never in production)
-- later: verifier/scorer (#7)
 """

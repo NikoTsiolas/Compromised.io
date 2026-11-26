@@ -11,7 +11,8 @@ Rules (docs/wiki/feed-scope-and-sources.md):
 ``refresh_event`` derives an event's facts from all of its source records, lays the enricher's
 stored output over them (#8: category and commentary flag; the organization only when the rules
 found none) and stores them with its tabs and action line. Call it whenever an event gains or
-loses a record (#5) or its status changes (#7).
+loses a record (#5) or a record's metadata is revised; it also re-assesses the event's
+verification status and score (#7, pipeline.verifier).
 Trending is ranked by a query (#10), so it is never stored as a tab.
 """
 
@@ -20,9 +21,11 @@ from dataclasses import dataclass, replace
 import psycopg
 
 from compromised import catalog, storage
+from compromised.pipeline import verifier
 from compromised.pipeline.actions import required_action_line
 from compromised.pipeline.classifier import VULNERABILITY_CATEGORIES, classify
 from compromised.pipeline.extractor import extract
+from compromised.sources import Tier
 
 # Tab ids double as URL slugs. Labels are the reader-facing names.
 TABS: dict[str, str] = {
@@ -132,7 +135,22 @@ def refresh_event(conn: psycopg.Connection, event_id: int) -> EventFacts:
     facts = with_enrichment(facts_for(records), ai)
     storage.save_classification(conn, event_id, facts, tabs_for(facts))
     storage.save_action_line(conn, event_id, action_line_for(records, facts, ai))
+    storage.save_trust(conn, event_id, verifier.assess(records, _registry(conn, records)))
     return facts
+
+
+def _registry(conn, records) -> dict[str, verifier.RegisteredSource]:
+    rows = storage.registered_sources(conn, {r.source_id for r in records})
+    return {
+        source_id: verifier.RegisteredSource(
+            name=r["name"],
+            tier=Tier(r["tier"]),
+            weight=r["weight"],
+            government=r["government"],
+            organization=r["organization"],
+        )
+        for source_id, r in rows.items()
+    }
 
 
 def refresh_all(conn: psycopg.Connection) -> int:
