@@ -34,12 +34,14 @@ pnpm dev
 `pnpm dev` applies pending migrations first. After a migration that adds event classification, or
 after changing the classifier rules or the alias dictionary
 (`api/src/compromised/data/catalog.json`), run `pnpm db:reclassify` to re-derive every stored
-event's category, affected organization and feed tabs.
+event's category, affected organization and feed tabs. Run it once after migration 010 too: it
+fills each stored event's threat actors, attack vector and full search document.
 
 The worker fetches each source when it is due, on its own interval from
 `api/src/compromised/sources.py` (The Record: every 5 minutes; Google Threat Intelligence:
 hourly). `pnpm worker:once` runs a single pass. Source health and overall ingestion status are at
-`/v1/status`.
+`/v1/status`. Search and filters are at `/v1/search` (accepted filter values: `/v1/filters`),
+Trending at `/v1/trending`.
 
 ## Tests
 
