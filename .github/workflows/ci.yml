@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 env:
-  # Matches the Postgres service below; same major version as Railway and local Homebrew.
+  # Matches the Postgres service below; same major version as local Homebrew (Railway pin: see wiki).
   TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/compromised_test
   E2E_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/compromised_test
 
