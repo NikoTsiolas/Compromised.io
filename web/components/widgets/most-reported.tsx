@@ -1,5 +1,6 @@
 // Most reported organisations: who appears in the most events over the last 30 days, by count
-// of events, never by clicks or engagement. Empty until issue #15 gives it a data source.
+// of events, never by clicks or engagement. Attacker claims nobody else reported never count
+// (compromised.widgets.most_reported).
 import { lettermark } from "@/components/feed/event-tile";
 
 import type { OrganisationFigure } from "./types";

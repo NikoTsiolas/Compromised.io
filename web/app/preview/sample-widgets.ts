@@ -1,5 +1,5 @@
 // SAMPLE DATA for the widgets on /preview. Invented figures that exist only to show the design
-// populated. The organisations are fictional (Microsoft's sample company names) and CVE numbers
+// populated; spike flags follow the API's rule (41 and 37 are one deviation above the average). The organisations are fictional (Microsoft's sample company names) and CVE numbers
 // use the impossible year 0000. Imported only by app/preview/page.preview.tsx.
 import type { IngestionStatus } from "@/lib/api";
 import type {
@@ -9,39 +9,41 @@ import type {
 } from "@/components/widgets/types";
 
 export const SAMPLE_FREQUENCY: MonthFigure[] = [
-  { month: "2025-12", count: 14 },
-  { month: "2026-01", count: 18 },
-  { month: "2026-02", count: 12 },
+  { month: "2025-12", count: 14, spike: false },
+  { month: "2026-01", count: 18, spike: false },
+  { month: "2026-02", count: 12, spike: false },
   {
     month: "2026-03",
     count: 41,
+    spike: true,
     notable: [
       { organization: "Fabrikam", title: "Home router flaw used to take over devices" },
       { organization: "Contoso Mail", title: "Webmail bug exploited to read inboxes" },
     ],
   },
-  { month: "2026-04", count: 16 },
-  { month: "2026-05", count: 21 },
-  { month: "2026-06", count: 15 },
-  { month: "2026-07", count: 19 },
+  { month: "2026-04", count: 16, spike: false },
+  { month: "2026-05", count: 21, spike: false },
+  { month: "2026-06", count: 15, spike: false },
+  { month: "2026-07", count: 19, spike: false },
   {
     month: "2026-08",
     count: 37,
+    spike: true,
     notable: [
       { organization: "Litware Office Suite", title: "Document flaw used in phishing attacks" },
       { organization: "Adatum Messaging", title: "Message preview bug exploited" },
     ],
   },
-  { month: "2026-09", count: 17 },
-  { month: "2026-10", count: 22 },
-  { month: "2026-11", count: 19 },
+  { month: "2026-09", count: 17, spike: false },
+  { month: "2026-10", count: 22, spike: false },
+  { month: "2026-11", count: 19, spike: false },
 ];
 
 export const SAMPLE_RECENTLY_EXPLOITED: ExploitedFlaw[] = [
-  { cve: "CVE-0000-00001", product: "Fabrikam home routers", addedAt: "2026-11-26T13:00:00Z" },
-  { cve: "CVE-0000-00007", product: "Litware Office Suite", addedAt: "2026-11-25T17:00:00Z" },
-  { cve: "CVE-0000-00011", product: "Contoso Mail", addedAt: "2026-11-24T09:30:00Z" },
-  { cve: "CVE-0000-00014", product: "Adatum Messaging", addedAt: "2026-11-22T15:10:00Z" },
+  { cve: "CVE-0000-00001", product: "Fabrikam home routers", addedOn: "2026-11-26" },
+  { cve: "CVE-0000-00007", product: "Litware Office Suite", addedOn: "2026-11-25" },
+  { cve: "CVE-0000-00011", product: "Contoso Mail", addedOn: "2026-11-24" },
+  { cve: "CVE-0000-00014", product: "Adatum Messaging", addedOn: "2026-11-22" },
 ];
 
 export const SAMPLE_MOST_REPORTED: OrganisationFigure[] = [
