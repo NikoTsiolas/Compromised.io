@@ -2,22 +2,14 @@
 // exactly the same components: section tabs, the new-events slot, then a grid of the featured
 // stories, the widget rail and the feed. On desktop the rail runs beside both and can sit on
 // either side; below 1024px it stacks between the featured stories and the feed.
-import Link from "next/link";
 import { ViewTransition } from "react";
 
 import { WidgetRail, type RailWidget } from "@/components/bencho-pro/arrange/widget-rail";
 import { NewEventsBar } from "@/components/bencho-pro/new-events-bar";
-import { ArrivalItem, MarkSeen } from "@/components/bencho-pro/text-fade/arrival-fade";
+import { MarkSeen } from "@/components/bencho-pro/text-fade/arrival-fade";
 import { Featured } from "@/components/feed/featured";
-import { FeedRow } from "@/components/feed/feed-row";
+import { FeedList } from "@/components/feed/feed-list";
 import { SectionTabs } from "@/components/feed/section-tabs";
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyTitle,
-} from "@/components/ui/empty";
-import { Separator } from "@/components/ui/separator";
 import type { Tab } from "@/lib/api";
 import { selectFeatured } from "@/lib/featured";
 import { DEFAULT_TAB, type FeedItem } from "@/lib/feed";
@@ -80,31 +72,17 @@ export function HomeView({
               Latest
             </h2>
           )}
-          {items.length === 0 ? (
-            <FeedEmpty
-              title={tab === DEFAULT_TAB ? "No events yet" : `Nothing under ${label} yet`}
-              description="Events appear here as soon as sources report them."
-            />
-          ) : (
-            <ol>
-              {featured.rest.map((item, i) => (
-                <ArrivalItem key={item.id} id={item.id}>
-                  {i > 0 && <Separator className="bg-rule" />}
-                  <FeedRow item={item} now={now} />
-                </ArrivalItem>
-              ))}
-            </ol>
-          )}
-          {olderHref && (
-            <div className="mt-2 border-t border-rule-strong pt-4">
-              <Link
-                href={olderHref}
-                className="text-sm font-medium text-ink underline decoration-1 underline-offset-4"
-              >
-                Older events
-              </Link>
-            </div>
-          )}
+          <FeedList
+            items={featured.rest}
+            now={now}
+            // The featured section may hold every item; the empty state is for no items at all.
+            empty={items.length === 0 ? emptyFor(tab, label) : undefined}
+            more={
+              olderHref
+                ? { href: olderHref, label: tab === "trending" ? "More trending events" : "Older events" }
+                : undefined
+            }
+          />
           </div>
           </ViewTransition>
         </section>
@@ -113,17 +91,16 @@ export function HomeView({
   );
 }
 
-function FeedEmpty({ title, description }: { title: string; description: string }) {
-  return (
-    <Empty className="items-start rounded-none border-0 px-0 py-12 text-left md:py-16">
-      <EmptyHeader className="items-start text-left">
-        <EmptyTitle className="text-lg font-bold tracking-[-0.01em] text-ink">
-          {title}
-        </EmptyTitle>
-        <EmptyDescription className="max-w-[52ch] text-[15px] leading-[22px] text-ink-2">
-          {description}
-        </EmptyDescription>
-      </EmptyHeader>
-    </Empty>
-  );
+function emptyFor(tab: string, label: string) {
+  if (tab === "trending") {
+    return {
+      title: "Nothing is trending right now",
+      description:
+        "Trending ranks events by how many independent sources covered them in the last 72 hours.",
+    };
+  }
+  return {
+    title: tab === DEFAULT_TAB ? "No events yet" : `Nothing under ${label} yet`,
+    description: "Events appear here as soon as sources report them.",
+  };
 }

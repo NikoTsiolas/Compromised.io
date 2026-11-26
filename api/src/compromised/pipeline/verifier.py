@@ -39,6 +39,16 @@ STATUS_OF_TIER = {
 }
 TIER_ORDER = (Tier.OFFICIAL, Tier.PRESS, Tier.ATTACKER_CLAIM)  # strongest first
 
+# Every status, strongest first, with a short reader-facing name for the search filter (an
+# event's own label says more: who confirmed, how many outlets reported).
+STATUS_NAMES = {
+    "confirmed": "Confirmed",
+    "reported": "Reported",
+    "investigating": "Under investigation",
+    "claimed": "Claimed by attackers",
+    "disputed": "Disputed",
+}
+
 # Who confirmed, strongest first, and how the label names them.
 CONFIRMERS = {
     "company": "the company",

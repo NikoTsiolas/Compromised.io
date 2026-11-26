@@ -3,7 +3,7 @@
 from collections.abc import Callable
 from contextlib import asynccontextmanager
 from dataclasses import asdict
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, time, timedelta
 from enum import StrEnum
 from typing import Annotated
 
@@ -17,10 +17,16 @@ from compromised.pipeline import verifier
 from compromised.pipeline.classifier import CATEGORIES
 from compromised.pipeline.scope import TABS
 from compromised.sources import REGISTRY, TIER_WEIGHT, Tier, by_id
+from compromised.storage import search as search_storage
 
 # Query values accepted for ?tab=, one per feed tab.
 TabId = StrEnum("TabId", {tab_id: tab_id for tab_id in TABS})
 DEFAULT_TAB = TabId("all")
+# Query values accepted by the search filters. Trending is a ranking, not a filter.
+FilterTabId = StrEnum("FilterTabId", {t: t for t in TABS if t != "trending"})
+CategoryId = StrEnum("CategoryId", {c: c for c in CATEGORIES})
+SourceId = StrEnum("SourceId", {s.id: s.id for s in REGISTRY})
+StatusId = StrEnum("StatusId", {s: s for s in verifier.STATUS_NAMES})
 
 UtcTimestamp = Annotated[
     datetime,
@@ -76,12 +82,22 @@ class EventOut(BaseModel):
     sources: list[SourceOut]  # earliest first; the first one's headline is the title
     trust: TrustOut | None  # None for commentary (not an incident) or before first assessment
     image: ImageOut | None  # the earliest source's feed image; None when off or absent
+    cves: list[str]  # every CVE identifier the sources name, sorted
+    threat_actors: list[str]  # groups a source names or a claim source credits
+    attack_vector: str | None  # how the attack worked, when a source says; None if not identified
 
 
 class ScoredSourceOut(BaseModel):
     name: str
     tier: str
     weight: int
+
+
+class TrendingRuleOut(BaseModel):
+    """Trending's recency decay: each source adds 0.5 ^ (hours since its report / half-life)."""
+
+    window_hours: int
+    half_life_hours: int
 
 
 class ScoringOut(BaseModel):
@@ -95,6 +111,7 @@ class ScoringOut(BaseModel):
     official_and_press: int
     disputed: int
     sources: list[ScoredSourceOut]
+    trending: TrendingRuleOut
 
 
 class TabOut(BaseModel):
@@ -105,6 +122,20 @@ class TabOut(BaseModel):
 class EventPageOut(BaseModel):
     events: list[EventOut]
     next_cursor: str | None
+
+
+class FilterOptionOut(BaseModel):
+    id: str
+    label: str
+
+
+class FiltersOut(BaseModel):
+    """The values each search filter accepts, with reader-facing labels."""
+
+    tabs: list[FilterOptionOut]
+    categories: list[FilterOptionOut]
+    sources: list[FilterOptionOut]
+    statuses: list[FilterOptionOut]
 
 
 class SourceHealthOut(BaseModel):
@@ -195,7 +226,8 @@ def _image(event, settings: config.Settings) -> ImageOut | None:
 def create_app(
     database_url: str | None = None, clock: Callable[[], datetime] | None = None
 ) -> FastAPI:
-    """``clock`` stands in for the current time in tests; the widgets' windows end at it."""
+    """The API. ``clock`` gives the current time (tests fix it); it ranks Trending and ends the
+    widgets' windows."""
     settings = config.load()
     now = clock or (lambda: datetime.now(UTC))
     url = database_url or settings.database_url
@@ -219,27 +251,73 @@ def create_app(
         tab: TabId = DEFAULT_TAB,
     ):
         if tab == "trending":
-            # Trending is ranked by its own ticket (#10); until then it has no events.
-            return EventPageOut(events=[], next_cursor=None)
+            return trending(request, limit=limit, cursor=cursor)
         with request.app.state.pool.connection() as conn:
             try:
                 page = storage.list_events(conn, limit=limit, cursor=cursor, tab=tab.value)
             except storage.InvalidCursor:
                 raise HTTPException(status_code=400, detail="Invalid cursor") from None
-        return EventPageOut(
-            events=[
-                EventOut.model_validate(
-                    {
-                        **asdict(e),
-                        "category_label": CATEGORIES[e.category],
-                        "source_count": len(e.sources),
-                        "trust": _trust(e),
-                        "image": _image(e, settings),
-                    }
-                )
-                for e in page.events
+        return _page_out(page, settings)
+
+    @app.get("/v1/search", response_model=EventPageOut)
+    def search_events(
+        request: Request,
+        response: Response,
+        q: Annotated[str, Query(max_length=search_storage.MAX_QUERY_LENGTH)] = "",
+        tab: FilterTabId | None = None,
+        category: Annotated[list[CategoryId], Query()] = [],  # noqa: B006 (FastAPI copies it)
+        source: Annotated[list[SourceId], Query()] = [],  # noqa: B006
+        status: Annotated[list[StatusId], Query()] = [],  # noqa: B006
+        since: Annotated[date | None, Query(alias="from")] = None,
+        until: Annotated[date | None, Query(alias="to")] = None,
+        limit: Annotated[int, Query(ge=1, le=storage.MAX_PAGE_SIZE)] = 20,
+        cursor: str | None = None,
+    ):
+        """Published events matching a query and filters, newest first. ``q`` matches an
+        organization, product, vendor, threat actor, attack vector or any word of the sources;
+        CVE identifiers in it match exactly. ``from`` and ``to`` are UTC dates, both inclusive."""
+        filters = search_storage.Filters(
+            query=q,
+            tab=tab.value if tab else None,
+            categories=tuple(c.value for c in category),
+            sources=tuple(s.value for s in source),
+            statuses=tuple(s.value for s in status),
+            since=_utc_day(since),
+            until=_utc_day(until + timedelta(days=1)) if until else None,
+        )
+        with request.app.state.pool.connection() as conn:
+            try:
+                page = search_storage.search(conn, filters, limit=limit, cursor=cursor)
+            except storage.InvalidCursor:
+                raise HTTPException(status_code=400, detail="Invalid cursor") from None
+        response.headers["Cache-Control"] = "public, max-age=30"
+        return _page_out(page, settings)
+
+    @app.get("/v1/trending", response_model=EventPageOut)
+    def trending(
+        request: Request,
+        limit: Annotated[int, Query(ge=1, le=storage.MAX_PAGE_SIZE)] = 20,
+        cursor: str | None = None,
+    ):
+        """Published events ranked by distinct source coverage with recency decay
+        (storage.search.trending). The Trending tab of /v1/events lists the same."""
+        with request.app.state.pool.connection() as conn:
+            try:
+                page = search_storage.trending(conn, now=now(), limit=limit, cursor=cursor)
+            except storage.InvalidCursor:
+                raise HTTPException(status_code=400, detail="Invalid cursor") from None
+        return _page_out(page, settings)
+
+    @app.get("/v1/filters", response_model=FiltersOut)
+    def filters(response: Response):
+        response.headers["Cache-Control"] = "public, max-age=300"
+        return FiltersOut(
+            tabs=[FilterOptionOut(id=t, label=TABS[t]) for t in FilterTabId],
+            categories=[FilterOptionOut(id=c, label=label) for c, label in CATEGORIES.items()],
+            sources=[FilterOptionOut(id=s.id, label=s.name) for s in REGISTRY],
+            statuses=[
+                FilterOptionOut(id=s, label=label) for s, label in verifier.STATUS_NAMES.items()
             ],
-            next_cursor=page.next_cursor,
         )
 
     @app.get("/v1/scoring", response_model=ScoringOut)
@@ -256,6 +334,10 @@ def create_app(
             sources=[
                 ScoredSourceOut(name=s.name, tier=str(s.tier), weight=s.weight) for s in REGISTRY
             ],
+            trending=TrendingRuleOut(
+                window_hours=int(search_storage.TRENDING_WINDOW.total_seconds() // 3600),
+                half_life_hours=search_storage.TRENDING_HALF_LIFE_HOURS,
+            ),
         )
 
     @app.get("/v1/tabs", response_model=list[TabOut])
@@ -329,6 +411,28 @@ def create_app(
         return {"ok": True}
 
     return app
+
+
+def _utc_day(day: date | None) -> datetime | None:
+    return datetime.combine(day, time(), tzinfo=UTC) if day else None
+
+
+def _page_out(page, settings: config.Settings) -> EventPageOut:
+    return EventPageOut(
+        events=[
+            EventOut.model_validate(
+                {
+                    **asdict(e),
+                    "category_label": CATEGORIES[e.category],
+                    "source_count": len(e.sources),
+                    "trust": _trust(e),
+                    "image": _image(e, settings),
+                }
+            )
+            for e in page.events
+        ],
+        next_cursor=page.next_cursor,
+    )
 
 
 def _trust(event) -> dict | None:

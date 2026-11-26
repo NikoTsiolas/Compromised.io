@@ -85,8 +85,7 @@ def test_each_tab_filters_the_feed(client):
         "Cyprus Becomes Espionage Target for Iranian Hackers",
         "Microsoft: China’s Salt Typhoon hackers are using Artex",
     ]
-    # Ranked by its own ticket (#10); empty until then.
-    assert tab("trending") == []
+    # Trending is a ranking, tested in test_trending.py.
 
 
 def test_commentary_appears_in_no_tab(client):
@@ -122,6 +121,10 @@ def test_events_carry_category_commentary_flag_organization_and_logo_key(client)
         "summary": None,
         "action_line": None,
         "enrichment": "rules",
+        # Search terms (#10): the employee's GitHub account "was hacked".
+        "cves": [],
+        "threat_actors": [],
+        "attack_vector": "Compromised account",
     }
 
     claim = client.get("/v1/events", params={"tab": "ransomware", "limit": 1}).json()["events"][0]
@@ -231,7 +234,7 @@ def test_the_scoring_rules_state_the_formulas_numbers_and_every_sources_weight(c
     assert response.status_code == 200
     rules = response.json()
     # The anchors agreed in docs/wiki/trust-labels-and-score.md.
-    assert {k: v for k, v in rules.items() if k != "sources"} == {
+    assert {k: v for k, v in rules.items() if k not in {"sources", "trending"}} == {
         "claim_only": 20,
         "one_outlet": 50,
         "per_extra_outlet": 10,
@@ -244,6 +247,8 @@ def test_the_scoring_rules_state_the_formulas_numbers_and_every_sources_weight(c
     assert {"name": "Ransomware.live", "tier": "attacker_claim", "weight": 20} in rules["sources"]
     assert {"name": "The Record", "tier": "press", "weight": 50} in rules["sources"]
     assert {"name": "CISA", "tier": "official", "weight": 90} in rules["sources"]
+    # Trending (#10): the window and half-life of its recency decay.
+    assert rules["trending"] == {"window_hours": 72, "half_life_hours": 24}
 
 
 # --- publisher images (#9) ----------------------------------------------------------------------

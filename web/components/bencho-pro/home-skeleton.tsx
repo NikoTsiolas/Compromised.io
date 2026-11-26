@@ -58,22 +58,31 @@ export function HomeSkeleton() {
         </div>
         <div className="home-feed min-w-0">
           <div className="mt-8 h-6 border-b border-rule-strong" />
-          {[0, 1, 2].map((i) => (
-            <div
-              key={i}
-              className="grid grid-cols-[minmax(0,1fr)_96px] gap-x-4 border-b border-rule py-4 sm:grid-cols-[200px_minmax(0,1fr)] sm:gap-x-6 sm:py-5"
-            >
-              <Bar className="col-start-2 aspect-[4/3] w-full sm:col-start-1" />
-              <div className="col-start-1 row-start-1 flex flex-col gap-2 sm:col-start-2">
-                <Bar className="h-3 w-1/4" />
-                <Bar className="h-5 w-4/5" />
-                <Bar className="h-3 w-1/5" />
-                <Bar className="mt-2 h-4 w-full" />
-              </div>
-            </div>
-          ))}
+          <FeedRowsSkeleton />
         </div>
       </div>
     </div>
+  );
+}
+
+/** Feed rows while they load: the same boxes as FeedRow. Also used by the search results. */
+export function FeedRowsSkeleton({ count = 3 }: { count?: number }) {
+  return (
+    <>
+      {Array.from({ length: count }, (_, i) => i).map((i) => (
+        <div
+          key={i}
+          className="grid grid-cols-[minmax(0,1fr)_96px] gap-x-4 border-b border-rule py-4 sm:grid-cols-[200px_minmax(0,1fr)] sm:gap-x-6 sm:py-5"
+        >
+          <Bar className="col-start-2 aspect-[4/3] w-full sm:col-start-1" />
+          <div className="col-start-1 row-start-1 flex flex-col gap-2 sm:col-start-2">
+            <Bar className="h-3 w-1/4" />
+            <Bar className="h-5 w-4/5" />
+            <Bar className="h-3 w-1/5" />
+            <Bar className="mt-2 h-4 w-full" />
+          </div>
+        </div>
+      ))}
+    </>
   );
 }

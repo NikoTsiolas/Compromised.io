@@ -71,6 +71,10 @@ class Event:
     status_label: str | None = None  # the reader-facing wording
     score: int | None = None  # 0-100 from the published formula
     score_sources: tuple[str, ...] = ()  # publishers the score counted
+    # Search terms (#10, pipeline.search_terms), derived from the records' own words.
+    cves: tuple[str, ...] = ()  # every CVE the records name, sorted
+    threat_actors: tuple[str, ...] = ()
+    attack_vector: str | None = None  # a label from search_terms.ATTACK_VECTORS
 
 
 @dataclass(frozen=True)

@@ -367,6 +367,32 @@ def save_action_line(conn: psycopg.Connection, event_id: int, action_line: str |
     conn.execute("update events set action_line = %s where id = %s", (action_line, event_id))
 
 
+def save_search_terms(
+    conn: psycopg.Connection,
+    event_id: int,
+    *,
+    cves: list[str],
+    threat_actors: list[str],
+    attack_vector: str | None,
+    names: str,
+) -> None:
+    """Store an event's search fields and rebuild its full-text document (English stemming):
+    title, organization and ``names`` weigh most, then every source's headline, then the
+    excerpts and the AI summary. Call after the classification and enrichment are stored."""
+    conn.execute(
+        "update events e set cves = %s, threat_actors = %s, attack_vector = %s, search_vector ="
+        " setweight(to_tsvector('english', e.title || ' ' || coalesce(e.organization, '')"
+        "   || ' ' || %s), 'A')"
+        " || setweight(to_tsvector('english', coalesce((select string_agg(r.headline, ' ')"
+        "   from source_records r where r.event_id = e.id), '')), 'B')"
+        " || setweight(to_tsvector('english', coalesce((select string_agg(r.excerpt, ' ')"
+        "   from source_records r where r.event_id = e.id), '') || ' '"
+        "   || coalesce(e.summary, '')), 'C')"
+        " where e.id = %s",
+        (cves, threat_actors, attack_vector, names, event_id),
+    )
+
+
 # --- enrichment (#8) --------------------------------------------------------------------------
 
 
@@ -498,7 +524,7 @@ def list_events(
     params: list = []
     conditions = []
     if cursor is not None:
-        published_at, event_id = _decode_cursor(cursor)
+        published_at, event_id = decode_cursor(cursor)
         conditions.append("(published_at, id) < (%s, %s)")
         params += [published_at, event_id]
     if tab is not None:
@@ -507,17 +533,29 @@ def list_events(
     where = f"where {' and '.join(conditions)}" if conditions else ""
     with conn.cursor(row_factory=dict_row) as cur:
         rows = cur.execute(
-            "select id, title, published_at, first_seen_at, category, commentary, organization,"
-            " organization_key, logo_key, tabs, summary, action_line, enrichment_state,"
-            " status, status_label, score, score_sources"
-            f" from events {where}"
+            f"select {EVENT_COLUMNS} from events {where}"
             " order by published_at desc, id desc limit %s",
             [*params, limit + 1],
         ).fetchall()
         has_more = len(rows) > limit
         rows = rows[:limit]
-        sources = _sources_for(cur, [r["id"] for r in rows])
-    events = [
+        events = events_from_rows(cur, rows)
+    next_cursor = encode_cursor(rows[-1]["published_at"], rows[-1]["id"]) if has_more else None
+    return EventPage(events=events, next_cursor=next_cursor)
+
+
+# Columns ``events_from_rows`` reads from the events table.
+EVENT_COLUMNS = (
+    "id, title, published_at, first_seen_at, category, commentary, organization,"
+    " organization_key, logo_key, tabs, summary, action_line, enrichment_state,"
+    " status, status_label, score, score_sources, cves, threat_actors, attack_vector"
+)
+
+
+def events_from_rows(cur, rows: list[dict]) -> list[Event]:
+    """Events, with their sources, from rows selected with ``EVENT_COLUMNS``, order kept."""
+    sources = _sources_for(cur, [r["id"] for r in rows])
+    return [
         Event(
             id=r["id"],
             title=r["title"],
@@ -537,11 +575,12 @@ def list_events(
             status_label=r["status_label"],
             score=r["score"],
             score_sources=tuple(r["score_sources"]),
+            cves=tuple(r["cves"]),
+            threat_actors=tuple(r["threat_actors"]),
+            attack_vector=r["attack_vector"],
         )
         for r in rows
     ]
-    next_cursor = _encode_cursor(rows[-1]["published_at"], rows[-1]["id"]) if has_more else None
-    return EventPage(events=events, next_cursor=next_cursor)
 
 
 def _sources_for(cur, event_ids: list[int]) -> dict[int, list[EventSource]]:
@@ -572,12 +611,12 @@ def _sources_for(cur, event_ids: list[int]) -> dict[int, list[EventSource]]:
     return out
 
 
-def _encode_cursor(published_at: datetime, event_id: int) -> str:
+def encode_cursor(published_at: datetime, event_id: int) -> str:
     raw = f"{published_at.isoformat()}|{event_id}".encode()
     return base64.urlsafe_b64encode(raw).decode().rstrip("=")
 
 
-def _decode_cursor(cursor: str) -> tuple[datetime, int]:
+def decode_cursor(cursor: str) -> tuple[datetime, int]:
     try:
         raw = base64.urlsafe_b64decode(cursor + "=" * (-len(cursor) % 4)).decode()
         stamp, event_id = raw.split("|")
