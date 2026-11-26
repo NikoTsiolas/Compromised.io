@@ -1,7 +1,8 @@
 """Normalizer: parsed item -> source record.
 
 Canonical URL, HTML stripped to plain text, excerpt capped near 300 characters, timestamps in
-UTC. Feed HTML never leaves this module. CVE extraction arrives with the tickets that use it.
+UTC, CVE identifiers found in the headline, full summary and metadata. Feed HTML never leaves
+this module.
 """
 
 import html
@@ -20,6 +21,7 @@ BOILERPLATE_TAIL = re.compile(
 )
 # A tag left unterminated where a body was cut off ("... <a href="https://..."): the parser
 # returns it as text. "<" followed by a space ("versions < 2.4") is not a tag and stays.
+CVE_ID = re.compile(r"\bCVE-(\d{4})-(\d{4,7})\b", re.IGNORECASE)
 DANGLING_TAG = re.compile(r"<[A-Za-z!/?][^<>]*$")
 
 
@@ -40,7 +42,15 @@ def normalize(item: ParsedItem, *, source_id: str, fetched_at: datetime) -> Sour
         published_at=published,
         fetched_at=fetched_at.astimezone(UTC),
         metadata={k: _plain_metadata(v) for k, v in item.metadata.items()},
+        cves=cve_ids(item.title, item.summary_html, *map(str, item.metadata.values())),
     )
+
+
+def cve_ids(*texts: str) -> tuple[str, ...]:
+    """Distinct CVE identifiers in the texts, upper case, sorted. The whole summary is read,
+    not just the excerpt: articles often name the CVE after the first 300 characters."""
+    found = {f"CVE-{year}-{number}" for t in texts for year, number in CVE_ID.findall(t)}
+    return tuple(sorted(found))
 
 
 def canonical_url(url: str) -> str | None:

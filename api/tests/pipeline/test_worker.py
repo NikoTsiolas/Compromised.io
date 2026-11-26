@@ -71,8 +71,13 @@ async def test_one_pass_fetches_every_source_once_politely_and_stores_its_events
 
     assert sorted(str(r.url) for r in fake.requests) == sorted(s.endpoint for s in REGISTRY)
     assert {r.headers["user-agent"] for r in fake.requests} == {UA}
-    assert {sid: o.new_events for sid, o in outcomes.items()} == {sid: 3 for sid in SAMPLES}
-    assert len(storage.list_events(conn, limit=100).events) == 30
+    # Security Affairs and The Hacker News each carry the 1Password breach BleepingComputer
+    # already reported, so that item joins BleepingComputer's event.
+    joined = {"securityaffairs", "thehackernews"}
+    assert {sid: (o.new_events, o.grouped) for sid, o in outcomes.items()} == {
+        sid: (2, 1) if sid in joined else (3, 0) for sid in SAMPLES
+    }
+    assert len(storage.list_events(conn, limit=100).events) == 28
     seen = health_by_id(conn)
     assert {h.state for h in seen.values()} == {"ok"}
     assert seen["darkreading"].last_success_at == T0
@@ -108,7 +113,7 @@ async def test_a_failing_and_a_malformed_source_are_recorded_and_do_not_stop_the
 
     assert outcomes["therecord"].error == "HTTP 503"
     assert outcomes["krebsonsecurity"].error.startswith("not a feed")
-    assert len(storage.list_events(conn, limit=100).events) == 24
+    assert len(storage.list_events(conn, limit=100).events) == 22  # 24 items, 1Password x3
     seen = health_by_id(conn, second)
     for failing in ("therecord", "krebsonsecurity"):
         assert seen[failing].state == "failing"

@@ -1,9 +1,12 @@
 // Browser seam: the running web app against the API and a database seeded with the real
-// BleepingComputer capture plus synthetic items (see api/tests/fixtures/*/README.md).
+// BleepingComputer, Security Affairs and The Hacker News captures plus synthetic items (see
+// api/tests/fixtures/*/README.md). All three outlets covered the 1Password breach.
 import { expect, test, type Page } from "@playwright/test";
 
 const ONEPASSWORD =
   "1Password customer data stolen after employee GitHub account breach";
+const FLIGHT_CENTRE =
+  "Australia’s Flight Centre Data Breach Exposes Customer Records and Passport Details";
 const SYNTHETIC_MARKUP =
   "[Synthetic test item] Builds < 2.4 & AT&T breach renders as text";
 const SYNTHETIC_ZERO_DAY =
@@ -21,6 +24,7 @@ test("the All tab lists in-scope events newest first, linking to the publisher",
 
   const rows = eventRows(page);
   await expect(rows.getByRole("link")).toHaveText([
+    FLIGHT_CENTRE,
     ONEPASSWORD,
     SYNTHETIC_ZERO_DAY,
     SYNTHETIC_CRITICAL,
@@ -35,7 +39,7 @@ test("the All tab lists in-scope events newest first, linking to the publisher",
   await expect(headline).toHaveAttribute("target", "_blank");
   await expect(headline).toHaveAttribute("rel", "noopener noreferrer");
 
-  const first = rows.nth(0);
+  const first = rows.nth(1);
   await expect(first).toContainText("1Password");
   await expect(first).toContainText("Data breach");
   await expect(first).toContainText("BleepingComputer");
@@ -82,6 +86,7 @@ test("tab links filter the feed through the API", async ({ page }) => {
 
   await tabs.getByRole("link", { name: "Breaches" }).click();
   await expect(eventRows(page).getByRole("link")).toHaveText([
+    FLIGHT_CENTRE,
     ONEPASSWORD,
     SYNTHETIC_MARKUP,
   ]);
@@ -91,7 +96,34 @@ test("tab links filter the feed through the API", async ({ page }) => {
 
   await tabs.getByRole("link", { name: "All" }).click();
   await expect(page).toHaveURL(/\/$/);
-  await expect(eventRows(page)).toHaveCount(4);
+  await expect(eventRows(page)).toHaveCount(5);
+});
+
+test("an event covered by several outlets shows its other sources", async ({
+  page,
+}) => {
+  await page.goto("/");
+
+  const row = eventRows(page).filter({ hasText: ONEPASSWORD });
+  await expect(row).toContainText("3 sources");
+  await row.getByText("3 sources").click();
+
+  const others = row.getByRole("list", { name: "Other sources" });
+  await expect(others.getByRole("link")).toHaveText([
+    "Security Affairs: 1Password Hacked: Customer Names and Emails Copied, Vaults Untouched",
+    "The Hacker News: 1Password Hacked, Customer Data and Source Code Stolen in GitHub Account Breach",
+  ]);
+  await expect(
+    others.getByRole("link", { name: /^Security Affairs/ }),
+  ).toHaveAttribute(
+    "href",
+    "https://securityaffairs.com/204031/cyber-crime/1password-hacked-customer-names-and-emails-copied-vaults-untouched.html",
+  );
+
+  // A single-source event has nothing to expand.
+  await expect(
+    eventRows(page).filter({ hasText: FLIGHT_CENTRE }),
+  ).not.toContainText("sources");
 });
 
 test("text from the API is rendered as text, never as markup", async ({

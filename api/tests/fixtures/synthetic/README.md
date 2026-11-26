@@ -8,3 +8,5 @@ headline, and links point at `example.com`. Test data only: never loaded into pr
 |---|---|
 | `text-not-markup.xml` | Browser seam: a headline with `<`, `&` and an escaped `<script>` must reach the page as text. It names a breach so that it lands in the All tab. |
 | `vulnerability-gate.xml` | Pipeline, API and browser seams: flaws in products on the "people use" list (Windows, Chrome) that are exploited, critical, or neither. No real capture had one. |
+| `cve-outside-window.xml` | Pipeline seam: an item naming CVE-2023-25914, dated 3 December 2026, more than 7 days after the real CISA and Security Affairs records that name it. No real capture had a shared CVE outside the window. |
+| `same-canonical-url.xml` | Pipeline seam: a second source whose item links the real BleepingComputer 1Password article (with tracking parameters and a fragment) under an unrelated headline. No two real captures shared a URL. |

@@ -30,10 +30,12 @@ class SourceRecord:
     published_at: datetime  # UTC
     fetched_at: datetime  # UTC
     metadata: dict[str, Any] = field(default_factory=dict)
+    cves: tuple[str, ...] = ()  # CVE identifiers named in the headline or summary, upper case
 
 
 @dataclass(frozen=True)
 class EventSource:
+    record_id: int
     publisher: str
     url: str
     headline: str
