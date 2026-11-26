@@ -483,6 +483,75 @@ def all_event_ids(conn: psycopg.Connection) -> list[int]:
     return [row[0] for row in conn.execute("select id from events order by id")]
 
 
+_EVENT_COLUMNS = (
+    "id, title, published_at, first_seen_at, category, commentary, organization,"
+    " organization_key, logo_key, tabs, summary, action_line, enrichment_state,"
+    " status, status_label, score, score_sources"
+)
+
+
+def _event(r: dict, sources: list[EventSource], cves: tuple[str, ...] = ()) -> Event:
+    return Event(
+        id=r["id"],
+        title=r["title"],
+        published_at=r["published_at"],
+        first_seen_at=r["first_seen_at"],
+        sources=sources,
+        category=r["category"],
+        commentary=r["commentary"],
+        affected_organization=r["organization"] or "unknown",
+        organization_key=r["organization_key"],
+        logo_key=r["logo_key"],
+        tabs=tuple(r["tabs"]),
+        summary=r["summary"],
+        action_line=r["action_line"],
+        enrichment="ai" if r["enrichment_state"] == "enriched" else "rules",
+        status=r["status"],
+        status_label=r["status_label"],
+        score=r["score"],
+        score_sources=tuple(r["score_sources"]),
+        cves=cves,
+    )
+
+
+def get_event(conn: psycopg.Connection, event_id: int) -> Event | None:
+    """One event with every source (earliest first) and the CVE identifiers they name."""
+    with conn.cursor(row_factory=dict_row) as cur:
+        row = cur.execute(
+            f"select {_EVENT_COLUMNS} from events where id = %s", (event_id,)
+        ).fetchone()
+        if row is None:
+            return None
+        sources = _sources_for(cur, [event_id]).get(event_id, [])
+        cves = cur.execute(
+            "select distinct cve from source_records, unnest(cves) cve where event_id = %s"
+            " order by cve",
+            (event_id,),
+        ).fetchall()
+    return _event(row, sources, tuple(r["cve"] for r in cves))
+
+
+def event_redirect(conn: psycopg.Connection, event_id: int) -> int | None:
+    """Where a deleted event's address now leads (see 010_event_redirects), or None."""
+    row = conn.execute(
+        "select to_event_id from event_redirects where from_event_id = %s", (event_id,)
+    ).fetchone()
+    return row[0] if row else None
+
+
+def redirect_event(conn: psycopg.Connection, from_event_id: int, to_event_id: int) -> None:
+    """Record that the deleted event ``from_event_id`` now lives on as ``to_event_id``, and move
+    on every older address that pointed at it, so a redirect is always a single hop."""
+    conn.execute(
+        "update event_redirects set to_event_id = %s where to_event_id = %s",
+        (to_event_id, from_event_id),
+    )
+    conn.execute(
+        "insert into event_redirects (from_event_id, to_event_id) values (%s, %s)",
+        (from_event_id, to_event_id),
+    )
+
+
 def list_events(
     conn: psycopg.Connection,
     *,
@@ -507,39 +576,14 @@ def list_events(
     where = f"where {' and '.join(conditions)}" if conditions else ""
     with conn.cursor(row_factory=dict_row) as cur:
         rows = cur.execute(
-            "select id, title, published_at, first_seen_at, category, commentary, organization,"
-            " organization_key, logo_key, tabs, summary, action_line, enrichment_state,"
-            " status, status_label, score, score_sources"
-            f" from events {where}"
+            f"select {_EVENT_COLUMNS} from events {where}"
             " order by published_at desc, id desc limit %s",
             [*params, limit + 1],
         ).fetchall()
         has_more = len(rows) > limit
         rows = rows[:limit]
         sources = _sources_for(cur, [r["id"] for r in rows])
-    events = [
-        Event(
-            id=r["id"],
-            title=r["title"],
-            published_at=r["published_at"],
-            first_seen_at=r["first_seen_at"],
-            sources=sources.get(r["id"], []),
-            category=r["category"],
-            commentary=r["commentary"],
-            affected_organization=r["organization"] or "unknown",
-            organization_key=r["organization_key"],
-            logo_key=r["logo_key"],
-            tabs=tuple(r["tabs"]),
-            summary=r["summary"],
-            action_line=r["action_line"],
-            enrichment="ai" if r["enrichment_state"] == "enriched" else "rules",
-            status=r["status"],
-            status_label=r["status_label"],
-            score=r["score"],
-            score_sources=tuple(r["score_sources"]),
-        )
-        for r in rows
-    ]
+    events = [_event(r, sources.get(r["id"], [])) for r in rows]
     next_cursor = _encode_cursor(rows[-1]["published_at"], rows[-1]["id"]) if has_more else None
     return EventPage(events=events, next_cursor=next_cursor)
 

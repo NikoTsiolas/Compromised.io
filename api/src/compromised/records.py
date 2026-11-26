@@ -71,6 +71,8 @@ class Event:
     status_label: str | None = None  # the reader-facing wording
     score: int | None = None  # 0-100 from the published formula
     score_sources: tuple[str, ...] = ()  # publishers the score counted
+    # CVE identifiers the sources name, sorted; filled for a single event (get_event) only.
+    cves: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)

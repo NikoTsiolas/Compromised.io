@@ -80,7 +80,8 @@ def move_record(conn: psycopg.Connection, record_id: int, to_event_id: int | Non
     ``to_event_id`` is None, to correct a grouping mistake. Returns the record's event id.
 
     The record's content is never changed. Both events' titles, times, facts and tabs are
-    recomputed; an event left without records is removed.
+    recomputed; an event left without records is removed, and its address redirects to
+    the record's new event.
     """
     with conn.transaction():
         from_event_id = storage.record_event(conn, record_id)
@@ -90,7 +91,10 @@ def move_record(conn: psycopg.Connection, record_id: int, to_event_id: int | Non
             return to_event_id
         storage.set_record_event(conn, record_id, to_event_id)
         for event_id in (from_event_id, to_event_id):
-            if not storage.delete_event_if_empty(conn, event_id):
+            if storage.delete_event_if_empty(conn, event_id):
+                # The emptied event's page address now leads to where its record went (#11).
+                storage.redirect_event(conn, event_id, to_event_id)
+            else:
                 storage.refresh_event_header(conn, event_id)
                 scope.refresh_event(conn, event_id)
     return to_event_id
