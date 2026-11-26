@@ -6,11 +6,13 @@ import { execFileSync } from "node:child_process";
 import { writeFileSync } from "node:fs";
 import path from "node:path";
 
-import { expect, test } from "@playwright/test";
+import { offline, expect, test } from "./test";
 
 import { databaseUrl } from "./env";
 
-// The newest real event on the All tab (which lists only events with a named organization).
+offline();
+
+// The real event that leads the All tab: named, covered by three outlets, with a picture.
 const NEWEST_REAL =
   "1Password customer data stolen after employee GitHub account breach";
 // Names a catalogued product and an attack, so the scope rules put it on the All tab.
@@ -76,12 +78,15 @@ test("new events wait behind the bar until the reader asks for them", async ({
   expect((await rows.first().boundingBox())!.y).toBe(topBefore);
 
   await bar.click();
-  await expect(topHeading).toHaveText(SYNTHETIC_HEADLINE);
+  // The arrival has no picture, so the pictured 1Password story (under 24 hours older) keeps
+  // the lead and the arrival becomes the first card (lib/featured.ts).
+  const cards = page.getByRole("list", { name: "More top stories" }).getByRole("heading");
+  await expect(cards.first()).toHaveText(SYNTHETIC_HEADLINE);
+  await expect(topHeading).toHaveText(before!);
   // The newly arrived story fades in; stories that were already on the page and only moved
-  // down do not.
-  await expect(topHeading.locator("[data-fade-word]").first()).toBeVisible();
-  const moved = page.getByRole("article").filter({ hasText: NEWEST_REAL });
-  await expect(moved.locator("[data-fade-word]")).toHaveCount(0);
+  // along do not.
+  await expect(cards.first().locator("[data-fade-word]").first()).toBeVisible();
+  await expect(cards.nth(1).locator("[data-fade-word]")).toHaveCount(0);
   await expect(
     page.getByRole("region", { name: "All events" }).locator("[data-fade-word]"),
   ).toHaveCount(0);

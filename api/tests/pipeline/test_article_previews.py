@@ -72,10 +72,12 @@ def page(head: str, body: str = "<p>Synthetic article.</p>") -> bytes:
 
 
 def images(conn) -> list[str | None]:
-    rows = conn.execute(
-        "select image_url from source_records order by published_at desc"
-    ).fetchall()
-    return [r[0] for r in rows]
+    """Each stored source's picture as the feed shows it, newest first."""
+    events = storage.list_events(conn, limit=50).events
+    sources = sorted(
+        (s for e in events for s in e.sources), key=lambda s: s.published_at, reverse=True
+    )
+    return [s.image_url for s in sources]
 
 
 async def run(conn, stub, source, *, passes: int = 1):

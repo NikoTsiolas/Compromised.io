@@ -2,7 +2,9 @@
 // rail to the other side, by pointer or keyboard; the arrangement is kept in this browser only.
 // No widget except source status has a real API yet (#15), so the others show a quiet empty
 // state here and are populated only on the sample preview.
-import { expect, test, type Page } from "@playwright/test";
+import { offline, expect, test, type Page } from "./test";
+
+offline();
 
 const rail = (page: Page) => page.getByRole("complementary", { name: "Widgets" });
 const widgetTitles = (page: Page) => rail(page).getByRole("heading", { level: 2 });
@@ -43,7 +45,7 @@ test("source status shows each source's last successful check", async ({ page })
   await page.goto("/");
 
   const sources = rail(page).getByRole("list", { name: "Sources" }).getByRole("listitem");
-  await expect(sources).toHaveCount(10);
+  await expect(sources).toHaveCount(14);
   const bleeping = sources.filter({ hasText: "BleepingComputer" });
   await expect(bleeping).toHaveAttribute("data-state", "ok");
   await expect(bleeping.locator("time")).toHaveAttribute(

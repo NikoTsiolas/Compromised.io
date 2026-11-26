@@ -6,6 +6,10 @@ uv run python -m compromised.worker --once   # one pass over every source, then 
 Each source is due ``interval_seconds`` after its last check (stored in the database, so a
 restart does not re-poll everything). Due sources are fetched concurrently and stored one by
 one. A source that fails to fetch or parse is recorded as failing and never stops the others.
+
+With ANTHROPIC_API_KEY set, each new event is enriched by the model (pipeline.enricher) up to
+ENRICHMENT_DAILY_CAP calls a day, and each pass retries events still awaiting enrichment.
+Without the key the worker runs on the rule classifier alone.
 """
 
 import argparse
@@ -20,7 +24,8 @@ import httpx
 import psycopg
 
 from compromised import config, storage
-from compromised.pipeline import ParseError, ingest
+from compromised.pipeline import ParseError, ingest, msrc
+from compromised.pipeline.enricher import Enricher
 from compromised.pipeline.fetcher import FetchError, FetchPolicy, FetchResult, Validators, fetch
 from compromised.pipeline.previews import fill_previews
 from compromised.sources import REGISTRY, Source, allowed_hosts
@@ -31,11 +36,18 @@ TICK_SECONDS = 15
 
 
 @dataclass(frozen=True)
+class Fetched:
+    result: FetchResult
+    ratings: dict[str, msrc.Rating] | None = None  # MSRC only: Microsoft's ratings (SUG API)
+
+
+@dataclass(frozen=True)
 class PollOutcome:
     error: str | None = None
     not_modified: bool = False
     items: int | None = None  # None when nothing was parsed
     new_events: int = 0
+    grouped: int = 0  # records that joined an event already stored
 
 
 def due(conn: psycopg.Connection, sources: tuple[Source, ...], *, now: datetime) -> list[Source]:
@@ -56,18 +68,36 @@ async def run_once(
     policy: FetchPolicy,
     sources: tuple[Source, ...] | list[Source] = REGISTRY,
     now: datetime | None = None,
+    enricher: Enricher | None = None,
 ) -> dict[str, PollOutcome]:
-    """Fetch and store each source once, recording its health."""
+    """Fetch and store each source once, recording its health; then enrich what still waits."""
     now = now or datetime.now(UTC)
     validators = {}
     for source in sources:
         storage.upsert_source(conn, source)
         validators[source.id] = Validators(*storage.stored_validators(conn, source.id))
-    fetched = await asyncio.gather(*(_fetch(client, s, policy, validators[s.id]) for s in sources))
+    rows = storage.source_rows(conn, [s.id for s in sources])
+    fetched = await asyncio.gather(
+        *(
+            _fetch(
+                client,
+                s,
+                policy,
+                validators[s.id],
+                _rate_window(s, rows.get(s.id, {}).get("last_success_at"), now),
+            )
+            for s in sources
+        )
+    )
     outcomes = {
-        source.id: _store(conn, source, result, now)
+        source.id: _store(conn, source, result, now, enricher)
         for source, result in zip(sources, fetched, strict=True)
     }
+    if enricher is not None:
+        try:
+            enricher.enrich_pending(conn)
+        except Exception:  # enrichment must never stop ingestion
+            log.exception("enrichment pass failed")
     # Records are stored before any article page is asked for a preview image, so a preview
     # can never hold up or undo ingestion. Publishers are worked through in parallel, each one
     # politely in sequence.
@@ -88,18 +118,48 @@ async def _previews(conn, client, policy, source: Source) -> None:
         )
 
 
-async def _fetch(client, source, policy, validators) -> FetchResult | FetchError:
+@dataclass(frozen=True)
+class RateWindow:
+    """MSRC entries first published since ``released_after`` (the backfill window) and revised
+    since ``since`` (the last successful check, or the window on a first run) are looked up."""
+
+    since: datetime
+    released_after: datetime
+
+
+def _rate_window(source: Source, last_success: datetime | None, now: datetime) -> RateWindow:
+    oldest = now - timedelta(days=source.backfill_days or 30)
+    return RateWindow(
+        since=max(last_success, oldest) if last_success else oldest, released_after=oldest
+    )
+
+
+async def _fetch(client, source, policy, validators, window: RateWindow) -> Fetched | FetchError:
     try:
-        return await fetch(client, source, policy, validators)
+        result = await fetch(client, source, policy, validators)
+        if source.format != "msrc" or result.not_modified:
+            return Fetched(result)
+        try:
+            cves = msrc.cves_to_rate(
+                msrc.parse(result.body), since=window.since, released_after=window.released_after
+            )
+        except ParseError:
+            return Fetched(result)  # ingest reports the parse error
+        return Fetched(result, await msrc.lookup(client, policy, cves))
     except FetchError as exc:
         return exc
 
 
 def _store(
-    conn: psycopg.Connection, source: Source, result: FetchResult | FetchError, now: datetime
+    conn: psycopg.Connection,
+    source: Source,
+    fetched: Fetched | FetchError,
+    now: datetime,
+    enricher: Enricher | None = None,
 ) -> PollOutcome:
-    if isinstance(result, FetchError):
-        return _failed(conn, source, now, str(result))
+    if isinstance(fetched, FetchError):
+        return _failed(conn, source, now, str(fetched))
+    result = fetched.result
     if result.not_modified:
         storage.record_success(
             conn,
@@ -111,7 +171,14 @@ def _store(
         log.info("not modified", extra={"source": source.id})
         return PollOutcome(not_modified=True)
     try:
-        ingested = ingest(conn, source, result.body, fetched_at=now)
+        ingested = ingest(
+            conn,
+            source,
+            result.body,
+            fetched_at=now,
+            ratings=fetched.ratings,
+            enricher=enricher,
+        )
     except ParseError as exc:
         return _failed(conn, source, now, str(exc))
     except Exception as exc:  # one source's bad data must not stop the others
@@ -126,9 +193,16 @@ def _store(
     )
     log.info(
         "ingested",
-        extra={"source": source.id, "items": ingested.items, "new_events": ingested.new_events},
+        extra={
+            "source": source.id,
+            "items": ingested.items,
+            "new_events": ingested.new_events,
+            "grouped": ingested.grouped,
+        },
     )
-    return PollOutcome(items=ingested.items, new_events=ingested.new_events)
+    return PollOutcome(
+        items=ingested.items, new_events=ingested.new_events, grouped=ingested.grouped
+    )
 
 
 def _failed(conn: psycopg.Connection, source: Source, now: datetime, error: str) -> PollOutcome:
@@ -137,22 +211,45 @@ def _failed(conn: psycopg.Connection, source: Source, now: datetime, error: str)
     return PollOutcome(error=error)
 
 
+def enricher_from(settings: config.Settings) -> Enricher | None:
+    """The model enricher when an API key is configured; None means rules only."""
+    if not settings.anthropic_api_key:
+        return None
+    from compromised.pipeline.claude import ClaudeClient
+
+    return Enricher(
+        ClaudeClient(settings.anthropic_api_key), daily_cap=settings.enrichment_daily_cap
+    )
+
+
 def policy_from(settings: config.Settings) -> FetchPolicy:
     return FetchPolicy(user_agent=settings.user_agent, allowed_hosts=allowed_hosts())
 
 
 async def run_forever(settings: config.Settings) -> None:
     policy = policy_from(settings)
+    enricher = _announced_enricher(settings)
     async with httpx.AsyncClient() as client:
         while True:
             try:
                 with psycopg.connect(settings.database_url, autocommit=True) as conn:
                     sources = due(conn, REGISTRY, now=datetime.now(UTC))
                     if sources:
-                        await run_once(conn, client=client, policy=policy, sources=sources)
+                        await run_once(
+                            conn, client=client, policy=policy, sources=sources, enricher=enricher
+                        )
             except Exception:
                 log.exception("pass failed")
             await asyncio.sleep(TICK_SECONDS)
+
+
+def _announced_enricher(settings: config.Settings) -> Enricher | None:
+    enricher = enricher_from(settings)
+    if enricher is None:
+        log.info("enrichment off: no ANTHROPIC_API_KEY, rules only")
+    else:
+        log.info("enrichment on", extra={"daily_cap": enricher.daily_cap})
+    return enricher
 
 
 class JsonFormatter(logging.Formatter):
@@ -185,7 +282,12 @@ def main(argv: list[str] | None = None) -> None:
         async def once():
             async with httpx.AsyncClient() as client:
                 with psycopg.connect(settings.database_url, autocommit=True) as conn:
-                    await run_once(conn, client=client, policy=policy_from(settings))
+                    await run_once(
+                        conn,
+                        client=client,
+                        policy=policy_from(settings),
+                        enricher=_announced_enricher(settings),
+                    )
 
         asyncio.run(once())
     else:

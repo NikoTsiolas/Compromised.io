@@ -32,3 +32,14 @@ characters and end in ` [truncated for fixture]`.
 
 Ransomware.live items are attacker claims relayed by a third party; their descriptions are
 attacker-supplied text. None of the 3 kept items links to a leak site or `.onion` address.
+
+## MSRC SUG API answers
+
+Microsoft's own severity and exploited flag for MSRC Update Guide entries (the feed carries
+neither). Both are real, unmodified responses from
+`https://api.msrc.microsoft.com/sug/v2.0/en-US/vulnerability`, filtered with OData `$filter`.
+
+| File | Filter | Captured | Notes |
+|---|---|---|---|
+| `msrc-sug.json` | `cveNumber eq 'CVE-2026-112732' or cveNumber eq 'CVE-2026-69291' or cveNumber eq 'CVE-2026-72965'` | 2026-11-26, 17:07:10 UTC (`curl -A "feed-check/0.1"`, HTTP 200, 10,226 bytes) | The three entries in `msrc-update-guide.xml` whose product is on the "people use" list. Visio: `Critical`; both Windows flaws: `Important`; none exploited. |
+| `msrc-sug-CVE-2026-70197.json` | `cveNumber eq 'CVE-2026-70197'` | 2026-11-26, during the feed research (HTTP 200, 6.3 KB) | A .NET CVE not in the trimmed feed sample: `Important`, not exploited. |

@@ -153,6 +153,13 @@ function Card({ item, now }: { item: FeedItem; now?: Date }) {
         <p className="mt-2 font-mono text-xs leading-4 text-ink-3">
           <LocalTime iso={item.publishedAt} style="short-relative" now={now} />
         </p>
+        {item.summary && (
+          <p className="mt-2 line-clamp-4 text-[14px] leading-[20px] text-ink-2">
+            <AiLabel />
+            {item.summary}
+          </p>
+        )}
+        <ActionLine item={item} />
         <div className="mt-2 flex flex-col gap-1 text-[13px] leading-[18px] text-ink-3">
           <Trust trust={item.trust} layout="inline" />
           <SourceNames item={item} />

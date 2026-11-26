@@ -1,6 +1,7 @@
 // Client for the Compromised API. Server-side only: API_URL is not exposed to the browser.
 
 export type EventSource = {
+  record_id: number;
   publisher: string;
   url: string;
   headline: string;
@@ -17,9 +18,9 @@ export type VerificationStatus =
   | "disputed";
 
 /**
- * One event as the API returns it. The optional fields at the end are filled by later tickets
- * (enrichment, grouping, scoring); until the API sends them they are absent and the page shows
- * a quiet empty state.
+ * One event as the API returns it. The optional fields at the end (trust status and score,
+ * CVEs, attack vector) are filled by later tickets; until the API sends them they are absent
+ * and the page shows a quiet empty state.
  */
 export type FeedEvent = {
   id: number;
@@ -34,15 +35,20 @@ export type FeedEvent = {
   organization_key: string | null;
   logo_key: string | null;
   tabs: string[];
+  /** Plain-language summary written by the model; show it labelled "AI summary". */
+  summary: string | null;
+  /** Only when a source states the action. */
+  action_line: string | null;
+  enrichment: "ai" | "rules";
+  source_count: number;
+  /** Earliest first; the first source's headline is the event title. */
   sources: EventSource[];
   /** The publisher's own feed image, or null (none, or images switched off). */
   image?: PublisherImage | null;
-  summary?: string | null;
   status?: VerificationStatus | null;
   score?: number | null;
   cves?: string[];
   attack_vector?: string | null;
-  action_line?: string | null;
 };
 
 export type PublisherImage = {

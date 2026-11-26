@@ -34,6 +34,9 @@ class Source:
     max_bytes: int = 2 * MB  # response size cap, measured after decompression
     crawl_delay_seconds: int = 0  # minimum wait between requests (robots.txt Crawl-Delay)
     weight: int = field(default=-1)
+    # Items published more than this many days before a fetch are never imported, so a first
+    # run backfills only that far (structured sources hold months or years of entries).
+    backfill_days: int | None = None
     # Hosts that serve this publisher's own article pages, stated here and never inferred from
     # feed content. Only these are ever asked for an article's preview image (pipeline.previews).
     # A feed host such as feeds.feedburner.com is not an article host.
@@ -146,6 +149,47 @@ GOOGLE_THREAT_INTEL = _rss(
     article_hosts=("cloud.google.com",),
 )
 
+CISA_KEV = Source(
+    id="cisa-kev",
+    name="CISA Known Exploited Vulnerabilities",
+    endpoint="https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json",
+    format="cisa-kev",
+    tier=Tier.OFFICIAL,
+    interval_seconds=60 * MIN,
+    max_bytes=8 * MB,  # the whole catalog, 1.9 MB on 2026-11-26
+    backfill_days=30,
+)
+
+RANSOMWARE_LIVE = Source(
+    id="ransomware-live",
+    name="Ransomware.live",
+    endpoint="https://www.ransomware.live/rss.xml",
+    format="ransomware-live",
+    tier=Tier.ATTACKER_CLAIM,
+    interval_seconds=30 * MIN,
+    crawl_delay_seconds=5,
+    backfill_days=30,
+)
+
+CISA_ADVISORIES = _rss(
+    "cisa-advisories",
+    "CISA",
+    "https://www.cisa.gov/cybersecurity-advisories/all.xml",
+    Tier.OFFICIAL,
+    30,
+    backfill_days=30,
+)
+MSRC_UPDATE_GUIDE = Source(
+    id="msrc-update-guide",
+    name="Microsoft Security Response Center",
+    endpoint="https://api.msrc.microsoft.com/update-guide/rss",
+    format="msrc",
+    tier=Tier.OFFICIAL,
+    interval_seconds=60 * MIN,
+    max_bytes=16 * MB,  # about 5,800 items, 3.3 MB on 2026-11-26
+    backfill_days=30,
+)
+
 REGISTRY: tuple[Source, ...] = (
     THE_RECORD,
     BLEEPINGCOMPUTER,
@@ -157,11 +201,28 @@ REGISTRY: tuple[Source, ...] = (
     CISCO_TALOS,
     UNIT_42,
     GOOGLE_THREAT_INTEL,
+    CISA_ADVISORIES,
+    RANSOMWARE_LIVE,
+    CISA_KEV,
+    MSRC_UPDATE_GUIDE,
 )
 
+# Endpoints the worker queries for detail about a registry source's entries; never polled on
+# their own. Their hosts are allowed deliberately, alongside the registry's.
+MSRC_SUG = Source(
+    id="msrc-sug",
+    name="MSRC Security Update Guide API",
+    endpoint="https://api.msrc.microsoft.com/sug/v2.0/en-US/vulnerability",
+    format="msrc-sug",
+    tier=Tier.OFFICIAL,
+    interval_seconds=60 * MIN,
+    max_bytes=2 * MB,  # about 3.4 KB per CVE; at most msrc.BATCH CVEs per request
+)
+LOOKUPS: tuple[Source, ...] = (MSRC_SUG,)
 
-def allowed_hosts(sources: tuple[Source, ...] = REGISTRY) -> frozenset[str]:
-    """The only hosts the fetcher may contact: the registry endpoints' hosts."""
+
+def allowed_hosts(sources: tuple[Source, ...] = REGISTRY + LOOKUPS) -> frozenset[str]:
+    """The only hosts the fetcher may contact: the registry's and lookup endpoints' hosts."""
     return frozenset(s.host for s in sources)
 
 

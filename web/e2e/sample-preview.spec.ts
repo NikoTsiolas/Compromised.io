@@ -1,6 +1,8 @@
 // The sample-data preview shows the components later tickets fill, with invented values, under a
 // banner that cannot be missed. It is built only when SAMPLE_PREVIEW=1 (never in production).
-import { expect, test } from "@playwright/test";
+import { offline, expect, test } from "./test";
+
+offline();
 
 test("the preview is labelled as sample data and shows every populated field", async ({
   page,

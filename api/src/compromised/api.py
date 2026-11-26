@@ -29,6 +29,7 @@ UtcTimestamp = Annotated[
 
 
 class SourceOut(BaseModel):
+    record_id: int
     publisher: str
     url: str
     headline: str
@@ -56,7 +57,11 @@ class EventOut(BaseModel):
     organization_key: str | None
     logo_key: str | None
     tabs: list[str]
-    sources: list[SourceOut]
+    summary: str | None  # plain-language summary written by the model; show as "AI summary"
+    action_line: str | None  # only when a source states the action
+    enrichment: str  # "ai" when the model's reply was accepted, "rules" otherwise
+    source_count: int
+    sources: list[SourceOut]  # earliest first; the first one's headline is the title
     image: ImageOut | None  # the earliest source's feed image; None when off or absent
 
 
@@ -139,6 +144,7 @@ def create_app(database_url: str | None = None) -> FastAPI:
                     {
                         **asdict(e),
                         "category_label": CATEGORIES[e.category],
+                        "source_count": len(e.sources),
                         "image": _image(e, settings),
                     }
                 )

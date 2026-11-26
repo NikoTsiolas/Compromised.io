@@ -1,14 +1,18 @@
 // Browser seam: the running web app against the API and a database seeded with the real
-// BleepingComputer capture plus synthetic items (see api/tests/fixtures/*/README.md).
+// BleepingComputer, Security Affairs and The Hacker News captures plus synthetic items (see
+// api/tests/fixtures/*/README.md). All three outlets covered the 1Password breach.
 // Times are checked in New York so that "local time" is visibly not UTC.
-import { expect, test, type Page } from "@playwright/test";
+import { offline, expect, test, type Page } from "./test";
 
-import { servePublisherImages } from "./images";
+offline();
+
 
 test.use({ timezoneId: "America/New_York" });
 
 const ONEPASSWORD =
   "1Password customer data stolen after employee GitHub account breach";
+const FLIGHT_CENTRE =
+  "Australia’s Flight Centre Data Breach Exposes Customer Records and Passport Details";
 const SYNTHETIC_MARKUP =
   "[Synthetic test item] Builds < 2.4 & AT&T breach renders as text";
 const SYNTHETIC_ZERO_DAY =
@@ -25,17 +29,15 @@ const headlines = (page: Page) => eventRows(page).getByRole("heading");
 const featured = (page: Page) => page.getByRole("region", { name: "Featured" });
 const lead = (page: Page) => featured(page).getByRole("article").first();
 
-test.beforeEach(async ({ page }) => {
-  await servePublisherImages(page);
-});
-
 test("the All tab lists in-scope events newest first, linking to the publisher", async ({
   page,
 }) => {
   await page.goto("/");
 
+  // The featured lead first, then its cards, then the feed (each in publication order).
   await expect(headlines(page)).toHaveText([
     ONEPASSWORD,
+    FLIGHT_CENTRE,
     SYNTHETIC_ZERO_DAY,
     SYNTHETIC_CRITICAL,
     SYNTHETIC_MARKUP,
@@ -52,7 +54,7 @@ test("the All tab lists in-scope events newest first, linking to the publisher",
   await expect(headline).toHaveAttribute("rel", "noopener noreferrer");
 });
 
-test("the featured section leads with the newest named, unclaimed event and three cards", async ({
+test("the featured section leads with a recent named event with a picture, then three cards", async ({
   page,
 }) => {
   await page.goto("/");
@@ -62,22 +64,52 @@ test("the featured section leads with the newest named, unclaimed event and thre
   await expect(story).toContainText("1Password");
   await expect(story).toContainText("Data breach");
   await expect(story).toContainText("BleepingComputer");
-  await expect(story).toContainText("1 source");
+  // Flight Centre is newer but has no picture; 1Password, a few hours older, has one (from
+  // The Hacker News's feed), so it leads.
+  await expect(story).toContainText("3 sources");
   await expect(story).toContainText(/Published .*ago/);
 
   const cards = featured(page).getByRole("list", { name: "More top stories" });
   await expect(cards.getByRole("heading")).toHaveText([
+    FLIGHT_CENTRE,
     SYNTHETIC_ZERO_DAY,
     SYNTHETIC_CRITICAL,
-    SYNTHETIC_MARKUP,
   ]);
 
   // The feed below continues after the featured stories and never repeats them.
   const feed = page.getByRole("region", { name: "All events" });
   await expect(feed.getByRole("heading", { level: 3 })).toHaveText([
+    SYNTHETIC_MARKUP,
     SYNTHETIC_ADOBE,
     SYNTHETIC_SLACK,
   ]);
+});
+
+test("an event covered by several outlets names them all under Technical details", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const story = lead(page);
+  await expect(story).toContainText("BleepingComputer +2 sources");
+
+  await story.getByRole("button", { name: "Technical details" }).click();
+  const security = story.getByRole("link", {
+    name: "1Password Hacked: Customer Names and Emails Copied, Vaults Untouched",
+  });
+  await expect(security).toHaveAttribute(
+    "href",
+    "https://securityaffairs.com/204031/cyber-crime/1password-hacked-customer-names-and-emails-copied-vaults-untouched.html",
+  );
+  await expect(security).toHaveAttribute("rel", "noopener noreferrer");
+  await expect(
+    story.getByRole("link", {
+      name: "1Password Hacked, Customer Data and Source Code Stolen in GitHub Account Breach",
+    }),
+  ).toBeVisible();
+
+  // A single-source event names its one publisher and no others.
+  const single = eventRows(page).filter({ hasText: FLIGHT_CENTRE });
+  await expect(single).not.toContainText("+");
 });
 
 test("times are shown in the reader's own time zone without hydration errors", async ({
@@ -108,6 +140,8 @@ test("a publisher's own image is loaded from the publisher, credited, with no re
 
   const adobe = eventRows(page).filter({ hasText: SYNTHETIC_ADOBE });
   const image = adobe.getByRole("img");
+  // Pictures below the fold load lazily, when the reader gets near them.
+  await adobe.scrollIntoViewIfNeeded();
   await expect(image).toHaveAttribute(
     "src",
     "https://images.example.com/synthetic/loads.png",
@@ -208,6 +242,7 @@ test("section tabs come from the API, each with its own URL, and filter the feed
 
   await tab("Breaches").click();
   await expect(headlines(page)).toHaveText([
+    FLIGHT_CENTRE,
     ONEPASSWORD,
     SYNTHETIC_MARKUP,
     SYNTHETIC_ADOBE,
@@ -220,7 +255,7 @@ test("section tabs come from the API, each with its own URL, and filter the feed
 
   await tab("All").click();
   await expect(page).toHaveURL(/\/$/);
-  await expect(eventRows(page)).toHaveCount(6);
+  await expect(eventRows(page)).toHaveCount(7);
 });
 
 test("text from the API is rendered as text, never as markup", async ({

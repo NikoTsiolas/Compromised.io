@@ -1,9 +1,10 @@
 // Browser seam: the page feels smooth because nothing jumps. Pictures fade in over a box that
 // was reserved before they arrived, and cumulative layout shift stays well under the 0.1 that
 // counts as "good". The measured values are printed for the design report.
-import { expect, test, type Page } from "@playwright/test";
+import { offline, expect, test, type Page } from "./test";
 
-import { servePublisherImages } from "./images";
+offline();
+
 
 async function cumulativeLayoutShift(page: Page): Promise<number> {
   await page.addInitScript(() => {
@@ -17,7 +18,6 @@ async function cumulativeLayoutShift(page: Page): Promise<number> {
       }
     }).observe({ type: "layout-shift", buffered: true });
   });
-  await servePublisherImages(page);
   await page.goto("/", { waitUntil: "networkidle" });
   // Scroll through the page so every lazy picture loads, then come back up.
   const height = await page.evaluate(() => document.documentElement.scrollHeight);

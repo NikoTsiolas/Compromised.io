@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SYNTHETIC TEST DATA, hand-written for the grouping and enrichment seam. Not a real capture, not a real incident. -->
+<rss version="2.0">
+<channel>
+  <title>Synthetic test feed</title>
+  <link>https://example.com/</link>
+  <description>Synthetic test data</description>
+  <item>
+    <title>[Synthetic test item] Exceptional Healthcare Inc. ransomware attack claimed by Metaencryptor</title>
+    <link>https://example.com/synthetic-press-on-a-ransomware-claim</link>
+    <guid>https://example.com/synthetic-press-on-a-ransomware-claim</guid>
+    <category>Exceptional Healthcare Inc.</category>
+    <pubDate>Thu, 26 Nov 2026 16:00:00 +0000</pubDate>
+    <description>Synthetic excerpt: a press report on the claim, published after the real Ransomware.live item.</description>
+  </item>
+</channel>
+</rss>
