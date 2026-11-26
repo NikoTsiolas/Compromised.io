@@ -109,6 +109,9 @@ DARK_READING = _rss(
     Tier.PRESS,
     15,
     article_hosts=("www.darkreading.com",),
+    # Its stock photos include the hooded-figure imagery Niko banned, so its events use the
+    # designed tiles (decided at the merge of #10, #11, #15 and #16).
+    publisher_images=False,
 )
 SECURITY_AFFAIRS = _rss(
     "securityaffairs",

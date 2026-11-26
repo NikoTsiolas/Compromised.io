@@ -128,8 +128,8 @@ test("every post has a picture: the publisher's photo or a tile of exactly the s
 
   // The synthetic Adobe item's image loads: a credited photo. Slack's is broken: a tile.
   const adobe = post(page, SYNTHETIC_ADOBE);
-  await expect(adobe.getByRole("img", { name: "Picture from Dark Reading" })).toBeVisible();
-  await expect(adobe.getByText("Image: Dark Reading")).toBeVisible();
+  await expect(adobe.getByRole("img", { name: "Picture from SecurityWeek" })).toBeVisible();
+  await expect(adobe.getByText("Image: SecurityWeek")).toBeVisible();
   await expect(post(page, SYNTHETIC_SLACK).locator("[data-media]")).toHaveAttribute(
     "data-media",
     "lettermark",

@@ -45,7 +45,7 @@ export default defineConfig({
         " thehackernews=tests/fixtures/real/thehackernews.xml" +
         " bleepingcomputer=tests/fixtures/synthetic/text-not-markup.xml" +
         " bleepingcomputer=tests/fixtures/synthetic/vulnerability-gate.xml" +
-        " darkreading=tests/fixtures/synthetic/publisher-images.xml" +
+        " securityweek=tests/fixtures/synthetic/publisher-images.xml" +
         " --sample-enrichment tests/fixtures/synthetic/enrichment-replies.json" +
         ` && uv run uvicorn compromised.api:create_app --factory --port ${apiPort}`,
       cwd: "../api",

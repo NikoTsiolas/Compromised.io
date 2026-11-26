@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 import pytest
 from fastapi.testclient import TestClient
 
+from compromised import sources
 from compromised.api import create_app
 from compromised.pipeline import ingest
 from tests.samples import real_sample, sample_source, synthetic_sample
@@ -254,10 +255,9 @@ def test_the_scoring_rules_state_the_formulas_numbers_and_every_sources_weight(c
 # --- publisher images (#9) ----------------------------------------------------------------------
 
 
-DOTNET_IMAGE = (
-    "https://eu-images.contentstack.com/v3/assets/blt6d90778a997de1cd/blt62eb1a39d76dff3b/"
-    "6b06d44d51725d29015e8423/Gorodenkoff-developer-coding-shutterstock.png"
-    "?width=720&quality=80&disable=upscale"
+FIFA_IMAGE = (
+    "https://cms.therecord.media/uploads/"
+    "fifa_sign_wc_final_202655407277531_c63256a9d9_o_77bc61d70a.jpg"
 )
 
 
@@ -267,9 +267,16 @@ def _event(client, title, tab="all"):
 
 
 def test_an_event_carries_its_publishers_feed_image_with_the_publishers_name(client):
-    assert _event(client, DOTNET)["image"] == {"url": DOTNET_IMAGE, "publisher": "Dark Reading"}
+    assert _event(client, FIFA)["image"] == {"url": FIFA_IMAGE, "publisher": "The Record"}
     # BleepingComputer's feed has no images.
     assert _event(client, ONEPASSWORD_BC)["image"] is None
+
+
+def test_dark_readings_images_are_off_by_default_so_its_events_use_tiles(client):
+    # Its stock photos include imagery Niko banned (hooded figures); the registry switches its
+    # images off. Its feed still offers one for this story, and it is kept, never shown.
+    assert sources.by_id("darkreading").publisher_images is False
+    assert _event(client, DOTNET)["image"] is None
 
 
 def test_attacker_claims_never_carry_an_image(client):
@@ -278,9 +285,7 @@ def test_attacker_claims_never_carry_an_image(client):
 
 
 def test_one_switch_turns_publisher_images_off_everywhere(conn, database_url, monkeypatch):
-    ingest(
-        conn, sample_source("darkreading"), real_sample("darkreading.xml"), fetched_at=FETCHED_AT
-    )
+    ingest(conn, sample_source("therecord"), real_sample("therecord.xml"), fetched_at=FETCHED_AT)
     monkeypatch.setenv("PUBLISHER_IMAGES", "off")
     with TestClient(create_app(database_url=database_url)) as off:
         for tab in ("all", "research"):
@@ -289,6 +294,7 @@ def test_one_switch_turns_publisher_images_off_everywhere(conn, database_url, mo
 
 
 def test_publisher_images_can_be_switched_off_for_one_source(client, monkeypatch, database_url):
-    monkeypatch.setenv("PUBLISHER_IMAGES_OFF_FOR", "darkreading")
+    assert _event(client, FIFA)["image"] is not None
+    monkeypatch.setenv("PUBLISHER_IMAGES_OFF_FOR", "therecord")
     with TestClient(create_app(database_url=database_url)) as off:
-        assert _event(off, DOTNET)["image"] is None
+        assert _event(off, FIFA)["image"] is None

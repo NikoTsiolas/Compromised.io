@@ -123,8 +123,8 @@ test("the publisher's picture is shown with its credit; without one, the logo ti
   page,
 }) => {
   await openEvent(page, ADOBE);
-  await expect(page.getByRole("img", { name: "Picture from Dark Reading" })).toBeVisible();
-  await expect(page.getByRole("main")).toContainText("Image: Dark Reading");
+  await expect(page.getByRole("img", { name: "Picture from SecurityWeek" })).toBeVisible();
+  await expect(page.getByRole("main")).toContainText("Image: SecurityWeek");
 
   // The Hacker News's picture is not served in the suite, so the 1Password tile takes its place.
   await openEvent(page, ONEPASSWORD);

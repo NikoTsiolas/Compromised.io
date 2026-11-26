@@ -153,7 +153,7 @@ test("a publisher's own image is loaded from the publisher, credited, with no re
   await expect
     .poll(() => image.evaluate((el: HTMLImageElement) => el.naturalWidth))
     .toBeGreaterThan(0);
-  await expect(adobe.getByText("Image: Dark Reading")).toBeVisible();
+  await expect(adobe.getByText("Image: SecurityWeek")).toBeVisible();
 });
 
 test("an event whose image is broken or missing gets a designed tile instead", async ({
