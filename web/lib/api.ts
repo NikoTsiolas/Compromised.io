@@ -1,6 +1,7 @@
 // Client for the Compromised API. Server-side only: API_URL is not exposed to the browser.
 
 export type EventSource = {
+  record_id: number;
   publisher: string;
   url: string;
   headline: string;
@@ -21,6 +22,8 @@ export type FeedEvent = {
   organization_key: string | null;
   logo_key: string | null;
   tabs: string[];
+  source_count: number;
+  /** Earliest first; the first source's headline is the event title. */
   sources: EventSource[];
 };
 

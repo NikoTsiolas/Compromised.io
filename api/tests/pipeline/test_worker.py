@@ -86,8 +86,16 @@ async def test_one_pass_fetches_every_source_once_politely_and_stores_its_events
     ]
     assert sorted(str(r.url) for r in feeds) == sorted(s.endpoint for s in REGISTRY)
     assert {r.headers["user-agent"] for r in fake.requests} == {UA}
-    assert {sid: o.new_events for sid, o in outcomes.items()} == NEW_EVENTS
-    assert len(storage.list_events(conn, limit=100).events) == 40
+    # Security Affairs and The Hacker News each carry the 1Password breach BleepingComputer
+    # already reported, so that item joins BleepingComputer's event. CISA's "Adds 10 Known
+    # Exploited Vulnerabilities" alert joins Security Affairs' write-up (shared CVE), and the
+    # KEV Juniper entry joins SecurityWeek's story on the same CVE.
+    joined = {"securityaffairs", "thehackernews", "cisa-advisories", "cisa-kev"}
+    assert {sid: (o.new_events, o.grouped) for sid, o in outcomes.items()} == {
+        sid: (NEW_EVENTS[sid] - 1, 1) if sid in joined else (NEW_EVENTS[sid], 0)
+        for sid in SAMPLES
+    }
+    assert len(storage.list_events(conn, limit=100).events) == 36
     seen = health_by_id(conn)
     assert {h.state for h in seen.values()} == {"ok"}
     assert seen["darkreading"].last_success_at == T0
@@ -123,7 +131,8 @@ async def test_a_failing_and_a_malformed_source_are_recorded_and_do_not_stop_the
 
     assert outcomes["therecord"].error == "HTTP 503"
     assert outcomes["krebsonsecurity"].error.startswith("not a feed")
-    assert len(storage.list_events(conn, limit=100).events) == 34
+    # 40 items less The Record's and Krebs' 6, grouped as in the pass above.
+    assert len(storage.list_events(conn, limit=100).events) == 30
     seen = health_by_id(conn, second)
     for failing in ("therecord", "krebsonsecurity"):
         assert seen[failing].state == "failing"

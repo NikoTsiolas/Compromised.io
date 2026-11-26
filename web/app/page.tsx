@@ -102,6 +102,24 @@ async function Feed({
                 {" ("}
                 {formatRelative(event.published_at)}
                 {")"}
+                {event.source_count > 1 && (
+                  <details>
+                    <summary>{event.source_count} sources</summary>
+                    <ul aria-label="Other sources">
+                      {event.sources.slice(1).map((other) => (
+                        <li key={other.record_id}>
+                          <a
+                            href={other.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {other.publisher}: {other.headline}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
+                )}
               </li>
             );
           })}

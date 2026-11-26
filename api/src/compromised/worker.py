@@ -41,6 +41,7 @@ class PollOutcome:
     not_modified: bool = False
     items: int | None = None  # None when nothing was parsed
     new_events: int = 0
+    grouped: int = 0  # records that joined an event already stored
 
 
 def due(conn: psycopg.Connection, sources: tuple[Source, ...], *, now: datetime) -> list[Source]:
@@ -151,9 +152,16 @@ def _store(
     )
     log.info(
         "ingested",
-        extra={"source": source.id, "items": ingested.items, "new_events": ingested.new_events},
+        extra={
+            "source": source.id,
+            "items": ingested.items,
+            "new_events": ingested.new_events,
+            "grouped": ingested.grouped,
+        },
     )
-    return PollOutcome(items=ingested.items, new_events=ingested.new_events)
+    return PollOutcome(
+        items=ingested.items, new_events=ingested.new_events, grouped=ingested.grouped
+    )
 
 
 def _failed(conn: psycopg.Connection, source: Source, now: datetime, error: str) -> PollOutcome:

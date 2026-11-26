@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SYNTHETIC TEST DATA, hand-written for the deduplicator's canonical URL rule. Not a real capture, not a real incident. -->
+<rss version="2.0">
+<channel>
+  <title>Synthetic test feed</title>
+  <link>https://example.com/</link>
+  <description>Synthetic test data</description>
+  <item>
+    <title>[Synthetic test item] Reading list: this week's must-read story</title>
+    <link>https://WWW.BLEEPINGCOMPUTER.COM/news/security/1password-customer-data-stolen-after-employee-github-account-breach/?utm_source=synthetic#top</link>
+    <guid>https://example.com/synthetic-same-canonical-url</guid>
+    <pubDate>Thu, 26 Nov 2026 14:00:00 +0000</pubDate>
+    <description>Synthetic excerpt: a second source linking the very article a real record links.</description>
+  </item>
+</channel>
+</rss>

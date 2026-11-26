@@ -24,6 +24,8 @@ export default defineConfig({
       command:
         "uv run python -m compromised.seed --reset" +
         " bleepingcomputer=tests/fixtures/real/bleepingcomputer.xml" +
+        " securityaffairs=tests/fixtures/real/securityaffairs.xml" +
+        " thehackernews=tests/fixtures/real/thehackernews.xml" +
         " bleepingcomputer=tests/fixtures/synthetic/text-not-markup.xml" +
         " bleepingcomputer=tests/fixtures/synthetic/vulnerability-gate.xml" +
         ` && uv run uvicorn compromised.api:create_app --factory --port ${apiPort}`,

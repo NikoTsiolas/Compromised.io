@@ -29,6 +29,7 @@ UtcTimestamp = Annotated[
 
 
 class SourceOut(BaseModel):
+    record_id: int
     publisher: str
     url: str
     headline: str
@@ -48,7 +49,8 @@ class EventOut(BaseModel):
     organization_key: str | None
     logo_key: str | None
     tabs: list[str]
-    sources: list[SourceOut]
+    source_count: int
+    sources: list[SourceOut]  # earliest first; the first one's headline is the title
 
 
 class TabOut(BaseModel):
@@ -110,7 +112,13 @@ def create_app(database_url: str | None = None) -> FastAPI:
                 raise HTTPException(status_code=400, detail="Invalid cursor") from None
         return EventPageOut(
             events=[
-                EventOut.model_validate({**asdict(e), "category_label": CATEGORIES[e.category]})
+                EventOut.model_validate(
+                    {
+                        **asdict(e),
+                        "category_label": CATEGORIES[e.category],
+                        "source_count": len(e.sources),
+                    }
+                )
                 for e in page.events
             ],
             next_cursor=page.next_cursor,

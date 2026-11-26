@@ -49,17 +49,17 @@ def titles(response):
 
 def test_the_default_listing_is_the_all_tab_newest_first_and_the_cursor_keeps_the_tab(client):
     first = client.get("/v1/events", params={"limit": 2})
-    assert titles(first) == [FLIGHT_CENTRE, ONEPASSWORD_SA]
+    # The 1Password event takes the time and headline of its earliest source.
+    assert titles(first) == [FLIGHT_CENTRE, ONEPASSWORD_BC]
 
     second = client.get("/v1/events", params={"limit": 2, "cursor": first.json()["next_cursor"]})
-    assert titles(second) == [ONEPASSWORD_BC, FIFA]
+    assert titles(second) == [FIFA, DOTNET]
 
     third = client.get("/v1/events", params={"limit": 2, "cursor": second.json()["next_cursor"]})
     # The synthetic items are dated 2 November, older than every real one.
-    assert titles(third) == [DOTNET, WINDOWS_ZERO_DAY]
+    assert titles(third) == [WINDOWS_ZERO_DAY, CHROME_CRITICAL]
     assert titles(client.get("/v1/events", params={"tab": "all"})) == [
         FLIGHT_CENTRE,
-        ONEPASSWORD_SA,
         ONEPASSWORD_BC,
         FIFA,
         DOTNET,
@@ -72,7 +72,7 @@ def test_each_tab_filters_the_feed(client):
     def tab(name):
         return titles(client.get("/v1/events", params={"tab": name}))
 
-    assert tab("breaches") == [FLIGHT_CENTRE, ONEPASSWORD_SA, ONEPASSWORD_BC, FIFA]
+    assert tab("breaches") == [FLIGHT_CENTRE, ONEPASSWORD_BC, FIFA]
     assert tab("ransomware") == [
         "Metaencryptor claims Exceptional Healthcare Inc. as a ransomware victim",
         "Orova claims Technology Investment Joint Stock CompanyTACORP as a ransomware victim",
@@ -104,7 +104,9 @@ def test_events_carry_category_commentary_flag_organization_and_logo_key(client)
         for e in client.get("/v1/events", params={"tab": "breaches"}).json()["events"]
         if e["title"] == ONEPASSWORD_BC
     ]
-    assert {k: event[k] for k in event if k not in {"id", "sources", "published_at"}} == {
+    assert {
+        k: event[k] for k in event if k not in {"id", "sources", "source_count", "published_at"}
+    } == {
         "title": ONEPASSWORD_BC,
         "first_seen_at": "2026-11-26T14:54:07Z",
         "category": "data_breach",
@@ -122,6 +124,36 @@ def test_events_carry_category_commentary_flag_organization_and_logo_key(client)
         None,
         None,
     )
+
+
+def test_an_event_lists_every_source_earliest_first_with_its_count(client):
+    [event] = [e for e in client.get("/v1/events").json()["events"] if e["title"] == ONEPASSWORD_BC]
+
+    assert event["source_count"] == 2
+    assert [
+        {k: s[k] for k in ("publisher", "url", "headline", "published_at")}
+        for s in event["sources"]
+    ] == [
+        {
+            "publisher": "BleepingComputer",
+            "url": (
+                "https://www.bleepingcomputer.com/news/security/"
+                "1password-customer-data-stolen-after-employee-github-account-breach/"
+            ),
+            "headline": ONEPASSWORD_BC,
+            "published_at": "2026-11-25T21:33:33Z",
+        },
+        {
+            "publisher": "Security Affairs",
+            "url": (
+                "https://securityaffairs.com/204031/cyber-crime/"
+                "1password-hacked-customer-names-and-emails-copied-vaults-untouched.html"
+            ),
+            "headline": ONEPASSWORD_SA,
+            "published_at": "2026-11-26T09:42:47Z",
+        },
+    ]
+    assert all(isinstance(s["record_id"], int) for s in event["sources"])
 
 
 def test_the_tabs_are_listed_in_reading_order_with_their_labels(client):

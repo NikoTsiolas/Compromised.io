@@ -1,5 +1,6 @@
 // Browser seam: the live ingestion indicator and each source's last successful check.
-// The seed records one successful BleepingComputer check; every other source is unchecked.
+// The seed records one successful check of BleepingComputer, Security Affairs and The Hacker
+// News; every other source is unchecked.
 import { expect, test } from "@playwright/test";
 
 test("the header shows that ingestion is live", async ({ page }) => {
