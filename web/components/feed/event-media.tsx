@@ -64,7 +64,7 @@ export function EventMedia({
           />
           <span
             className={cn(
-              "absolute right-1.5 bottom-1.5 max-w-[80%] truncate rounded-[2px] bg-[#111111]/70 px-1.5 py-0.5 font-mono leading-4 text-[#f6f5f1]",
+              "absolute right-1.5 bottom-1.5 max-w-[80%] truncate rounded-[2px] bg-[#111111]/75 px-1.5 py-0.5 font-mono leading-4 text-[#f6f5f1]",
               size === "thumb" ? "text-[9px]" : "text-[10px]",
             )}
           >

@@ -26,9 +26,9 @@ export function FeedRow({ item, now }: { item: FeedItem; now?: Date }) {
   return (
     <Item
       render={<article aria-labelledby={headingId} />}
-      className="grid grid-cols-[minmax(0,1fr)_96px] items-start gap-x-4 gap-y-0 rounded-none border-0 px-0 py-4 sm:grid-cols-[200px_minmax(0,1fr)] sm:gap-x-6 sm:py-5"
+      className="grid grid-cols-[minmax(0,1fr)_96px] grid-rows-[auto_1fr] items-start gap-x-4 gap-y-0 rounded-none border-0 px-0 py-4 sm:grid-cols-[200px_minmax(0,1fr)] sm:gap-x-6 sm:py-5"
     >
-      <div className="col-start-2 row-start-1 sm:col-start-1">
+      <div className="col-start-2 row-start-1 sm:col-start-1 sm:row-span-2">
         <EventMedia
           image={item.image}
           logo={item.logo}
@@ -63,7 +63,7 @@ export function FeedRow({ item, now }: { item: FeedItem; now?: Date }) {
         </p>
       </div>
 
-      <div className="col-span-2 min-w-0 sm:col-span-1 sm:col-start-2">
+      <div className="col-span-2 row-start-2 min-w-0 sm:col-span-1 sm:col-start-2">
         {summary && (
           <p className="mt-2 line-clamp-3 max-w-[68ch] text-[15px] leading-[22px] text-ink-2">
             {summary.ai && <AiLabel />}

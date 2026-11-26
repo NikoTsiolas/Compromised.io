@@ -20,11 +20,11 @@ const parts = (iso: string, timeZone: string | undefined) =>
 /** "EST", "GMT+1", "UTC". */
 export function zoneName(iso: string, timeZone?: string): string {
   if (timeZone === "UTC") return "UTC";
-  return (
+  const name =
     new Intl.DateTimeFormat("en-US", { timeZoneName: "short", timeZone })
       .formatToParts(new Date(iso))
-      .find((p) => p.type === "timeZoneName")?.value ?? ""
-  );
+      .find((p) => p.type === "timeZoneName")?.value ?? "";
+  return name === "GMT+0" ? "GMT" : name;
 }
 
 /** "16:33" */

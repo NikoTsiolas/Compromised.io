@@ -28,7 +28,7 @@ export function MostReported({ items }: { items: OrganisationFigure[] | null }) 
           </span>
           <span className="min-w-0">
             <span className="block truncate text-[13px] leading-[18px] text-ink">{org.name}</span>
-            <span aria-hidden className="mt-1 block h-0.5 bg-rule">
+            <span aria-hidden className="mt-1.5 block h-[3px] overflow-hidden rounded-[1px] bg-background">
               <span
                 className="block h-full bg-ink-3"
                 style={{ width: `${(org.count / max) * 100}%` }}

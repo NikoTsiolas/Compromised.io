@@ -203,9 +203,11 @@
    After Bencho's Stacked bars (MIT): de-emphasis grey columns, spike months in
    the muted red, 4px rounded data-end square at the baseline; while a month is
    active the others step back by mixing toward the surface, never fading. */
+:root { --chart-grey: color-mix(in srgb, var(--c-ink) 48%, var(--c-surface)); }
+.dark { --chart-grey: color-mix(in srgb, var(--c-ink) 38%, var(--c-surface)); }
 .xchart-bar {
   border-radius: 4px 4px 0 0;
-  background: color-mix(in srgb, var(--c-ink) 30%, var(--c-surface));
+  background: var(--chart-grey);
   transition: background-color 160ms ease;
 }
 .xchart-bar.xchart-spike { background: var(--c-accent); }

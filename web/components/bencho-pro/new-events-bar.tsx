@@ -64,7 +64,13 @@ export function NewEventsBar({
   };
 
   return (
-    <div className="sticky top-0 z-10 h-11 border-b border-rule bg-background">
+    <div
+      className={
+        count > 0
+          ? "sticky top-0 z-10 h-11 border-b border-rule bg-background"
+          : "relative h-11 border-b border-rule"
+      }
+    >
       <AnimatePresence initial={false} mode="popLayout">
         {count > 0 ? (
           <motion.button

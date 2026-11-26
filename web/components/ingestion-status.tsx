@@ -103,7 +103,9 @@ export function SourceList({ status, now }: { status: IngestionStatus; now?: Dat
           <span aria-hidden className={cn("size-1.5", DOT[source.state])} />
           <span className="truncate text-ink">{source.name}</span>
           <span className="font-mono text-[11px] text-ink-3">
-            {source.state === "pending" || !source.last_success_at ? (
+            {source.state === "failing" && !source.last_success_at ? (
+              <span className="text-red-ink">Failing</span>
+            ) : source.state === "pending" || !source.last_success_at ? (
               "Not checked yet"
             ) : (
               <>

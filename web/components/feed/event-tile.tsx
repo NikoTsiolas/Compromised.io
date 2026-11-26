@@ -36,11 +36,12 @@ export function EventTile({
 }) {
   const key = organization ?? fallbackLabel;
   const kind = logo ? "logo" : organization ? "lettermark" : "category";
+  const caption = size !== "thumb" && kind !== "category" ? organization : null;
   return (
     <div
       data-tile={tintFor(key)}
       className={cn(
-        "event-tile absolute inset-0 grid place-items-center overflow-hidden [container-type:size]",
+        "event-tile absolute inset-0 flex flex-col items-center justify-center gap-[3cqmin] overflow-hidden [container-type:size]",
         className,
       )}
     >
@@ -52,7 +53,7 @@ export function EventTile({
             viewBox="0 0 24 24"
             className={cn(
               "fill-current text-ink",
-              size === "lead" ? "size-[28cqmin]" : "size-[34cqmin]",
+              size === "thumb" ? "size-[38cqmin]" : "size-[26cqmin]",
             )}
           >
             <path d={logo!.path} />
@@ -62,7 +63,10 @@ export function EventTile({
         <div
           data-media="lettermark"
           aria-hidden
-          className="text-[46cqmin] leading-none font-bold tracking-[-0.04em] text-ink"
+          className={cn(
+            "leading-none font-bold tracking-[-0.04em] text-ink",
+            size === "thumb" ? "text-[36cqmin]" : "text-[30cqmin]",
+          )}
         >
           {lettermark(organization!)}
         </div>
@@ -73,6 +77,17 @@ export function EventTile({
           className="px-3 text-center font-mono text-[11px] tracking-[0.08em] text-ink-2 uppercase"
         >
           {fallbackLabel}
+        </div>
+      )}
+      {caption && (
+        <div
+          aria-hidden
+          className={cn(
+            "max-w-[80%] truncate text-center font-bold tracking-[-0.01em] text-ink-2 @max-[160px]:hidden",
+            size === "lead" ? "text-[15px]" : "text-[12px]",
+          )}
+        >
+          {caption}
         </div>
       )}
     </div>
