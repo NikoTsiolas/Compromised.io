@@ -85,8 +85,7 @@ def test_each_tab_filters_the_feed(client):
         "Cyprus Becomes Espionage Target for Iranian Hackers",
         "Microsoft: China’s Salt Typhoon hackers are using Artex",
     ]
-    # Ranked by its own ticket (#10); empty until then.
-    assert tab("trending") == []
+    # Trending is a ranking, tested in test_trending.py.
 
 
 def test_commentary_appears_in_no_tab(client):

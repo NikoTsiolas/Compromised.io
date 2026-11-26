@@ -1,5 +1,6 @@
 """Read-only JSON API, versioned under /v1."""
 
+from collections.abc import Callable
 from contextlib import asynccontextmanager
 from dataclasses import asdict
 from datetime import UTC, date, datetime, time, timedelta
@@ -162,7 +163,11 @@ def _image(event, settings: config.Settings) -> ImageOut | None:
     return None
 
 
-def create_app(database_url: str | None = None) -> FastAPI:
+def create_app(
+    database_url: str | None = None, clock: Callable[[], datetime] | None = None
+) -> FastAPI:
+    """The API. ``clock`` gives the current time (tests fix it); it ranks Trending."""
+    now = clock or (lambda: datetime.now(UTC))
     settings = config.load()
     url = database_url or settings.database_url
 
@@ -185,8 +190,7 @@ def create_app(database_url: str | None = None) -> FastAPI:
         tab: TabId = DEFAULT_TAB,
     ):
         if tab == "trending":
-            # Trending is ranked by its own ticket (#10); until then it has no events.
-            return EventPageOut(events=[], next_cursor=None)
+            return trending(request, limit=limit, cursor=cursor)
         with request.app.state.pool.connection() as conn:
             try:
                 page = storage.list_events(conn, limit=limit, cursor=cursor, tab=tab.value)
@@ -226,6 +230,21 @@ def create_app(database_url: str | None = None) -> FastAPI:
             except storage.InvalidCursor:
                 raise HTTPException(status_code=400, detail="Invalid cursor") from None
         response.headers["Cache-Control"] = "public, max-age=30"
+        return _page_out(page, settings)
+
+    @app.get("/v1/trending", response_model=EventPageOut)
+    def trending(
+        request: Request,
+        limit: Annotated[int, Query(ge=1, le=storage.MAX_PAGE_SIZE)] = 20,
+        cursor: str | None = None,
+    ):
+        """Published events ranked by distinct source coverage with recency decay
+        (storage.search.trending). The Trending tab of /v1/events lists the same."""
+        with request.app.state.pool.connection() as conn:
+            try:
+                page = search_storage.trending(conn, now=now(), limit=limit, cursor=cursor)
+            except storage.InvalidCursor:
+                raise HTTPException(status_code=400, detail="Invalid cursor") from None
         return _page_out(page, settings)
 
     @app.get("/v1/filters", response_model=FiltersOut)

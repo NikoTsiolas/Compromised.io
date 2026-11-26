@@ -171,7 +171,7 @@ def test_filters_combine_with_each_other_and_with_search(client):
     ]
     assert titles(client, q="Orova", status="reported") == []
     assert titles(client, q="CVE-2026-119977", status="confirmed", tab="update-now") == [WORDPRESS]
-    assert titles(client, q="1Password", **{"to": "2026-11-02"}) == []
+    assert titles(client, q="1Password", to="2026-11-02") == []
 
 
 def test_results_are_paginated_with_the_cursor_and_the_cursor_keeps_the_filters(client):
@@ -227,7 +227,7 @@ def test_values_outside_a_filters_list_are_refused(client, params):
         "\\\\ \\' \\\"",
         "% _ %%",
         "CVE-2026-123633'; select pg_sleep(5); --",
-        "‮Salt Typhoon‬ 🔥",
+        "\u202eSalt Typhoon\u202c \U0001f525",
         "x" * 200,
         "<script>alert(1)</script>",
     ],

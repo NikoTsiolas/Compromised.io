@@ -1,13 +1,16 @@
-"""Search and filters over published events (#10). All queries are parameterised.
+"""Search, filters and Trending over published events (#10). All queries are parameterised.
 
 Scope: only events that appear in at least one feed tab, so search never surfaces what the feed
 rules keep out (commentary, unknown organization, gated vulnerabilities). Results are newest
 first and paginated with the feed's cursor (publication time, id).
 """
 
+import base64
+import binascii
 import re
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
+from decimal import Decimal
 
 import psycopg
 from psycopg.rows import dict_row
@@ -16,6 +19,7 @@ from compromised.records import EventPage
 from compromised.storage import (
     EVENT_COLUMNS,
     MAX_PAGE_SIZE,
+    InvalidCursor,
     decode_cursor,
     encode_cursor,
     events_from_rows,
@@ -103,3 +107,87 @@ def search(
         events = events_from_rows(cur, rows)
     next_cursor = encode_cursor(rows[-1]["published_at"], rows[-1]["id"]) if has_more else None
     return EventPage(events=events, next_cursor=next_cursor)
+
+
+# --- trending -----------------------------------------------------------------------------------
+
+# Trending score: every distinct news or official source that reported the event within the
+# window adds 0.5 ^ (hours since that source's latest report on it / half-life). Attacker-claim
+# sources add nothing and claim-only events never trend. Only events shown in a tab are ranked.
+# Nothing else enters the score: no views, clicks or any other engagement, which does not exist.
+TRENDING_WINDOW = timedelta(hours=72)
+TRENDING_HALF_LIFE_HOURS = 24
+_SCORE_DIGITS = 9  # the score is rounded, so a cursor compares exactly
+
+
+def trending(
+    conn: psycopg.Connection, *, now: datetime, limit: int = 20, cursor: str | None = None
+) -> EventPage:
+    """Published events by trending score, highest first (ties: newest id first).
+
+    The cursor carries the time the first page was ranked at, so later pages continue the same
+    ranking instead of one that has decayed since."""
+    limit = max(1, min(limit, MAX_PAGE_SIZE))
+    as_of, after = now, None
+    if cursor is not None:
+        as_of, after = _decode_trending_cursor(cursor)
+    page_condition = ""
+    params: dict = {
+        "as_of": as_of,
+        "since": as_of - TRENDING_WINDOW,
+        "half_life": TRENDING_HALF_LIFE_HOURS,
+        "digits": _SCORE_DIGITS,
+        "limit": limit + 1,
+    }
+    if after is not None:
+        page_condition = "and (s.trend_score, e.id) < (%(after_score)s, %(after_id)s)"
+        params |= {"after_score": after[0], "after_id": after[1]}
+    with conn.cursor(row_factory=dict_row) as cur:
+        rows = cur.execute(
+            "with coverage as ("
+            "  select r.event_id, r.source_id, max(r.published_at) as reported_at"
+            "  from source_records r join sources src on src.id = r.source_id"
+            "  where src.tier <> 'attacker_claim'"
+            "  group by r.event_id, r.source_id),"
+            " scored as ("
+            "  select event_id, round(sum(power(0.5, greatest(extract(epoch from"
+            "    %(as_of)s - reported_at), 0) / 3600.0 / %(half_life)s))::numeric,"
+            "    %(digits)s) as trend_score"
+            "  from coverage where reported_at > %(since)s group by event_id)"
+            f" select {_prefixed('e', EVENT_COLUMNS)}, s.trend_score"
+            " from events e join scored s on s.event_id = e.id"
+            f" where cardinality(e.tabs) > 0 and not e.claim_only {page_condition}"
+            " order by s.trend_score desc, e.id desc limit %(limit)s",
+            params,
+        ).fetchall()
+        has_more = len(rows) > limit
+        rows = rows[:limit]
+        events = events_from_rows(cur, rows)
+    next_cursor = None
+    if has_more:
+        next_cursor = _encode_trending_cursor(as_of, rows[-1]["trend_score"], rows[-1]["id"])
+    return EventPage(events=events, next_cursor=next_cursor)
+
+
+def _prefixed(alias: str, columns: str) -> str:
+    return ", ".join(f"{alias}.{c.strip()}" for c in columns.split(","))
+
+
+def _encode_trending_cursor(as_of: datetime, score: Decimal, event_id: int) -> str:
+    raw = f"trending|{as_of.isoformat()}|{score}|{event_id}".encode()
+    return base64.urlsafe_b64encode(raw).decode().rstrip("=")
+
+
+def _decode_trending_cursor(cursor: str) -> tuple[datetime, tuple[Decimal, int]]:
+    try:
+        raw = base64.urlsafe_b64decode(cursor + "=" * (-len(cursor) % 4)).decode()
+        kind, stamp, score, event_id = raw.split("|")
+        as_of = datetime.fromisoformat(stamp)
+        if kind != "trending" or as_of.tzinfo is None:
+            raise ValueError(cursor)
+        value = Decimal(score)
+        if not value.is_finite():
+            raise ValueError(cursor)
+        return as_of, (value, int(event_id))
+    except (binascii.Error, UnicodeDecodeError, ValueError, ArithmeticError) as exc:
+        raise InvalidCursor(cursor) from exc
