@@ -8,3 +8,4 @@ headline, and links point at `example.com`. Test data only: never loaded into pr
 |---|---|
 | `text-not-markup.xml` | Browser seam: a headline with `<`, `&` and an escaped `<script>` must reach the page as text. It names a breach so that it lands in the All tab. |
 | `vulnerability-gate.xml` | Pipeline, API and browser seams: flaws in products on the "people use" list (Windows, Chrome) that are exploited, critical, or neither. No real capture had one. |
+| `publisher-images.xml` | Browser seam: two breaches whose feed items carry an image URL on `images.example.com`. The browser suite answers one with a picture and the other with an error, to check the image, its credit and the fallback tile. |

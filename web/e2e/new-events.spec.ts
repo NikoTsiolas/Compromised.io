@@ -72,6 +72,14 @@ test("new events wait behind the bar until the reader asks for them", async ({
 
   await bar.click();
   await expect(topHeading).toHaveText(SYNTHETIC_HEADLINE);
+  // The newly arrived story fades in; stories that were already on the page and only moved
+  // down do not.
+  await expect(topHeading.locator("[data-fade-word]").first()).toBeVisible();
+  const moved = page.getByRole("article").filter({ hasText: NEWEST_REAL });
+  await expect(moved.locator("[data-fade-word]")).toHaveCount(0);
+  await expect(
+    page.getByRole("region", { name: "All events" }).locator("[data-fade-word]"),
+  ).toHaveCount(0);
   await expect(bar).toHaveCount(0);
   await expect(page.getByRole("heading", { name: NEWEST_REAL })).toBeVisible();
 });

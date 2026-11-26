@@ -148,3 +148,76 @@
     animation-duration: 0ms !important;
   }
 }
+
+/* ══ Homepage grid ═══════════════════════════════════════════════════════════
+   Phones and tablets: featured stories, then the widgets, then the feed.
+   Desktop: the rail runs beside both, on the side the reader chose. The side is
+   set on <html> by the rail's pre-paint script (components/bencho-pro/arrange). */
+.home-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "featured" "rail" "feed";
+}
+.home-featured { grid-area: featured; }
+.home-rail { grid-area: rail; margin-top: 2rem; }
+.home-feed { grid-area: feed; }
+
+@media (min-width: 1024px) {
+  .home-grid {
+    grid-template-columns: minmax(0, 1fr) 300px;
+    grid-template-rows: auto 1fr;
+    grid-template-areas: "featured rail" "feed rail";
+    column-gap: 40px;
+  }
+  html[data-rail-side="left"] .home-grid {
+    grid-template-columns: 300px minmax(0, 1fr);
+    grid-template-areas: "rail featured" "rail feed";
+  }
+  .home-rail { margin-top: 1.5rem; align-self: start; }
+}
+
+/* ══ Event tile ══════════════════════════════════════════════════════════════
+   Five restrained grounds, one per organisation (picked by name), each a small
+   step off the page in light and dark, with a hairline inside the edge. */
+:root {
+  --tile-1: #ebe8e0; /* stone */
+  --tile-2: #e4e7e1; /* sage */
+  --tile-3: #e3e6ea; /* slate */
+  --tile-4: #eee6da; /* sand */
+  --tile-5: #ece2de; /* clay */
+}
+.dark {
+  --tile-1: #1f1e1c;
+  --tile-2: #1c1f1c;
+  --tile-3: #1c1e22;
+  --tile-4: #221f1a;
+  --tile-5: #231d1c;
+}
+.event-tile { background: var(--tile-1); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c-ink) 8%, transparent); }
+.event-tile[data-tile="2"] { background: var(--tile-2); }
+.event-tile[data-tile="3"] { background: var(--tile-3); }
+.event-tile[data-tile="4"] { background: var(--tile-4); }
+.event-tile[data-tile="5"] { background: var(--tile-5); }
+
+/* ══ Exploitation chart ══════════════════════════════════════════════════════
+   After Bencho's Stacked bars (MIT): de-emphasis grey columns, spike months in
+   the muted red, 4px rounded data-end square at the baseline; while a month is
+   active the others step back by mixing toward the surface, never fading. */
+.xchart-bar {
+  border-radius: 4px 4px 0 0;
+  background: color-mix(in srgb, var(--c-ink) 30%, var(--c-surface));
+  transition: background-color 160ms ease;
+}
+.xchart-bar.xchart-spike { background: var(--c-accent); }
+.xchart[data-scrub] .xchart-col:not([data-on]) .xchart-bar {
+  background: color-mix(in srgb, var(--c-ink) 14%, var(--c-surface));
+}
+.xchart[data-scrub] .xchart-col:not([data-on]) .xchart-bar.xchart-spike {
+  background: color-mix(in srgb, var(--c-accent) 45%, var(--c-surface));
+}
+.xchart-ring,
+.xchart-tip {
+  transition:
+    left 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 160ms ease;
+}

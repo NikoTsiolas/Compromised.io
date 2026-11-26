@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SYNTHETIC TEST DATA, hand-written for the publisher-image browser tests. Not a real capture, not a real incident. -->
+<rss version="2.0" xmlns:media="http://search.yahoo.com/mrss/">
+<channel>
+  <title>Synthetic test feed</title>
+  <link>https://example.com/</link>
+  <description>Synthetic test data</description>
+  <item>
+    <title>[Synthetic test item] Adobe confirms data breach exposing customer records</title>
+    <link>https://example.com/synthetic-adobe-breach</link>
+    <guid>https://example.com/synthetic-adobe-breach</guid>
+    <pubDate>Sun, 01 Nov 2026 12:00:00 +0000</pubDate>
+    <description>Synthetic excerpt: the item carries an image that loads.</description>
+    <media:content url="https://images.example.com/synthetic/loads.png" medium="image"/>
+  </item>
+  <item>
+    <title>[Synthetic test item] Slack data breach exposes workspace messages</title>
+    <link>https://example.com/synthetic-slack-breach</link>
+    <guid>https://example.com/synthetic-slack-breach</guid>
+    <pubDate>Sun, 01 Nov 2026 11:00:00 +0000</pubDate>
+    <description>Synthetic excerpt: the item carries an image whose URL is broken.</description>
+    <enclosure url="https://images.example.com/synthetic/broken.png" type="image/png" length="0"/>
+  </item>
+</channel>
+</rss>

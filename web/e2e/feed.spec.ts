@@ -1,6 +1,11 @@
 // Browser seam: the running web app against the API and a database seeded with the real
 // BleepingComputer capture plus synthetic items (see api/tests/fixtures/*/README.md).
+// Times are checked in New York so that "local time" is visibly not UTC.
 import { expect, test, type Page } from "@playwright/test";
+
+import { servePublisherImages } from "./images";
+
+test.use({ timezoneId: "America/New_York" });
 
 const ONEPASSWORD =
   "1Password customer data stolen after employee GitHub account breach";
@@ -10,21 +15,32 @@ const SYNTHETIC_ZERO_DAY =
   "[Synthetic test item] Windows zero-day exploited in attacks";
 const SYNTHETIC_CRITICAL =
   "[Synthetic test item] Critical Chrome flaw fixed in security update";
+const SYNTHETIC_ADOBE =
+  "[Synthetic test item] Adobe confirms data breach exposing customer records";
+const SYNTHETIC_SLACK =
+  "[Synthetic test item] Slack data breach exposes workspace messages";
 
 const eventRows = (page: Page) => page.getByRole("article");
 const headlines = (page: Page) => eventRows(page).getByRole("heading");
+const featured = (page: Page) => page.getByRole("region", { name: "Featured" });
+const lead = (page: Page) => featured(page).getByRole("article").first();
+
+test.beforeEach(async ({ page }) => {
+  await servePublisherImages(page);
+});
 
 test("the All tab lists in-scope events newest first, linking to the publisher", async ({
   page,
 }) => {
   await page.goto("/");
 
-  const rows = eventRows(page);
   await expect(headlines(page)).toHaveText([
     ONEPASSWORD,
     SYNTHETIC_ZERO_DAY,
     SYNTHETIC_CRITICAL,
     SYNTHETIC_MARKUP,
+    SYNTHETIC_ADOBE,
+    SYNTHETIC_SLACK,
   ]);
 
   const headline = page.getByRole("link", { name: ONEPASSWORD });
@@ -34,22 +50,111 @@ test("the All tab lists in-scope events newest first, linking to the publisher",
   );
   await expect(headline).toHaveAttribute("target", "_blank");
   await expect(headline).toHaveAttribute("rel", "noopener noreferrer");
+});
 
-  const first = rows.nth(0);
-  await expect(first).toContainText("1Password");
-  await expect(first).toContainText("Data breach");
-  await expect(first).toContainText("BleepingComputer");
-  const time = first.locator("time").first();
+test("the featured section leads with the newest named, unclaimed event and three cards", async ({
+  page,
+}) => {
+  await page.goto("/");
+
+  const story = lead(page);
+  await expect(story.getByRole("heading", { level: 2 })).toHaveText(ONEPASSWORD);
+  await expect(story).toContainText("1Password");
+  await expect(story).toContainText("Data breach");
+  await expect(story).toContainText("BleepingComputer");
+  await expect(story).toContainText("1 source");
+  await expect(story).toContainText(/Published .*ago/);
+
+  const cards = featured(page).getByRole("list", { name: "More top stories" });
+  await expect(cards.getByRole("heading")).toHaveText([
+    SYNTHETIC_ZERO_DAY,
+    SYNTHETIC_CRITICAL,
+    SYNTHETIC_MARKUP,
+  ]);
+
+  // The feed below continues after the featured stories and never repeats them.
+  const feed = page.getByRole("region", { name: "All events" });
+  await expect(feed.getByRole("heading", { level: 3 })).toHaveText([
+    SYNTHETIC_ADOBE,
+    SYNTHETIC_SLACK,
+  ]);
+});
+
+test("times are shown in the reader's own time zone without hydration errors", async ({
+  page,
+}) => {
+  const problems: string[] = [];
+  page.on("console", (m) => {
+    if (m.type() === "error") problems.push(m.text());
+  });
+  page.on("pageerror", (e) => problems.push(e.message));
+  await page.goto("/");
+
+  const time = lead(page).locator("time").first();
   await expect(time).toHaveAttribute("datetime", "2026-11-25T21:33:33Z");
-  await expect(time).toContainText("21:33");
-  await expect(first).toContainText(/ ago|yesterday/);
+  // 21:33 UTC is 16:33 in New York.
+  await expect(time).toContainText("16:33");
+  await expect(time).not.toContainText("UTC");
+
+  await lead(page).getByRole("button", { name: "Technical details" }).click();
+  await expect(lead(page).getByText("25 Nov 2026, 16:33 EST")).toBeVisible();
+  expect(problems.filter((p) => /hydrat/i.test(p))).toEqual([]);
+});
+
+test("a publisher's own image is loaded from the publisher, credited, with no referrer", async ({
+  page,
+}) => {
+  await page.goto("/");
+
+  const adobe = eventRows(page).filter({ hasText: SYNTHETIC_ADOBE });
+  const image = adobe.getByRole("img");
+  await expect(image).toHaveAttribute(
+    "src",
+    "https://images.example.com/synthetic/loads.png",
+  );
+  await expect(image).toHaveAttribute("referrerpolicy", "no-referrer");
+  await expect
+    .poll(() => image.evaluate((el: HTMLImageElement) => el.naturalWidth))
+    .toBeGreaterThan(0);
+  await expect(adobe.getByText("Image: Dark Reading")).toBeVisible();
+});
+
+test("an event whose image is broken or missing gets a designed tile instead", async ({
+  page,
+}) => {
+  await page.goto("/");
+
+  // Broken image URL: the lettermark tile replaces it and the credit goes with it.
+  const slack = eventRows(page).filter({ hasText: SYNTHETIC_SLACK });
+  const tile = slack.locator("[data-media]");
+  await expect(tile).toHaveAttribute("data-media", "lettermark");
+  await expect(tile).toHaveText("S");
+  await expect(slack.locator("img")).toHaveCount(0);
+  await expect(slack.getByText(/^Image:/)).toHaveCount(0);
+
+  // No image in the feed, and a logo the catalog can resolve: the company's logo.
+  await expect(lead(page).locator("[data-media]")).toHaveAttribute(
+    "data-media",
+    "logo",
+  );
+  await expect(
+    lead(page).getByRole("img", { name: "1Password logo" }),
+  ).toBeVisible();
+
+  // No image and no logo: a lettermark.
+  const windows = eventRows(page).filter({ hasText: SYNTHETIC_ZERO_DAY });
+  await expect(windows.locator("[data-media]")).toHaveAttribute(
+    "data-media",
+    "lettermark",
+  );
+  await expect(windows.locator("[data-media]")).toHaveText("W");
 });
 
 test("type is Helvetica Neue first, with monospace for times", async ({
   page,
 }) => {
   await page.goto("/");
-  const first = page.getByRole("article").first();
+  const first = lead(page);
 
   const headlineFont = await first
     .getByRole("heading")
@@ -67,10 +172,9 @@ test("fields that later tickets fill show a quiet empty state, never invented va
   page,
 }) => {
   await page.goto("/");
-  const first = page.getByRole("article").first();
 
-  await expect(first).toContainText("Not yet assessed");
-  await expect(first).not.toContainText("/100");
+  await expect(lead(page)).toContainText("Not yet assessed");
+  await expect(page.locator("main")).not.toContainText("/100");
   await expect(page.getByText("Sample data")).toHaveCount(0);
 });
 
@@ -93,6 +197,7 @@ test("section tabs come from the API, each with its own URL, and filter the feed
   await tab("Research").click();
   await expect(page).toHaveURL(/\?tab=research$/);
   await expect(tab("Research")).toHaveAttribute("aria-selected", "true");
+  await expect(featured(page)).toHaveCount(0);
   await expect(headlines(page)).toHaveText([
     "SYS010 malware abuses browser management to spy on Gmail, Outlook",
   ]);
@@ -102,7 +207,12 @@ test("section tabs come from the API, each with its own URL, and filter the feed
   await expect(headlines(page)).toHaveText([SYNTHETIC_ZERO_DAY]);
 
   await tab("Breaches").click();
-  await expect(headlines(page)).toHaveText([ONEPASSWORD, SYNTHETIC_MARKUP]);
+  await expect(headlines(page)).toHaveText([
+    ONEPASSWORD,
+    SYNTHETIC_MARKUP,
+    SYNTHETIC_ADOBE,
+    SYNTHETIC_SLACK,
+  ]);
 
   await tab("Trending").click();
   await expect(eventRows(page)).toHaveCount(0);
@@ -110,7 +220,7 @@ test("section tabs come from the API, each with its own URL, and filter the feed
 
   await tab("All").click();
   await expect(page).toHaveURL(/\/$/);
-  await expect(eventRows(page)).toHaveCount(4);
+  await expect(eventRows(page)).toHaveCount(6);
 });
 
 test("text from the API is rendered as text, never as markup", async ({
@@ -126,11 +236,11 @@ test("text from the API is rendered as text, never as markup", async ({
   ).toBeUndefined();
 });
 
-test("technical details expand inline under the row and collapse again", async ({
+test("technical details expand inline under the story and collapse again", async ({
   page,
 }) => {
   await page.goto("/");
-  const first = page.getByRole("article").first();
+  const first = lead(page);
   const toggle = first.getByRole("button", { name: "Technical details" });
 
   await expect(toggle).toHaveAttribute("aria-expanded", "false");
@@ -139,13 +249,42 @@ test("technical details expand inline under the row and collapse again", async (
   await toggle.click();
   await expect(toggle).toHaveAttribute("aria-expanded", "true");
   await expect(first.getByText("CVE identifiers")).toBeVisible();
-  await expect(first.getByText("25 Nov 2026, 21:33 UTC")).toBeVisible();
   const source = first.getByRole("link", { name: ONEPASSWORD }).last();
   await expect(source).toHaveAttribute("rel", "noopener noreferrer");
 
   await toggle.click();
   await expect(toggle).toHaveAttribute("aria-expanded", "false");
   await expect(first.getByText("CVE identifiers")).toBeHidden();
+});
+
+test("the lead headline fades in word by word, and not at all under reduced motion", async ({
+  page,
+}) => {
+  const words = () =>
+    lead(page)
+      .getByRole("heading", { level: 2 })
+      .locator("[data-fade-word]");
+  const animation = () =>
+    words()
+      .first()
+      .evaluate((el) => getComputedStyle(el).animationName);
+
+  await page.goto("/");
+  await expect(words().first()).toBeVisible();
+  expect(await animation()).not.toBe("none");
+  // Ordinary feed rows never fade.
+  const row = page
+    .getByRole("region", { name: "All events" })
+    .getByRole("article")
+    .first();
+  await expect(row.locator("[data-fade-word]")).toHaveCount(0);
+
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.reload();
+  expect(await animation()).toBe("none");
+  await expect(lead(page).getByRole("heading", { level: 2 })).toHaveText(
+    ONEPASSWORD,
+  );
 });
 
 test("the theme switch moves between light and dark and is remembered", async ({
@@ -176,7 +315,7 @@ test("the theme switch moves between light and dark and is remembered", async ({
 test.describe("at phone width", () => {
   test.use({ viewport: { width: 375, height: 812 }, hasTouch: true });
 
-  test("the feed fits the screen, tabs scroll sideways and rows still expand", async ({
+  test("featured stories, then the widgets, then the feed, all within the screen", async ({
     page,
   }) => {
     await page.goto("/");
@@ -188,13 +327,19 @@ test.describe("at phone width", () => {
     );
     expect(overflow).toBe(0);
 
-    const first = page.getByRole("article").first();
+    const top = async (role: "region" | "complementary", name: string) =>
+      (await page.getByRole(role, { name }).boundingBox())!.y;
+    const featuredTop = await top("region", "Featured");
+    const widgetsTop = await top("complementary", "Widgets");
+    const feedTop = await top("region", "All events");
+    expect(featuredTop).toBeLessThan(widgetsTop);
+    expect(widgetsTop).toBeLessThan(feedTop);
+
+    // Widgets stack and are not draggable on phones.
     await expect(
-      first.getByRole("link", { name: ONEPASSWORD }).first(),
-    ).toBeVisible();
-    await expect(
-      first.getByText("Not yet assessed").filter({ visible: true }),
-    ).toHaveCount(1);
+      page.getByRole("button", { name: /^Move / }).filter({ visible: true }),
+    ).toHaveCount(0);
+
     await expect(page.getByRole("link", { name: "Search" })).toBeVisible();
     await expect(
       page.getByRole("switch", { name: "Dark theme" }),
@@ -206,10 +351,12 @@ test.describe("at phone width", () => {
     );
     expect(scrolls).toBe(true);
 
-    const toggle = first.getByRole("button", { name: "Technical details" });
+    const toggle = lead(page).getByRole("button", {
+      name: "Technical details",
+    });
     const box = await toggle.boundingBox();
     expect(box!.height).toBeGreaterThanOrEqual(44);
     await toggle.tap();
-    await expect(first.getByText("CVE identifiers")).toBeVisible();
+    await expect(lead(page).getByText("CVE identifiers")).toBeVisible();
   });
 });

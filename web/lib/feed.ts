@@ -1,9 +1,12 @@
 // What a feed row shows, independent of where the values come from (the API, or the clearly
 // labelled sample data on /preview). `undefined` means "this field does not exist yet" and is
 // rendered as a quiet empty state; `null` means "looked for and not known".
-import type { FeedEvent, VerificationStatus } from "@/lib/api";
+import type { FeedEvent, PublisherImage, VerificationStatus } from "@/lib/api";
 
-export type { VerificationStatus };
+export type { PublisherImage, VerificationStatus };
+
+/** A company logo drawn from Simple Icons: the SVG path on a 24x24 grid. */
+export type Logo = { title: string; path: string };
 
 export type Trust = {
   status: VerificationStatus;
@@ -35,6 +38,10 @@ export type FeedItem = {
   /** The API's plain-language name for the category, when it sends one. */
   categoryName?: string;
   logoKey?: string | null;
+  /** Filled on the server from logoKey (lib/logos.ts); null when the catalog has no logo. */
+  logo?: Logo | null;
+  /** Loaded by the browser straight from the publisher, with credit; never by our server. */
+  image?: PublisherImage | null;
   trust?: Trust | null;
   sources: FeedSource[];
   cves?: string[];
@@ -67,6 +74,7 @@ export function toFeedItem(event: FeedEvent): FeedItem {
     category: event.category,
     categoryName: event.category_label,
     logoKey: event.logo_key,
+    image: event.image ?? null,
     trust,
     sources: event.sources.map((s) => ({
       publisher: s.publisher,
@@ -96,55 +104,4 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 export function categoryLabel(category: string): string {
   return CATEGORY_LABELS[category] ?? category.replaceAll("_", " ");
-}
-
-// --- time ------------------------------------------------------------------------------------
-
-const clock = new Intl.DateTimeFormat("en-GB", {
-  hour: "2-digit",
-  minute: "2-digit",
-  hourCycle: "h23",
-  timeZone: "UTC",
-});
-
-/** "11:50" in UTC. */
-export function formatClock(iso: string): string {
-  return clock.format(new Date(iso));
-}
-
-const day = new Intl.DateTimeFormat("en-GB", {
-  weekday: "long",
-  day: "numeric",
-  month: "long",
-  timeZone: "UTC",
-});
-
-/** "Thursday 26 November", in UTC like the times beside it. */
-export function formatDay(iso: string): string {
-  return day.format(new Date(iso)).replace(",", "");
-}
-
-function utcDateKey(iso: string): string {
-  return iso.slice(0, 10);
-}
-
-export type DayGroup = { key: string; label: string; items: FeedItem[] };
-
-/** Consecutive items grouped by UTC calendar day, labelled Today / Yesterday where true. */
-export function groupByDay(items: FeedItem[], now: Date = new Date()): DayGroup[] {
-  const today = now.toISOString().slice(0, 10);
-  const yesterday = new Date(now.getTime() - 86_400_000).toISOString().slice(0, 10);
-  const groups: DayGroup[] = [];
-  for (const item of items) {
-    const key = utcDateKey(new Date(item.publishedAt).toISOString());
-    let group = groups.at(-1);
-    if (!group || group.key !== key) {
-      const prefix = key === today ? "Today" : key === yesterday ? "Yesterday" : null;
-      const label = formatDay(item.publishedAt);
-      group = { key, label: prefix ? `${prefix} · ${label}` : label, items: [] };
-      groups.push(group);
-    }
-    group.items.push(item);
-  }
-  return groups;
 }

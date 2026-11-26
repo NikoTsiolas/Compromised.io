@@ -1,0 +1,38 @@
+/* ══ Text reveal ══════════════════════════════════════════
+   From the Bencho "Text fade" block (Bencho Pro licence, see ../README.md).
+   Token mapping to this project (app/globals.css):
+     --ink, --fill-on  -> inherit the surrounding text colour (headline ink, summary ink-2),
+                          so the block never overrides our type colours
+     --signal          -> --c-focus (the focus ring is the link's own, from globals.css)
+     --d               -> each word's delay, set inline by text-fade.tsx
+     --trv-dur         -> the duration, set inline by text-fade.tsx (900ms at speed 1)
+   The paragraph box rules (.trv width, size, cursor, user-select) are dropped: the text keeps
+   the typography of the heading or paragraph it sits in. */
+.trv {
+  color: inherit;
+}
+
+/* a word never breaks across lines */
+.trv-word {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.trv-bit {
+  display: inline-block;
+  animation: trv-blur var(--trv-dur, 900ms) cubic-bezier(0.16, 1, 0.3, 1) var(--d, 0ms) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trv-bit {
+    animation: none;
+  }
+}
+
+@keyframes trv-blur {
+  from {
+    opacity: 0;
+    filter: blur(8px);
+    translate: 0 0.3em;
+  }
+}

@@ -35,12 +35,19 @@ export type FeedEvent = {
   logo_key: string | null;
   tabs: string[];
   sources: EventSource[];
+  /** The publisher's own feed image, or null (none, or images switched off). */
+  image?: PublisherImage | null;
   summary?: string | null;
   status?: VerificationStatus | null;
   score?: number | null;
   cves?: string[];
   attack_vector?: string | null;
   action_line?: string | null;
+};
+
+export type PublisherImage = {
+  url: string;
+  publisher: string;
 };
 
 export type Tab = {

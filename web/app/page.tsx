@@ -1,34 +1,30 @@
 // The homepage is the feed. Everything from the API is rendered as React text, never as HTML.
-// Next.js 16 runs with cacheComponents, so the data-fetching part sits inside <Suspense>.
+// Next.js 16 runs with cacheComponents, so the data-fetching parts sit inside <Suspense>.
 import { Suspense } from "react";
 
+import { HomeView } from "@/components/feed/home-view";
 import { FeedSkeleton } from "@/components/feed/feed-skeleton";
-import { FeedView } from "@/components/feed/feed-view";
-import { IngestionIndicator, SourceHealthList } from "@/components/ingestion-status";
+import { IngestionIndicator, SourceStatus } from "@/components/ingestion-status";
 import { SiteHeader } from "@/components/site/site-header";
+import { railWidgets } from "@/components/widgets/rail-widgets";
 import { listEvents, listTabs, type EventPage, type Tab } from "@/lib/api";
 import { DEFAULT_TAB, toFeedItem } from "@/lib/feed";
+import { withLogo } from "@/lib/logos";
 
 export default function Home({ searchParams }: PageProps<"/">) {
   return (
     <>
       <SiteHeader
-        statusSlot={
+        status={
           <Suspense fallback={null}>
             <IngestionIndicator />
           </Suspense>
         }
       />
-      <main className="mx-auto max-w-[1120px] px-4 pb-16 sm:px-6 lg:px-10">
+      <main className="mx-auto max-w-[1240px] px-4 pb-16 sm:px-6 lg:px-10">
         <Suspense fallback={<FeedSkeleton />}>
           <Feed searchParams={searchParams} />
         </Suspense>
-        <section aria-labelledby="sources-heading" className="mt-12">
-          <h2 id="sources-heading">Sources</h2>
-          <Suspense fallback={null}>
-            <SourceHealthList />
-          </Suspense>
-        </section>
       </main>
     </>
   );
@@ -68,11 +64,25 @@ async function Feed({
     );
   }
 
+  // Widgets other than source status have no API yet (#15): they get null and say so.
+  const widgets = railWidgets({
+    frequency: null,
+    recentlyExploited: null,
+    mostReported: null,
+    sourceStatus: (
+      <Suspense fallback={<p className="text-[13px] text-ink-3">Loading sources…</p>}>
+        <SourceStatus />
+      </Suspense>
+    ),
+  });
+
   return (
-    <FeedView
-      items={page.events.map(toFeedItem)}
+    <HomeView
+      items={page.events.map(toFeedItem).map(withLogo)}
       tabs={tabs}
       tab={tab}
+      withFeatured={tab === DEFAULT_TAB && typeof cursor !== "string"}
+      widgets={widgets}
       olderHref={olderHref(tab, page.next_cursor)}
     />
   );

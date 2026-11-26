@@ -4,23 +4,20 @@ import type { ReactNode } from "react";
 import { Search } from "lucide-react";
 import Link from "next/link";
 
-import { LiveStatus, type IngestionStatus } from "@/components/site/live-status";
 import { SearchField } from "@/components/site/search-field";
-import { ThemeSwitch } from "@/components/site/theme-switch";
+import { ThemeSwitch } from "@/components/bencho-pro/theme-switch";
 import { Wordmark } from "@/components/site/wordmark";
 
 export function SiteHeader({
-  status = { state: "unknown" },
-  statusSlot,
+  status,
 }: {
-  status?: IngestionStatus;
-  /** Replaces the static indicator, e.g. with a streamed one fed by GET /v1/status. */
-  statusSlot?: ReactNode;
+  /** The ingestion indicator (components/ingestion-status.tsx), streamed on the real page. */
+  status: ReactNode;
 }) {
-  const indicator = statusSlot ?? <LiveStatus status={status} />;
+  const indicator = status;
   return (
     <header className="border-b border-rule">
-      <div className="mx-auto flex max-w-[1120px] items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-10">
+      <div className="mx-auto flex max-w-[1240px] items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-10">
         <Wordmark />
         <div className="flex items-center gap-3 sm:gap-4">
           <div className="hidden md:block">
@@ -39,8 +36,8 @@ export function SiteHeader({
           <ThemeSwitch />
         </div>
       </div>
-      <div className="mx-auto max-w-[1120px] px-4 pb-3 sm:px-6 md:hidden">
-        {statusSlot ? null : <LiveStatus status={status} />}
+      <div className="mx-auto max-w-[1240px] px-4 pb-3 sm:px-6 md:hidden">
+        {indicator}
       </div>
     </header>
   );
