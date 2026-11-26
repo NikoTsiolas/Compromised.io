@@ -140,8 +140,8 @@ def create_event(conn: psycopg.Connection, record: SourceRecord) -> int:
 def insert_record(conn: psycopg.Connection, record: SourceRecord, event_id: int) -> None:
     conn.execute(
         "insert into source_records (source_id, guid, canonical_url, original_url, headline,"
-        " excerpt, published_at, fetched_at, metadata, event_id)"
-        " values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+        " excerpt, published_at, fetched_at, metadata, event_id, image_url)"
+        " values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
         (
             record.source_id,
             record.guid,
@@ -153,6 +153,7 @@ def insert_record(conn: psycopg.Connection, record: SourceRecord, event_id: int)
             record.fetched_at,
             Jsonb(record.metadata),
             event_id,
+            record.image_url,
         ),
     )
 
@@ -187,7 +188,7 @@ def event_records(conn: psycopg.Connection, event_id: int) -> list[SourceRecord]
     with conn.cursor(row_factory=dict_row) as cur:
         rows = cur.execute(
             "select source_id, guid, canonical_url, original_url, headline, excerpt,"
-            " published_at, fetched_at, metadata from source_records"
+            " published_at, fetched_at, metadata, image_url from source_records"
             " where event_id = %s order by published_at, id",
             (event_id,),
         ).fetchall()
@@ -254,7 +255,8 @@ def _sources_for(cur, event_ids: list[int]) -> dict[int, list[EventSource]]:
     if not event_ids:
         return {}
     rows = cur.execute(
-        "select r.event_id, s.name, r.original_url, r.headline, r.excerpt, r.published_at"
+        "select r.event_id, s.name, r.original_url, r.headline, r.excerpt, r.published_at,"
+        " r.image_url"
         " from source_records r join sources s on s.id = r.source_id"
         " where r.event_id = any(%s) order by r.published_at, r.id",
         (event_ids,),
@@ -268,6 +270,7 @@ def _sources_for(cur, event_ids: list[int]) -> dict[int, list[EventSource]]:
                 headline=r["headline"],
                 excerpt=r["excerpt"],
                 published_at=r["published_at"],
+                image_url=r["image_url"],
             )
         )
     return out

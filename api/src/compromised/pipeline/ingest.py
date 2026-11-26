@@ -10,7 +10,7 @@ from compromised import storage
 from compromised.pipeline import deduplicator, scope
 from compromised.pipeline.normalizer import normalize
 from compromised.pipeline.parsers import PARSERS
-from compromised.sources import Source
+from compromised.sources import Source, Tier
 
 
 @dataclass(frozen=True)
@@ -27,7 +27,12 @@ def ingest(
     with conn.transaction():
         storage.upsert_source(conn, source)
         for item in items:
-            record = normalize(item, source_id=source.id, fetched_at=fetched_at)
+            record = normalize(
+                item,
+                source_id=source.id,
+                fetched_at=fetched_at,
+                images=source.tier != Tier.ATTACKER_CLAIM,
+            )
             if record is None:
                 continue
             event_id = deduplicator.assign(conn, record)

@@ -48,9 +48,28 @@ def parse_rss(body: bytes) -> list[ParsedItem]:
                 summary_html=entry.get("summary", ""),
                 published=_published(entry),
                 metadata=metadata,
+                image_url=_feed_image(entry),
             )
         )
     return items
+
+
+def _feed_image(entry) -> str | None:
+    """The image the publisher attached to the item: media:content, media:thumbnail, or an
+    image enclosure, in that order. Only the URL is read; nothing is fetched."""
+    for media in entry.get("media_content", []):
+        medium = media.get("medium", "")
+        kind = media.get("type", "")
+        if media.get("url") and (medium == "image" or kind.startswith("image/")):
+            return media["url"]
+    for thumb in entry.get("media_thumbnail", []):
+        if thumb.get("url"):
+            return thumb["url"]
+    for link in entry.get("links", []):
+        is_image = link.get("type", "").startswith("image/")
+        if link.get("rel") == "enclosure" and is_image and link.get("href"):
+            return link["href"]
+    return None
 
 
 def _published(entry) -> datetime | None:

@@ -23,8 +23,13 @@ BOILERPLATE_TAIL = re.compile(
 DANGLING_TAG = re.compile(r"<[A-Za-z!/?][^<>]*$")
 
 
-def normalize(item: ParsedItem, *, source_id: str, fetched_at: datetime) -> SourceRecord | None:
-    """Return the record to store, or None when the item has no usable link or headline."""
+def normalize(
+    item: ParsedItem, *, source_id: str, fetched_at: datetime, images: bool = True
+) -> SourceRecord | None:
+    """Return the record to store, or None when the item has no usable link or headline.
+
+    ``images=False`` drops the feed image (attacker-claim sources, whose images are screenshots
+    of leak sites)."""
     canonical = canonical_url(item.link or "")
     headline = plain_text(item.title)
     if canonical is None or not headline:
@@ -40,6 +45,7 @@ def normalize(item: ParsedItem, *, source_id: str, fetched_at: datetime) -> Sour
         published_at=published,
         fetched_at=fetched_at.astimezone(UTC),
         metadata={k: _plain_metadata(v) for k, v in item.metadata.items()},
+        image_url=image_url(item.image_url) if images else None,
     )
 
 
@@ -65,6 +71,32 @@ def canonical_url(url: str) -> str | None:
         ]
     )
     return urlunsplit((scheme, netloc, parts.path or "/", query, ""))
+
+
+IMAGE_URL_LIMIT = 2048
+
+
+def image_url(url: str | None) -> str | None:
+    """The feed image's URL if it is a plain https URL; anything else is dropped, not repaired.
+
+    The browser loads it straight from the publisher, so http (mixed content), other schemes,
+    .onion hosts, credentials in the URL and oversized values are all refused.
+    """
+    if not url:
+        return None
+    url = url.strip()
+    if len(url) > IMAGE_URL_LIMIT or any(c.isspace() or c in "\"'<>" for c in url):
+        return None
+    try:
+        parts = urlsplit(url)
+        host = (parts.hostname or "").lower()
+    except ValueError:
+        return None
+    if parts.scheme.lower() != "https" or not host or host.endswith(".onion"):
+        return None
+    if parts.username or parts.password:
+        return None
+    return urlunsplit(("https", parts.netloc.lower(), parts.path or "/", parts.query, ""))
 
 
 def plain_text(fragment: str) -> str:

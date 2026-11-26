@@ -107,7 +107,7 @@ def test_events_carry_category_commentary_flag_organization_and_logo_key(client)
         for e in client.get("/v1/events", params={"tab": "breaches"}).json()["events"]
         if e["title"] == ONEPASSWORD_BC
     ]
-    assert {k: event[k] for k in event if k not in {"id", "sources", "published_at"}} == {
+    assert {k: event[k] for k in event if k not in {"id", "sources", "published_at", "image"}} == {
         "title": ONEPASSWORD_BC,
         "first_seen_at": "2026-11-26T14:54:07Z",
         "category": "data_breach",
@@ -154,3 +154,37 @@ def test_a_malformed_cursor_is_a_client_error(client):
 def test_page_size_is_bounded(client):
     assert client.get("/v1/events", params={"limit": 0}).status_code == 422
     assert client.get("/v1/events", params={"limit": 101}).status_code == 422
+
+
+DOTNET_IMAGE = (
+    "https://eu-images.contentstack.com/v3/assets/blt6d90778a997de1cd/blt62eb1a39d76dff3b/"
+    "6b06d44d51725d29015e8423/Gorodenkoff-developer-coding-shutterstock.png"
+    "?width=720&quality=80&disable=upscale"
+)
+
+
+def _event(client, title, tab="all"):
+    events = client.get("/v1/events", params={"tab": tab, "limit": 100}).json()["events"]
+    return next(e for e in events if e["title"] == title)
+
+
+def test_an_event_carries_its_publishers_feed_image_with_the_publishers_name(client):
+    assert _event(client, DOTNET)["image"] == {"url": DOTNET_IMAGE, "publisher": "Dark Reading"}
+    # BleepingComputer's feed has no images.
+    assert _event(client, ONEPASSWORD_BC)["image"] is None
+
+
+def test_attacker_claims_never_carry_an_image(client):
+    events = client.get("/v1/events", params={"tab": "ransomware", "limit": 100}).json()["events"]
+    assert events and all(e["image"] is None for e in events)
+
+
+def test_one_switch_turns_publisher_images_off_everywhere(conn, database_url, monkeypatch):
+    ingest(
+        conn, sample_source("darkreading"), real_sample("darkreading.xml"), fetched_at=FETCHED_AT
+    )
+    monkeypatch.setenv("PUBLISHER_IMAGES", "off")
+    with TestClient(create_app(database_url=database_url)) as off:
+        for tab in ("all", "research"):
+            events = off.get("/v1/events", params={"tab": tab}).json()["events"]
+            assert events and all(e["image"] is None for e in events)

@@ -36,6 +36,14 @@ class SourceOut(BaseModel):
     published_at: UtcTimestamp
 
 
+class ImageOut(BaseModel):
+    """The image a publisher put in its own feed. The browser loads it from the publisher with
+    no referrer and credits the publisher; our servers never fetch or store it."""
+
+    url: str
+    publisher: str
+
+
 class EventOut(BaseModel):
     id: int
     title: str
@@ -49,6 +57,7 @@ class EventOut(BaseModel):
     logo_key: str | None
     tabs: list[str]
     sources: list[SourceOut]
+    image: ImageOut | None  # the earliest source's feed image; None when off or absent
 
 
 class TabOut(BaseModel):
@@ -76,6 +85,13 @@ class StatusOut(BaseModel):
     status: str  # starting | live | degraded | down
     last_success_at: UtcTimestamp | None
     sources: list[SourceHealthOut]
+
+
+def _image(event) -> ImageOut | None:
+    for source in event.sources:
+        if source.image_url:
+            return ImageOut(url=source.image_url, publisher=source.publisher)
+    return None
 
 
 def create_app(database_url: str | None = None) -> FastAPI:
@@ -110,7 +126,13 @@ def create_app(database_url: str | None = None) -> FastAPI:
                 raise HTTPException(status_code=400, detail="Invalid cursor") from None
         return EventPageOut(
             events=[
-                EventOut.model_validate({**asdict(e), "category_label": CATEGORIES[e.category]})
+                EventOut.model_validate(
+                    {
+                        **asdict(e),
+                        "category_label": CATEGORIES[e.category],
+                        "image": _image(e) if settings.publisher_images else None,
+                    }
+                )
                 for e in page.events
             ],
             next_cursor=page.next_cursor,
