@@ -104,23 +104,73 @@ def insert_record(conn: psycopg.Connection, record: SourceRecord, event_id: int)
     )
 
 
+def save_classification(conn: psycopg.Connection, event_id: int, facts, tabs) -> None:
+    """Store an event's classification facts (pipeline.scope.EventFacts) and its tabs."""
+    conn.execute(
+        "update events set category = %s, commentary = %s, organization = %s,"
+        " organization_key = %s, logo_key = %s, people_use = %s, exploited = %s,"
+        " critical = %s, claim_only = %s, tabs = %s where id = %s",
+        (
+            facts.category,
+            facts.commentary,
+            facts.organization,
+            facts.organization_key,
+            facts.logo,
+            facts.people_use,
+            facts.exploited,
+            facts.critical,
+            facts.claim_only,
+            sorted(tabs),
+            event_id,
+        ),
+    )
+
+
 # --- reads ------------------------------------------------------------------------------------
 
 
-def list_events(
-    conn: psycopg.Connection, *, limit: int = 20, cursor: str | None = None
-) -> EventPage:
-    """Events newest first (by publication time, then id), keyset-paginated by an opaque cursor."""
-    limit = max(1, min(limit, MAX_PAGE_SIZE))
-    params: list = []
-    where = ""
-    if cursor is not None:
-        published_at, event_id = _decode_cursor(cursor)
-        where = "where (published_at, id) < (%s, %s)"
-        params += [published_at, event_id]
+def event_records(conn: psycopg.Connection, event_id: int) -> list[SourceRecord]:
+    """An event's source records, earliest first."""
     with conn.cursor(row_factory=dict_row) as cur:
         rows = cur.execute(
-            f"select id, title, published_at, first_seen_at from events {where}"
+            "select source_id, guid, canonical_url, original_url, headline, excerpt,"
+            " published_at, fetched_at, metadata from source_records"
+            " where event_id = %s order by published_at, id",
+            (event_id,),
+        ).fetchall()
+    return [SourceRecord(**r) for r in rows]
+
+
+def all_event_ids(conn: psycopg.Connection) -> list[int]:
+    return [row[0] for row in conn.execute("select id from events order by id")]
+
+
+def list_events(
+    conn: psycopg.Connection,
+    *,
+    limit: int = 20,
+    cursor: str | None = None,
+    tab: str | None = None,
+) -> EventPage:
+    """Events newest first (by publication time, then id), keyset-paginated by an opaque cursor.
+
+    ``tab`` keeps only events in that feed tab; None lists every stored event.
+    """
+    limit = max(1, min(limit, MAX_PAGE_SIZE))
+    params: list = []
+    conditions = []
+    if cursor is not None:
+        published_at, event_id = _decode_cursor(cursor)
+        conditions.append("(published_at, id) < (%s, %s)")
+        params += [published_at, event_id]
+    if tab is not None:
+        conditions.append("tabs @> array[%s]::text[]")
+        params.append(tab)
+    where = f"where {' and '.join(conditions)}" if conditions else ""
+    with conn.cursor(row_factory=dict_row) as cur:
+        rows = cur.execute(
+            "select id, title, published_at, first_seen_at, category, commentary, organization,"
+            f" organization_key, logo_key, tabs from events {where}"
             " order by published_at desc, id desc limit %s",
             [*params, limit + 1],
         ).fetchall()
@@ -134,6 +184,12 @@ def list_events(
             published_at=r["published_at"],
             first_seen_at=r["first_seen_at"],
             sources=sources.get(r["id"], []),
+            category=r["category"],
+            commentary=r["commentary"],
+            affected_organization=r["organization"] or "unknown",
+            organization_key=r["organization_key"],
+            logo_key=r["logo_key"],
+            tabs=tuple(r["tabs"]),
         )
         for r in rows
     ]

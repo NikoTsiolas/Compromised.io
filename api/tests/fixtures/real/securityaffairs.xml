@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"
+	xmlns:content="http://purl.org/rss/1.0/modules/content/"
+	xmlns:wfw="http://wellformedweb.org/CommentAPI/"
+	xmlns:dc="http://purl.org/dc/elements/1.1/"
+	xmlns:atom="http://www.w3.org/2005/Atom"
+	xmlns:sy="http://purl.org/rss/1.0/modules/syndication/"
+	xmlns:slash="http://purl.org/rss/1.0/modules/slash/"
+	>
+
+<channel>
+	<title>Security Affairs</title>
+	<atom:link href="https://securityaffairs.com/feed" rel="self" type="application/rss+xml" />
+	<link>https://securityaffairs.com/</link>
+	<description>Read, think, share … Security is everyone&#039;s responsibility</description>
+	<lastBuildDate>Thu, 26 Nov 2026 11:51:13 +0000</lastBuildDate>
+	<language>en-US</language>
+	<sy:updatePeriod>
+	hourly	</sy:updatePeriod>
+	<sy:updateFrequency>
+	1	</sy:updateFrequency>
+	
+<site xmlns="com-wordpress:feed-additions:1">29506073</site>	<item>
+		<title>Australia&#8217;s Flight Centre Data Breach Exposes Customer Records and Passport Details</title>
+		<link>https://securityaffairs.com/204049/data-breach/australias-flight-centre-data-breach-exposes-customer-records-and-passport-details.html</link>
+		
+		<dc:creator><![CDATA[Pierluigi Paganini]]></dc:creator>
+		<pubDate>Thu, 26 Nov 2026 11:51:11 +0000</pubDate>
+				<category><![CDATA[Breaking News]]></category>
+		<category><![CDATA[Cyber Crime]]></category>
+		<category><![CDATA[Data Breach]]></category>
+		<category><![CDATA[Hacking]]></category>
+		<category><![CDATA[Security]]></category>
+		<category><![CDATA[Flight Centre]]></category>
+		<category><![CDATA[Flight Centre Travel Group]]></category>
+		<category><![CDATA[hacking news]]></category>
+		<category><![CDATA[information security news]]></category>
+		<category><![CDATA[IT Information Security]]></category>
+		<category><![CDATA[Pierluigi Paganini]]></category>
+		<category><![CDATA[Security Affairs]]></category>
+		<category><![CDATA[Security News]]></category>
+		<guid isPermaLink="false">https://securityaffairs.com/?p=204049</guid>
+
+					<description><![CDATA[Australia&#8217;s Flight Centre is investigating a third-party breach that exposed customer travel records and limited passport details. Australia’s Flight Centre Travel Group is investigating a cyber incident involving a third-party accommodation booking system that may have exposed a significant number of customer records. The company disclosed the incident on November 26, saying it had detected [&#8230;]]]></description>
+										<content:encoded><![CDATA[<div style="margin-top: 0px; margin-bottom: 0px;" class="sharethis-inline-share-buttons" ></div>
+<h2 class="wp-block-heading">Australia&#8217;s Flight Centre is investigating a third-party breach that exposed customer travel records and limited passport details.</h2>
+
+
+
+<p class="wp-block-paragraph">Australia’s Flight Centre Travel Group is investigating a cyber incident involving a third-party accommodation booking system that may have exposed a significant number of customer records. The company disclosed the incident on November 26, saying it had detected unusual activity in a platform used [truncated for fixture]]]></content:encoded>
+					
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">204049</post-id>	</item>
+		<item>
+		<title>1Password Hacked: Customer Names and Emails Copied, Vaults Untouched</title>
+		<link>https://securityaffairs.com/204031/cyber-crime/1password-hacked-customer-names-and-emails-copied-vaults-untouched.html</link>
+		
+		<dc:creator><![CDATA[Pierluigi Paganini]]></dc:creator>
+		<pubDate>Thu, 26 Nov 2026 09:42:47 +0000</pubDate>
+				<category><![CDATA[Breaking News]]></category>
+		<category><![CDATA[Cyber Crime]]></category>
+		<category><![CDATA[Hacking]]></category>
+		<category><![CDATA[Security]]></category>
+		<category><![CDATA[1Password]]></category>
+		<category><![CDATA[Cybercrime]]></category>
+		<category><![CDATA[data breach]]></category>
+		<category><![CDATA[hacking news]]></category>
+		<category><![CDATA[information security news]]></category>
+		<category><![CDATA[IT Information Security]]></category>
+		<category><![CDATA[Pierluigi Paganini]]></category>
+		<category><![CDATA[Security Affairs]]></category>
+		<category><![CDATA[Security News]]></category>
+		<guid isPermaLink="false">https://securityaffairs.com/?p=204031</guid>
+
+					<description><![CDATA[1Password says an attacker stole customer names and emails through an employee&#8217;s GitHub account, but vaults and passwords remained safe. 1Password has disclosed that an attacker got into some of its backend systems. The company posted its update on November 25 and says customer vaults weren&#8217;t affected. It also says some customer account data was [&#8230;]]]></description>
+										<content:encoded><![CDATA[<div style="margin-top: 0px; margin-bottom: 0px;" class="sharethis-inline-share-buttons" ></div>
+<h2 class="wp-block-heading">1Password says an attacker stole customer names and emails through an employee&#8217;s GitHub account, but vaults and passwords remained safe.</h2>
+
+
+
+<p class="wp-block-paragraph">1Password has disclosed that an attacker got into some of its backend systems. The company posted its update on November 25 and says customer vaults weren&#8217;t affected. It also says some customer account data was copied.</p>
+
+
+
+<p class="wp-block-paragraph"><em>&#8220;An attacker gained a [truncated for fixture]]]></content:encoded>
+					
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">204031</post-id>	</item>
+		<item>
+		<title>U.S. CISA adds HPE, Danfoss, Mitel MiCollab, and Vates Xen Orchestra flaws to its Known Exploited Vulnerabilities catalog</title>
+		<link>https://securityaffairs.com/204014/hacking/u-s-cisa-adds-hpe-juniper-session-smart-conductor-and-session-smart-router-flaw-to-its-known-exploited-vulnerabilities-catalog.html</link>
+		
+		<dc:creator><![CDATA[Pierluigi Paganini]]></dc:creator>
+		<pubDate>Thu, 26 Nov 2026 06:05:09 +0000</pubDate>
+				<category><![CDATA[Breaking News]]></category>
+		<category><![CDATA[Hacking]]></category>
+		<category><![CDATA[Security]]></category>
+		<category><![CDATA[CISA]]></category>
+		<category><![CDATA[hacking news]]></category>
+		<category><![CDATA[information security news]]></category>
+		<category><![CDATA[IT Information Security]]></category>
+		<category><![CDATA[Known Exploited Vulnerabilities Catalog]]></category>
+		<category><![CDATA[Pierluigi Paganini]]></category>
+		<category><![CDATA[Security Affairs]]></category>
+		<category><![CDATA[Security News]]></category>
+		<guid isPermaLink="false">https://securityaffairs.com/?p=204014</guid>
+
+					<description><![CDATA[U.S. Cybersecurity and Infrastructure Security Agency (CISA) adds HPE, Danfoss, Mitel MiCollab, and Vates Xen Orchestra flaws to its Known Exploited Vulnerabilities catalog. The U.S. Cybersecurity and Infrastructure Security Agency (CISA) added the following HPE, Danfoss, Mitel MiCollab, and Vates Xen Orchestra flaws to its Known Exploited Vulnerabilities (KEV) catalog. The first flaw, tracked as CVE-2023-25914 (CVSS [&#8230;]]]></description>
+										<content:encoded><![CDATA[<div style="margin-top: 0px; margin-bottom: 0px;" class="sharethis-inline-share-buttons" ></div>
+<h2 class="wp-block-heading">U.S. Cybersecurity and Infrastructure Security Agency (CISA) adds HPE, Danfoss, Mitel MiCollab, and Vates Xen Orchestra flaws to its Known Exploited Vulnerabilities catalog.</h2>
+
+
+
+<p class="wp-block-paragraph">The U.S. Cybersecurity and Infrastructure Security Agency (CISA) <a href="https://www.cisa.gov/news-events/alerts/2026/11/25/cisa-adds-10-known-exploited-vulnerabilities-catalog">added</a> the following HPE, Danfoss, Mitel MiCollab, and Vates Xen Orchestra flaws [truncated for fixture]]]></content:encoded>
+					
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">204014</post-id>	</item>
+	</channel>
+</rss>
+
+<!--
+Performance optimized by W3 Total Cache. Learn more: https://www.boldgrid.com/w3-total-cache/?utm_source=w3tc&utm_medium=footer_comment&utm_campaign=free_plugin
+
+Object Caching 42/61 objects using Memcached
+Page Caching using Memcached (Page is feed) 
+Database Caching 10/26 queries in 0.045 seconds using Memcached (Request-wide modification query)
+
+Served from: securityaffairs.com @ 2026-11-26 14:39:51 by W3 Total Cache
+-->

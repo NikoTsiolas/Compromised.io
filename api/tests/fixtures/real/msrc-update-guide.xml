@@ -1,0 +1,60 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<rss
+  version="2.0">
+  <channel>
+    <title>MSRC Security Update Guide</title>
+    <link>https://msrc.microsoft.com/update-guide/</link>
+    <description />
+    <lastBuildDate>Tue, 24 Nov 2026 21:11:00 Z</lastBuildDate>
+    <item
+      Revision="1.1000000000">
+      <guid
+        isPermaLink="false">CVE-2026-112732</guid>
+      <link>https://msrc.microsoft.com/update-guide/vulnerability/CVE-2026-112732</link>
+      <category>CVE</category>
+      <title>CVE-2026-112732 Microsoft Office Visio Remote Code Execution Vulnerability</title>
+      <description>Information published. This CVE was addressed by updates that were released in November 2026, but the CVE was inadvertently omitted from the November 2026 Security Updates. This is an informational change only. Customers who have already installed the November 2026 updates do not need to take any further action.</description>
+      <pubDate>Tue, 24 Nov 2026 08:00:00 -0800</pubDate>
+    </item>
+    <item
+      Revision="1.1000000000">
+      <guid
+        isPermaLink="false">CVE-2026-69291</guid>
+      <link>https://msrc.microsoft.com/update-guide/vulnerability/CVE-2026-69291</link>
+      <category>CVE</category>
+      <title>CVE-2026-69291 Windows Volume Manager Extension Driver Remote Code Execution Vulnerability</title>
+      <description>Updated an acknowledgement. This is an informational change only.</description>
+      <pubDate>Mon, 23 Nov 2026 08:00:00 -0800</pubDate>
+    </item>
+    <item
+      Revision="1.1000000000">
+      <guid
+        isPermaLink="false">CVE-2026-78462</guid>
+      <link>https://msrc.microsoft.com/update-guide/vulnerability/CVE-2026-78462</link>
+      <category>CVE</category>
+      <title>CVE-2026-78462 Visual Studio Code Security Feature Bypass Vulnerability</title>
+      <description>Updated an acknowledgement. This is an informational change only.</description>
+      <pubDate>Mon, 23 Nov 2026 08:00:00 -0800</pubDate>
+    </item>
+    <item
+      Revision="1.2000000000">
+      <guid
+        isPermaLink="false">CVE-2026-72965</guid>
+      <link>https://msrc.microsoft.com/update-guide/vulnerability/CVE-2026-72965</link>
+      <category>CVE</category>
+      <title>CVE-2026-72965 Windows WebClient Service Elevation of Privilege Vulnerability</title>
+      <description>Updated an acknowledgement. This is an informational change only.</description>
+      <pubDate>Mon, 23 Nov 2026 08:00:00 -0800</pubDate>
+    </item>
+    <item
+      Revision="1.2000000000">
+      <guid
+        isPermaLink="false">CVE-2026-87697</guid>
+      <link>https://msrc.microsoft.com/update-guide/vulnerability/CVE-2026-87697</link>
+      <category>CVE</category>
+      <title>CVE-2026-87697 .NET Remote Code Execution Vulnerability</title>
+      <description>Updated an acknowledgement. This is an informational change only.</description>
+      <pubDate>Mon, 23 Nov 2026 08:00:00 -0800</pubDate>
+    </item>
+  </channel>
+</rss>
