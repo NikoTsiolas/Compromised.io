@@ -2,7 +2,9 @@
 
 Each organization entry carries its aliases, its vendor, whether it is a product people use
 (the flag that gates vulnerabilities into the feed) and a logo key for the web app. The file
-also lists threat actors and reporters, which are never the affected organization.
+also lists threat actors, reporters and agencies, and every country by its common names; none of
+them is ever the affected organization. A national body with a name of its own ("FinCEN", "US
+Treasury") is not a bare country name and stays an organization.
 """
 
 import json
@@ -33,6 +35,7 @@ class Catalog:
     organizations: tuple[Organization, ...]
     threat_actors: tuple[ThreatActor, ...]
     not_organizations: frozenset[str]
+    countries: frozenset[str]
 
     def by_key(self, key: str) -> Organization | None:
         return _index(self).get(key)
@@ -57,7 +60,7 @@ class Catalog:
         return [a for a in self.threat_actors if _whole_word(a.name).search(text)]
 
     def is_not_organization(self, name: str) -> bool:
-        """True for reporters, agencies, countries and threat actors."""
+        """True for reporters, agencies, bare country names and threat actors."""
         return name.strip().casefold() in _excluded_names(self)
 
 
@@ -83,6 +86,7 @@ def load() -> Catalog:
             for a in raw["threat_actors"]
         ),
         not_organizations=frozenset(raw["not_organizations"]),
+        countries=frozenset(raw["countries"]),
     )
 
 
@@ -104,6 +108,7 @@ def _alias_index(catalog: Catalog) -> dict[str, Organization]:
 def _excluded_names(catalog: Catalog) -> frozenset[str]:
     return frozenset(
         [n.casefold() for n in catalog.not_organizations]
+        + [c.casefold() for c in catalog.countries]
         + [a.name.casefold() for a in catalog.threat_actors]
     )
 

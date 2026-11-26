@@ -325,3 +325,22 @@ def test_events_stored_before_classification_existed_are_classified_by_a_refresh
         "1password",
         "1password",
     )
+
+
+def test_a_country_is_never_the_affected_organization(conn):
+    # Real Security Affairs story, 25 Nov 2026: the headline opens with "Switzerland Confirms"
+    # and the publisher tags it "Switzerland". Switzerland reports the attacks; the victims are
+    # unnamed Swiss organisations, so the organization is unknown.
+    ingest(
+        conn,
+        sample_source("securityaffairs"),
+        real_sample("securityaffairs-switzerland.xml"),
+        fetched_at=FETCHED_AT,
+    )
+
+    event = by_title(conn)[
+        "Switzerland Confirms First AI-Agent Cyberattacks on Local Organisations"
+    ]
+
+    assert event.affected_organization == "unknown"
+    assert "all" not in event.tabs

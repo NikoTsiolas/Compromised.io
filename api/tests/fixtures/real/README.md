@@ -39,6 +39,13 @@ development database), with only the fields the KEV adapter reads, each value un
 suffix), `dateAdded`, `shortDescription`, `requiredAction`, `dueDate`,
 `knownRansomwareCampaignUse`. `notes`, `cwes` and `forensicTriage` were not stored and are absent.
 
+`securityaffairs-switzerland.xml` comes from a later capture of https://securityaffairs.com/feed
+(2026-11-26, served 20:40:02 UTC, `curl -A "Compromised/0.1 (+https://github.com/NikoTsiolas/Compromised.io)"`,
+HTTP 200, 10 items). It keeps one item, "Switzerland Confirms First AI-Agent Cyberattacks on Local
+Organisations" (25 Nov 2026), with the feed's header and tail byte for byte; its `content:encoded`
+is cut to its first 600 characters and ends in ` [truncated for fixture]`. It is the story whose
+"Switzerland" tag made a country the affected organization.
+
 Ransomware.live items are attacker claims relayed by a third party; their descriptions are
 attacker-supplied text. None of the 3 kept items links to a leak site or `.onion` address.
 

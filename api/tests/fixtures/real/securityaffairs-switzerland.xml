@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"
+	xmlns:content="http://purl.org/rss/1.0/modules/content/"
+	xmlns:wfw="http://wellformedweb.org/CommentAPI/"
+	xmlns:dc="http://purl.org/dc/elements/1.1/"
+	xmlns:atom="http://www.w3.org/2005/Atom"
+	xmlns:sy="http://purl.org/rss/1.0/modules/syndication/"
+	xmlns:slash="http://purl.org/rss/1.0/modules/slash/"
+	>
+
+<channel>
+	<title>Security Affairs</title>
+	<atom:link href="https://securityaffairs.com/feed" rel="self" type="application/rss+xml" />
+	<link>https://securityaffairs.com/</link>
+	<description>Read, think, share … Security is everyone&#039;s responsibility</description>
+	<lastBuildDate>Thu, 26 Nov 2026 19:45:59 +0000</lastBuildDate>
+	<language>en-US</language>
+	<sy:updatePeriod>
+	hourly	</sy:updatePeriod>
+	<sy:updateFrequency>
+	1	</sy:updateFrequency>
+	
+<site xmlns="com-wordpress:feed-additions:1">29506073</site>	<item>
+		<title>Switzerland Confirms First AI-Agent Cyberattacks on Local Organisations</title>
+		<link>https://securityaffairs.com/204004/hacking/switzerland-confirms-first-ai-agent-cyberattacks-on-local-organisations.html</link>
+		
+		<dc:creator><![CDATA[Pierluigi Paganini]]></dc:creator>
+		<pubDate>Wed, 25 Nov 2026 21:06:55 +0000</pubDate>
+				<category><![CDATA[Artificial Intelligence]]></category>
+		<category><![CDATA[Breaking News]]></category>
+		<category><![CDATA[Hacking]]></category>
+		<category><![CDATA[Security]]></category>
+		<category><![CDATA[Agentic Offensive Frameworks]]></category>
+		<category><![CDATA[AI]]></category>
+		<category><![CDATA[AI agents]]></category>
+		<category><![CDATA[ARTEX]]></category>
+		<category><![CDATA[critical infrastructure]]></category>
+		<category><![CDATA[hacking news]]></category>
+		<category><![CDATA[information security news]]></category>
+		<category><![CDATA[IT Information Security]]></category>
+		<category><![CDATA[Pierluigi Paganini]]></category>
+		<category><![CDATA[Security Affairs]]></category>
+		<category><![CDATA[Security News]]></category>
+		<category><![CDATA[Switzerland]]></category>
+		<guid isPermaLink="false">https://securityaffairs.com/?p=204004</guid>
+
+					<description><![CDATA[Switzerland reports its first AI-agent cyberattacks, including critical infrastructure breaches, and urges patching internet-facing systems within 24 hours. Switzerland ’s National Cyber Security Centre (NCSC) has now seen these attacks firsthand. In recent days, it received its first reports of cyberattacks on Swiss organisations carried out with the help of AI agents. The victims include [&#8230;]]]></description>
+										<content:encoded><![CDATA[<div style="margin-top: 0px; margin-bottom: 0px;" class="sharethis-inline-share-buttons" ></div>
+<h2 class="wp-block-heading">Switzerland reports its first AI-agent cyberattacks, including critical infrastructure breaches, and urges patching internet-facing systems within 24 hours.</h2>
+
+
+
+<p class="wp-block-paragraph">Switzerland ’s National Cyber Security Centre (NCSC) has now seen these attacks firsthand. In recent days, it received its first reports of cyberattacks on Swiss organisations carried out with the help of AI agents. The victims include critical infrastructure operators in at lea [truncated for fixture]]]></content:encoded>
+					
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">204004</post-id>	</item>
+	</channel>
+</rss>
+
+<!--
+Performance optimized by W3 Total Cache. Learn more: https://www.boldgrid.com/w3-total-cache/?utm_source=w3tc&utm_medium=footer_comment&utm_campaign=free_plugin
+
+Object Caching 41/61 objects using Memcached
+Page Caching using Memcached (Page is feed) 
+Database Caching 1/26 queries in 0.046 seconds using Memcached (Request-wide modification query)
+
+Served from: securityaffairs.com @ 2026-11-26 20:40:02 by W3 Total Cache
+-->

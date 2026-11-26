@@ -49,3 +49,22 @@ def test_ordinary_words_that_are_also_brand_names_do_not_match_on_their_own():
 
     assert found("Attackers Target .NET Developers With Poisoned Job Assessments").name == ".NET"
     assert found("A Ring of Scammers Sends an Early Signal to X") is None
+
+
+def test_a_bare_country_name_is_never_an_organization_but_a_named_national_body_is():
+    cat = catalog.load()
+    for country in ("Switzerland", "switzerland", "China", "United States", "Brazil", "Norway"):
+        assert cat.is_not_organization(country), country
+    # A national body with a name of its own is an organization a story can be about.
+    for body in ("US Treasury", "FinCEN", "Swiss Post", "Bank of England"):
+        assert not cat.is_not_organization(body), body
+
+
+def test_the_country_list_covers_every_un_member_state():
+    countries = raw_catalog()["countries"]
+    assert len(countries) >= 193
+    assert len({c.casefold() for c in countries}) == len(countries)
+    # Countries live in their own list, not among the reporters and agencies.
+    assert not {c.casefold() for c in countries} & {
+        n.casefold() for n in raw_catalog()["not_organizations"]
+    }
