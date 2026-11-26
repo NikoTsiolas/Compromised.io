@@ -31,13 +31,15 @@ Start the API (http://127.0.0.1:8000), the worker and the web app (http://localh
 pnpm dev
 ```
 
-`pnpm dev` applies pending migrations first. The worker fetches each source immediately and then
-on its own interval (BleepingComputer: every 10 minutes). `pnpm worker:once` runs a single pass.
+`pnpm dev` applies pending migrations first. The worker fetches each source when it is due and then
+on its own interval from `api/src/compromised/sources.py` (The Record: every 5 minutes; Google
+Threat Intelligence: hourly). `pnpm worker:once` runs a single pass. Source health and overall
+ingestion status are at `/v1/status`.
 
 ## Tests
 
 ```sh
-pnpm test:api     # pipeline seam (api/tests/pipeline) and API seam (api/tests/api), on compromised_test
+pnpm test:api     # pipeline, fetcher and API seams (api/tests/{pipeline,fetcher,api}), on compromised_test
 pnpm test:e2e     # browser seam (web/e2e), Playwright; seeds compromised_test itself
 ```
 

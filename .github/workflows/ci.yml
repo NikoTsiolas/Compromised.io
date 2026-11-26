@@ -36,6 +36,8 @@ jobs:
       - run: uv run ruff check . && uv run ruff format --check .
       - name: Pipeline seam
         run: uv run pytest tests/pipeline
+      - name: Fetcher seam (local HTTPS stub server)
+        run: uv run pytest tests/fetcher
       - name: API seam
         run: uv run pytest tests/api
 

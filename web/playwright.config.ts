@@ -2,10 +2,11 @@ import { defineConfig, devices } from "@playwright/test";
 
 // The browser suite starts its own API (port 8100) and web app (port 3100) against a test
 // database seeded from captured samples, so it never touches the dev servers or dev data.
+// E2E_API_PORT and E2E_WEB_PORT override the ports (for running several checkouts at once).
 const databaseUrl =
   process.env.E2E_DATABASE_URL ?? "postgresql:///compromised_test";
-const apiPort = 8100;
-const webPort = 3100;
+const apiPort = Number(process.env.E2E_API_PORT ?? 8100);
+const webPort = Number(process.env.E2E_WEB_PORT ?? 3100);
 
 export default defineConfig({
   testDir: "./e2e",

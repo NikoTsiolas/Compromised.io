@@ -10,7 +10,7 @@ test("the feed lists real events newest first, linking to the publisher", async 
 }) => {
   await page.goto("/");
 
-  const rows = page.getByRole("listitem");
+  const rows = page.getByRole("list", { name: "Events" }).getByRole("listitem");
   await expect(rows).toHaveCount(4);
   await expect(rows.nth(0).getByRole("link")).toHaveText(NEWEST);
   await expect(rows.nth(2).getByRole("link")).toHaveText(

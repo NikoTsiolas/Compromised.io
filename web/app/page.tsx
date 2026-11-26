@@ -3,17 +3,31 @@
 import Link from "next/link";
 import { Suspense } from "react";
 
+import { IngestionIndicator, SourceHealthList } from "@/components/ingestion-status";
 import { listEvents, type EventPage } from "@/lib/api";
 import { formatOriginal, formatRelative } from "@/lib/time";
 
 export default function Home({ searchParams }: PageProps<"/">) {
   return (
-    <main>
-      <h1>Compromised</h1>
-      <Suspense fallback={<p>Loading events…</p>}>
-        <Feed searchParams={searchParams} />
-      </Suspense>
-    </main>
+    <>
+      <header>
+        <h1>Compromised</h1>
+        <Suspense fallback={null}>
+          <IngestionIndicator />
+        </Suspense>
+      </header>
+      <main>
+        <Suspense fallback={<p>Loading events…</p>}>
+          <Feed searchParams={searchParams} />
+        </Suspense>
+        <section aria-labelledby="sources-heading">
+          <h2 id="sources-heading">Sources</h2>
+          <Suspense fallback={null}>
+            <SourceHealthList />
+          </Suspense>
+        </section>
+      </main>
+    </>
   );
 }
 
@@ -35,7 +49,7 @@ async function Feed({
 
   return (
     <>
-      <ul>
+      <ul aria-label="Events">
         {page.events.map((event) => {
           const source = event.sources[0];
           return (
