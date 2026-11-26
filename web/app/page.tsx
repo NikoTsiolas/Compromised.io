@@ -1,19 +1,23 @@
-// Deliberately bare: the walking skeleton proves data reaches the page. Design is #9.
-// Everything from the API is rendered as React text children, never as HTML.
-import Link from "next/link";
+// The homepage is the feed. Everything from the API is rendered as React text, never as HTML.
+// Next.js 16 runs with cacheComponents, so the data-fetching part sits inside <Suspense>.
 import { Suspense } from "react";
 
+import { FeedSkeleton } from "@/components/feed/feed-skeleton";
+import { FeedView } from "@/components/feed/feed-view";
+import { SiteHeader } from "@/components/site/site-header";
 import { listEvents, type EventPage } from "@/lib/api";
-import { formatOriginal, formatRelative } from "@/lib/time";
+import { tabFrom, toFeedItem } from "@/lib/feed";
 
 export default function Home({ searchParams }: PageProps<"/">) {
   return (
-    <main>
-      <h1>Compromised</h1>
-      <Suspense fallback={<p>Loading events…</p>}>
-        <Feed searchParams={searchParams} />
-      </Suspense>
-    </main>
+    <>
+      <SiteHeader />
+      <main className="mx-auto max-w-[1120px] px-4 pb-16 sm:px-6 lg:px-10">
+        <Suspense fallback={<FeedSkeleton />}>
+          <Feed searchParams={searchParams} />
+        </Suspense>
+      </main>
+    </>
   );
 }
 
@@ -22,45 +26,27 @@ async function Feed({
 }: {
   searchParams: PageProps<"/">["searchParams"];
 }) {
-  const { cursor } = await searchParams;
+  const { cursor, tab } = await searchParams;
   let page: EventPage;
   try {
     page = await listEvents(typeof cursor === "string" ? cursor : undefined);
   } catch {
-    return <p>Events could not be loaded.</p>;
-  }
-  if (page.events.length === 0) {
-    return <p>No events yet.</p>;
+    return (
+      <p className="py-12 text-[15px] text-ink-2">
+        Events could not be loaded. Please try again in a minute.
+      </p>
+    );
   }
 
   return (
-    <>
-      <ul>
-        {page.events.map((event) => {
-          const source = event.sources[0];
-          return (
-            <li key={event.id}>
-              <a href={source.url} target="_blank" rel="noopener noreferrer">
-                {event.title}
-              </a>
-              {" — "}
-              {source.publisher}
-              {" — "}
-              <time dateTime={event.published_at}>
-                {formatOriginal(event.published_at)}
-              </time>
-              {" ("}
-              {formatRelative(event.published_at)}
-              {")"}
-            </li>
-          );
-        })}
-      </ul>
-      {page.next_cursor && (
-        <Link href={{ pathname: "/", query: { cursor: page.next_cursor } }}>
-          Older events
-        </Link>
-      )}
-    </>
+    <FeedView
+      items={page.events.map(toFeedItem)}
+      tab={tabFrom(tab)}
+      olderHref={
+        page.next_cursor
+          ? `/?cursor=${encodeURIComponent(page.next_cursor)}`
+          : undefined
+      }
+    />
   );
 }

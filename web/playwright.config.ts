@@ -1,12 +1,9 @@
 import { defineConfig, devices } from "@playwright/test";
 
-// The browser suite starts its own API (port 8100) and web app (port 3100) against a test
-// database seeded from captured samples, so it never touches the dev servers or dev data.
-const databaseUrl =
-  process.env.E2E_DATABASE_URL ?? "postgresql:///compromised_test";
-const apiPort = 8100;
-const webPort = 3100;
+import { apiPort, databaseUrl, webPort } from "./e2e/env";
 
+// The browser suite starts its own API and web app against a test database seeded from captured
+// samples, so it never touches the dev servers or dev data. Ports and database: see e2e/env.ts.
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: true,
@@ -17,7 +14,20 @@ export default defineConfig({
     baseURL: `http://127.0.0.1:${webPort}`,
     trace: "on-first-retry",
   },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  projects: [
+    {
+      name: "chromium",
+      testIgnore: /new-events\.spec\.ts/,
+      use: { ...devices["Desktop Chrome"] },
+    },
+    {
+      // Adds events to the shared test database, so it runs only after every read-only test.
+      name: "chromium-writes",
+      testMatch: /new-events\.spec\.ts/,
+      dependencies: ["chromium"],
+      use: { ...devices["Desktop Chrome"] },
+    },
+  ],
   webServer: [
     {
       command:
@@ -32,7 +42,8 @@ export default defineConfig({
     },
     {
       command: `pnpm build && pnpm start --port ${webPort}`,
-      env: { API_URL: `http://127.0.0.1:${apiPort}` },
+      // SAMPLE_PREVIEW builds the clearly labelled /preview route so the suite can check it.
+      env: { API_URL: `http://127.0.0.1:${apiPort}`, SAMPLE_PREVIEW: "1" },
       url: `http://127.0.0.1:${webPort}`,
       reuseExistingServer: false,
       timeout: 180_000,
