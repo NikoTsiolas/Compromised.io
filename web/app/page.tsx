@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { Suspense } from "react";
 
-import { listEvents, type EventPage } from "@/lib/api";
+import { listEvents, listTabs, type EventPage, type Tab } from "@/lib/api";
 import { formatOriginal, formatRelative } from "@/lib/time";
+
+const DEFAULT_TAB = "all";
 
 export default function Home({ searchParams }: PageProps<"/">) {
   return (
@@ -17,49 +19,82 @@ export default function Home({ searchParams }: PageProps<"/">) {
   );
 }
 
+function tabHref(tab: string, cursor?: string) {
+  const query: Record<string, string> = {};
+  if (tab !== DEFAULT_TAB) query.tab = tab;
+  if (cursor) query.cursor = cursor;
+  return { pathname: "/", query };
+}
+
 async function Feed({
   searchParams,
 }: {
   searchParams: PageProps<"/">["searchParams"];
 }) {
-  const { cursor } = await searchParams;
+  const { cursor, tab: requested } = await searchParams;
+  let tabs: Tab[];
   let page: EventPage;
+  let tab = DEFAULT_TAB;
   try {
-    page = await listEvents(typeof cursor === "string" ? cursor : undefined);
+    tabs = await listTabs();
+    if (typeof requested === "string" && tabs.some((t) => t.id === requested)) {
+      tab = requested;
+    }
+    page = await listEvents(
+      tab,
+      typeof cursor === "string" ? cursor : undefined,
+    );
   } catch {
     return <p>Events could not be loaded.</p>;
-  }
-  if (page.events.length === 0) {
-    return <p>No events yet.</p>;
   }
 
   return (
     <>
-      <ul>
-        {page.events.map((event) => {
-          const source = event.sources[0];
-          return (
-            <li key={event.id}>
-              <a href={source.url} target="_blank" rel="noopener noreferrer">
-                {event.title}
-              </a>
-              {" — "}
-              {source.publisher}
-              {" — "}
-              <time dateTime={event.published_at}>
-                {formatOriginal(event.published_at)}
-              </time>
-              {" ("}
-              {formatRelative(event.published_at)}
-              {")"}
+      <nav aria-label="Feed tabs">
+        <ul>
+          {tabs.map((t) => (
+            <li key={t.id}>
+              <Link
+                href={tabHref(t.id)}
+                aria-current={t.id === tab ? "page" : undefined}
+              >
+                {t.label}
+              </Link>
             </li>
-          );
-        })}
-      </ul>
+          ))}
+        </ul>
+      </nav>
+      {page.events.length === 0 ? (
+        <p>No events yet.</p>
+      ) : (
+        <ul aria-label="Events">
+          {page.events.map((event) => {
+            const source = event.sources[0];
+            return (
+              <li key={event.id}>
+                {event.affected_organization}
+                {" · "}
+                {event.category_label}
+                {" — "}
+                <a href={source.url} target="_blank" rel="noopener noreferrer">
+                  {event.title}
+                </a>
+                {" — "}
+                {source.publisher}
+                {" — "}
+                <time dateTime={event.published_at}>
+                  {formatOriginal(event.published_at)}
+                </time>
+                {" ("}
+                {formatRelative(event.published_at)}
+                {")"}
+              </li>
+            );
+          })}
+        </ul>
+      )}
       {page.next_cursor && (
-        <Link href={{ pathname: "/", query: { cursor: page.next_cursor } }}>
-          Older events
-        </Link>
+        <Link href={tabHref(tab, page.next_cursor)}>Older events</Link>
       )}
     </>
   );
