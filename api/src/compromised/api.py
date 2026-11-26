@@ -1,8 +1,9 @@
 """Read-only JSON API, versioned under /v1."""
 
+from collections.abc import Callable
 from contextlib import asynccontextmanager
 from dataclasses import asdict
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from enum import StrEnum
 from typing import Annotated
 
@@ -11,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from psycopg_pool import ConnectionPool
 from pydantic import BaseModel, PlainSerializer
 
-from compromised import config, health, storage
+from compromised import config, health, storage, widgets
 from compromised.pipeline import verifier
 from compromised.pipeline.classifier import CATEGORIES
 from compromised.pipeline.scope import TABS
@@ -123,6 +124,57 @@ class StatusOut(BaseModel):
     sources: list[SourceHealthOut]
 
 
+class NotableOut(BaseModel):
+    cve: str
+    title: str
+    organization: str
+    people_use: bool
+    ransomware: bool  # CISA: known to be used in ransomware campaigns
+
+
+class MonthOut(BaseModel):
+    month: str  # "YYYY-MM"
+    count: int  # entries added to the KEV catalog that month (UTC)
+    spike: bool  # by spike_rule, over the months returned
+    notable: list[NotableOut]  # spike months only, at most three, newest first
+
+
+class KevCatalogOut(BaseModel):
+    version: str | None
+    declared_count: int | None  # the size the catalog states for itself
+    entries: int  # entries kept from it
+    fetched_at: UtcTimestamp
+
+
+class ExploitedByMonthOut(BaseModel):
+    months: list[MonthOut]  # oldest first; empty until the catalog has been fetched
+    spike_rule: str
+    catalog: KevCatalogOut | None
+
+
+class ExploitedFlawOut(BaseModel):
+    cve: str
+    product: str
+    logo_key: str | None
+    added_on: date  # the day CISA listed it as exploited
+
+
+class RecentlyExploitedOut(BaseModel):
+    items: list[ExploitedFlawOut]
+
+
+class OrganisationOut(BaseModel):
+    name: str
+    key: str | None
+    logo_key: str | None
+    count: int  # distinct reported events naming it in the window
+
+
+class MostReportedOut(BaseModel):
+    window_days: int
+    items: list[OrganisationOut]
+
+
 def _image(event, settings: config.Settings) -> ImageOut | None:
     """The earliest source's image, skipping sources whose images are switched off."""
     if not settings.publisher_images:
@@ -139,8 +191,12 @@ def _image(event, settings: config.Settings) -> ImageOut | None:
     return None
 
 
-def create_app(database_url: str | None = None) -> FastAPI:
+def create_app(
+    database_url: str | None = None, clock: Callable[[], datetime] | None = None
+) -> FastAPI:
+    """``clock`` stands in for the current time in tests; the widgets' windows end at it."""
     settings = config.load()
+    now = clock or (lambda: datetime.now(UTC))
     url = database_url or settings.database_url
 
     @asynccontextmanager
@@ -227,6 +283,44 @@ def create_app(database_url: str | None = None) -> FastAPI:
                 )
                 for h in current.sources
             ],
+        )
+
+    # Widget figures (#15). The KEV catalog is fetched hourly, so its figures keep 5 minutes.
+
+    @app.get("/v1/widgets/exploited-by-month", response_model=ExploitedByMonthOut)
+    def exploited_by_month(
+        request: Request,
+        response: Response,
+        months: Annotated[int, Query(ge=1, le=60)] = 12,
+    ):
+        with request.app.state.pool.connection() as conn:
+            history = widgets.exploitation_history(conn, now=now(), months=months)
+        response.headers["Cache-Control"] = "public, max-age=300"
+        return ExploitedByMonthOut(
+            months=[MonthOut.model_validate(asdict(m)) for m in history.months],
+            spike_rule=widgets.SPIKE_RULE,
+            catalog=KevCatalogOut.model_validate(asdict(history.catalog))
+            if history.catalog
+            else None,
+        )
+
+    @app.get("/v1/widgets/recently-exploited", response_model=RecentlyExploitedOut)
+    def recently_exploited(request: Request, response: Response):
+        with request.app.state.pool.connection() as conn:
+            flaws = widgets.recently_exploited(conn)
+        response.headers["Cache-Control"] = "public, max-age=300"
+        return RecentlyExploitedOut(
+            items=[ExploitedFlawOut.model_validate(asdict(f)) for f in flaws]
+        )
+
+    @app.get("/v1/widgets/most-reported", response_model=MostReportedOut)
+    def most_reported(request: Request, response: Response):
+        with request.app.state.pool.connection() as conn:
+            top = widgets.most_reported(conn, now=now())
+        response.headers["Cache-Control"] = "public, max-age=60"
+        return MostReportedOut(
+            window_days=widgets.MOST_REPORTED_DAYS,
+            items=[OrganisationOut.model_validate(asdict(o)) for o in top],
         )
 
     @app.get("/healthz")

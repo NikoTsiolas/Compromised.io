@@ -10,6 +10,7 @@ See docs/wiki/feed-scope-and-sources.md for the field notes behind each adapter.
 import html
 import json
 import re
+from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from urllib.parse import urlsplit
 
@@ -20,8 +21,57 @@ KEV_TITLE = "{name} ({cve}) added to CISA's Known Exploited Vulnerabilities cata
 KEV_LINK = "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search_api_fulltext={cve}"
 
 
-def parse_kev(body: bytes) -> list[ParsedItem]:
-    """The CISA KEV catalog (JSON). One item per vulnerability, dated by ``dateAdded``."""
+@dataclass(frozen=True)
+class KevEntry:
+    """One catalog entry, as the per-month history keeps it (CISA's own field values)."""
+
+    cve: str
+    vendor: str
+    product: str
+    name: str  # vulnerabilityName, unchanged
+    date_added: date
+    known_ransomware_use: bool  # knownRansomwareCampaignUse is "Known" (else "Unknown")
+
+
+@dataclass(frozen=True)
+class KevCatalog:
+    version: str | None  # catalogVersion
+    declared_count: int | None  # the catalog's own ``count``
+    entries: list[KevEntry]
+
+
+def parse_kev_catalog(body: bytes) -> KevCatalog:
+    """Every usable entry of the CISA KEV catalog, whatever its age (the history behind the
+    homepage chart). An entry without a CVE, name or valid ``dateAdded`` is skipped, as in
+    ``parse_kev``; a CVE listed twice is kept once."""
+    catalog, raw = _kev_json(body)
+    entries: dict[str, KevEntry] = {}
+    for entry in raw:
+        if not isinstance(entry, dict):
+            continue
+        cve = _str(entry.get("cveID"))
+        name = _str(entry.get("vulnerabilityName"))
+        added = _date(entry.get("dateAdded"))
+        if not (cve and name and added) or cve in entries:
+            continue
+        entries[cve] = KevEntry(
+            cve=cve,
+            vendor=_str(entry.get("vendorProject")),
+            product=_str(entry.get("product")),
+            name=name,
+            date_added=added.date(),
+            known_ransomware_use=_str(entry.get("knownRansomwareCampaignUse")).casefold()
+            == "known",
+        )
+    count = catalog.get("count")
+    return KevCatalog(
+        version=_str(catalog.get("catalogVersion")) or None,
+        declared_count=count if isinstance(count, int) and not isinstance(count, bool) else None,
+        entries=list(entries.values()),
+    )
+
+
+def _kev_json(body: bytes) -> tuple[dict, list]:
     try:
         catalog = json.loads(body)
         entries = catalog["vulnerabilities"]
@@ -29,6 +79,12 @@ def parse_kev(body: bytes) -> list[ParsedItem]:
         raise ParseError(f"not a KEV catalog: {type(exc).__name__}") from None
     if not isinstance(entries, list):
         raise ParseError("not a KEV catalog: vulnerabilities is not a list")
+    return catalog, entries
+
+
+def parse_kev(body: bytes) -> list[ParsedItem]:
+    """The CISA KEV catalog (JSON). One item per vulnerability, dated by ``dateAdded``."""
+    _, entries = _kev_json(body)
     items = []
     for entry in entries:
         if not isinstance(entry, dict):

@@ -1,0 +1,152 @@
+{
+  "_comment": "SYNTHETIC TEST DATA shaped like the CISA KEV catalog. Not real vulnerabilities: every CVE uses the impossible year 0000 and every name starts with [Synthetic test entry]. See README.md.",
+  "title": "Synthetic test catalog shaped like CISA's Known Exploited Vulnerabilities",
+  "catalogVersion": "0000.06.03",
+  "dateReleased": "2026-06-03T00:00:00Z",
+  "count": 13,
+  "vulnerabilities": [
+    {
+      "cveID": "CVE-0000-0001",
+      "vendorProject": "Danfoss",
+      "product": "AK-SM 800A Series",
+      "vulnerabilityName": "[Synthetic test entry] Danfoss AK-SM 800A Series Improper Authentication Vulnerability",
+      "dateAdded": "2024-11-14",
+      "shortDescription": "Synthetic test entry. Not a real vulnerability.",
+      "requiredAction": "Synthetic test entry: no action.",
+      "dueDate": "2024-11-14",
+      "knownRansomwareCampaignUse": "Unknown"
+    },
+    {
+      "cveID": "CVE-0000-0101",
+      "vendorProject": "Microsoft",
+      "product": "Office",
+      "vulnerabilityName": "[Synthetic test entry] Microsoft Office Remote Code Execution Vulnerability",
+      "dateAdded": "2026-01-08",
+      "shortDescription": "Synthetic test entry. Not a real vulnerability.",
+      "requiredAction": "Synthetic test entry: no action.",
+      "dueDate": "2026-01-08",
+      "knownRansomwareCampaignUse": "Unknown"
+    },
+    {
+      "cveID": "CVE-0000-0102",
+      "vendorProject": "Ivanti",
+      "product": "Connect Secure",
+      "vulnerabilityName": "[Synthetic test entry] Ivanti Connect Secure Authentication Bypass Vulnerability",
+      "dateAdded": "2026-01-21",
+      "shortDescription": "Synthetic test entry. Not a real vulnerability.",
+      "requiredAction": "Synthetic test entry: no action.",
+      "dueDate": "2026-01-21",
+      "knownRansomwareCampaignUse": "Known"
+    },
+    {
+      "cveID": "CVE-0000-0201",
+      "vendorProject": "Cisco",
+      "product": "IOS XE",
+      "vulnerabilityName": "[Synthetic test entry] Cisco IOS XE Privilege Escalation Vulnerability",
+      "dateAdded": "2026-02-10",
+      "shortDescription": "Synthetic test entry. Not a real vulnerability.",
+      "requiredAction": "Synthetic test entry: no action.",
+      "dueDate": "2026-02-10",
+      "knownRansomwareCampaignUse": "Unknown"
+    },
+    {
+      "cveID": "CVE-0000-0301",
+      "vendorProject": "Ivanti",
+      "product": "Endpoint Manager Mobile (EPMM)",
+      "vulnerabilityName": "[Synthetic test entry] Ivanti Endpoint Manager Mobile (EPMM) Code Injection Vulnerability",
+      "dateAdded": "2026-03-02",
+      "shortDescription": "Synthetic test entry. Not a real vulnerability.",
+      "requiredAction": "Synthetic test entry: no action.",
+      "dueDate": "2026-03-02",
+      "knownRansomwareCampaignUse": "Unknown"
+    },
+    {
+      "cveID": "CVE-0000-0302",
+      "vendorProject": "Google",
+      "product": "Chromium V8",
+      "vulnerabilityName": "[Synthetic test entry] Google Chromium V8 Type Confusion Vulnerability",
+      "dateAdded": "2026-03-05",
+      "shortDescription": "Synthetic test entry. Not a real vulnerability.",
+      "requiredAction": "Synthetic test entry: no action.",
+      "dueDate": "2026-03-05",
+      "knownRansomwareCampaignUse": "Unknown"
+    },
+    {
+      "cveID": "CVE-0000-0303",
+      "vendorProject": "Apple",
+      "product": "iOS",
+      "vulnerabilityName": "[Synthetic test entry] Apple iOS Memory Corruption Vulnerability",
+      "dateAdded": "2026-03-12",
+      "shortDescription": "Synthetic test entry. Not a real vulnerability.",
+      "requiredAction": "Synthetic test entry: no action.",
+      "dueDate": "2026-03-12",
+      "knownRansomwareCampaignUse": "Unknown"
+    },
+    {
+      "cveID": "CVE-0000-0304",
+      "vendorProject": "Danfoss",
+      "product": "AK-SM 800A Series",
+      "vulnerabilityName": "[Synthetic test entry] Danfoss AK-SM 800A Series Missing Authorization Vulnerability",
+      "dateAdded": "2026-03-18",
+      "shortDescription": "Synthetic test entry. Not a real vulnerability.",
+      "requiredAction": "Synthetic test entry: no action.",
+      "dueDate": "2026-03-18",
+      "knownRansomwareCampaignUse": "Unknown"
+    },
+    {
+      "cveID": "CVE-0000-0305",
+      "vendorProject": "Fortinet",
+      "product": "FortiOS",
+      "vulnerabilityName": "[Synthetic test entry] Fortinet FortiOS Heap Overflow Vulnerability",
+      "dateAdded": "2026-03-20",
+      "shortDescription": "Synthetic test entry. Not a real vulnerability.",
+      "requiredAction": "Synthetic test entry: no action.",
+      "dueDate": "2026-03-20",
+      "knownRansomwareCampaignUse": "Known"
+    },
+    {
+      "cveID": "CVE-0000-0306",
+      "vendorProject": "Microsoft",
+      "product": "Windows",
+      "vulnerabilityName": "[Synthetic test entry] Microsoft Windows Use-After-Free Vulnerability",
+      "dateAdded": "2026-03-24",
+      "shortDescription": "Synthetic test entry. Not a real vulnerability.",
+      "requiredAction": "Synthetic test entry: no action.",
+      "dueDate": "2026-03-24",
+      "knownRansomwareCampaignUse": "Known"
+    },
+    {
+      "cveID": "CVE-0000-0401",
+      "vendorProject": "Synacor",
+      "product": "Zimbra Collaboration Suite (ZCS)",
+      "vulnerabilityName": "[Synthetic test entry] Synacor Zimbra Collaboration Suite (ZCS) Cross-Site Scripting Vulnerability",
+      "dateAdded": "2026-04-07",
+      "shortDescription": "Synthetic test entry. Not a real vulnerability.",
+      "requiredAction": "Synthetic test entry: no action.",
+      "dueDate": "2026-04-07",
+      "knownRansomwareCampaignUse": "Unknown"
+    },
+    {
+      "cveID": "CVE-0000-0402",
+      "vendorProject": "Oracle",
+      "product": "E-Business Suite",
+      "vulnerabilityName": "[Synthetic test entry] Oracle E-Business Suite Missing Authentication Vulnerability",
+      "dateAdded": "2026-04-28",
+      "shortDescription": "Synthetic test entry. Not a real vulnerability.",
+      "requiredAction": "Synthetic test entry: no action.",
+      "dueDate": "2026-04-28",
+      "knownRansomwareCampaignUse": "Known"
+    },
+    {
+      "cveID": "CVE-0000-0601",
+      "vendorProject": "Mozilla",
+      "product": "Firefox",
+      "vulnerabilityName": "[Synthetic test entry] Mozilla Firefox Use-After-Free Vulnerability",
+      "dateAdded": "2026-06-03",
+      "shortDescription": "Synthetic test entry. Not a real vulnerability.",
+      "requiredAction": "Synthetic test entry: no action.",
+      "dueDate": "2026-06-03",
+      "knownRansomwareCampaignUse": "Unknown"
+    }
+  ]
+}

@@ -54,6 +54,8 @@ def ingest(
     """
     items = PARSERS[source.format](body)
     parsed = len(items)
+    # The KEV catalog also feeds the per-month history (#15): every entry, whatever its age.
+    kev_catalog = adapters.parse_kev_catalog(body) if source.format == "cisa-kev" else None
     if source.backfill_days is not None:
         oldest = fetched_at - timedelta(days=source.backfill_days)
         items = [i for i in items if i.published is not None and i.published >= oldest]
@@ -63,6 +65,8 @@ def ingest(
     grouped = 0
     with conn.transaction():
         storage.upsert_source(conn, source)
+        if kev_catalog is not None:
+            storage.replace_kev_catalog(conn, kev_catalog, fetched_at=fetched_at)
         for item in items:
             record = normalize(
                 item,

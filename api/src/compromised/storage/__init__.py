@@ -2,7 +2,7 @@
 
 import base64
 import binascii
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from importlib import resources
 
 import psycopg
@@ -54,7 +54,7 @@ def migrate(database_url: str) -> list[str]:
 def reset_for_tests(conn: psycopg.Connection) -> None:
     conn.execute(
         "truncate article_previews, source_record_revisions, source_records, events, sources,"
-        " enrichment_usage"
+        " enrichment_usage, kev_catalog_entries, kev_catalog"
         " restart identity cascade"
     )
 
@@ -615,3 +615,90 @@ def save_preview(
         " values (%s, %s, %s, %s) on conflict (record_id) do nothing",
         (record_id, state, image_url, at),
     )
+
+
+# --- the KEV catalog behind the widgets (#15) ---------------------------------------------------
+
+
+def replace_kev_catalog(conn: psycopg.Connection, catalog, *, fetched_at: datetime) -> None:
+    """Replace the stored catalog with ``catalog`` (adapters.KevCatalog), in one transaction."""
+    with conn.transaction():
+        conn.execute("delete from kev_catalog_entries")
+        with conn.cursor() as cur:
+            cur.executemany(
+                "insert into kev_catalog_entries (cve, vendor, product, name, date_added,"
+                " known_ransomware_use) values (%s, %s, %s, %s, %s, %s)",
+                [
+                    (e.cve, e.vendor, e.product, e.name, e.date_added, e.known_ransomware_use)
+                    for e in catalog.entries
+                ],
+            )
+        conn.execute(
+            "insert into kev_catalog (version, declared_count, entries, fetched_at)"
+            " values (%s, %s, %s, %s) on conflict (id) do update set version = excluded.version,"
+            " declared_count = excluded.declared_count, entries = excluded.entries,"
+            " fetched_at = excluded.fetched_at",
+            (catalog.version, catalog.declared_count, len(catalog.entries), fetched_at),
+        )
+
+
+def kev_catalog_info(conn: psycopg.Connection) -> dict | None:
+    with conn.cursor(row_factory=dict_row) as cur:
+        return cur.execute(
+            "select version, declared_count, entries, fetched_at from kev_catalog"
+        ).fetchone()
+
+
+def kev_monthly_counts(conn: psycopg.Connection, first: date, last: date) -> dict[date, int]:
+    """Entries added per calendar month (keyed by the month's first day), ``first`` to ``last``."""
+    rows = conn.execute(
+        "select date_trunc('month', date_added)::date, count(*) from kev_catalog_entries"
+        " where date_added >= %s and date_added < (%s::date + interval '1 month')"
+        " group by 1",
+        (first, last),
+    ).fetchall()
+    return {month: count for month, count in rows}
+
+
+def kev_entries(
+    conn: psycopg.Connection, *, since: date | None = None, before: date | None = None
+) -> list[dict]:
+    """Stored catalog entries, newest added first (then by CVE), optionally within dates."""
+    conditions, params = [], []
+    if since is not None:
+        conditions.append("date_added >= %s")
+        params.append(since)
+    if before is not None:
+        conditions.append("date_added < %s")
+        params.append(before)
+    where = f"where {' and '.join(conditions)}" if conditions else ""
+    with conn.cursor(row_factory=dict_row) as cur:
+        return cur.execute(
+            "select cve, vendor, product, name, date_added, known_ransomware_use"
+            f" from kev_catalog_entries {where} order by date_added desc, cve desc",
+            params,
+        ).fetchall()
+
+
+def events_per_organisation(
+    conn: psycopg.Connection, *, since: datetime, until: datetime, limit: int
+) -> list[dict]:
+    """Distinct All-tab events per organisation published in [since, until], most first.
+
+    Grouped by catalog key, else by the name case-folded; the name shown is the one on the most
+    recent event. All-tab events exclude commentary, research and claim-only events by the
+    scope rules (pipeline.scope.tabs_for); ``not claim_only`` restates the claims rule here.
+    """
+    with conn.cursor(row_factory=dict_row) as cur:
+        return cur.execute(
+            "select (array_agg(organization order by published_at desc, id desc))[1] as name,"
+            " min(organization_key) as key,"
+            " (array_agg(logo_key order by published_at desc, id desc))[1] as logo_key,"
+            " count(*)::int as count"
+            " from events"
+            " where tabs @> array['all']::text[] and not commentary and not claim_only"
+            " and organization is not null and published_at >= %s and published_at <= %s"
+            " group by coalesce(organization_key, lower(organization))"
+            " order by count(*) desc, max(published_at) desc, 1 limit %s",
+            (since, until, limit),
+        ).fetchall()
