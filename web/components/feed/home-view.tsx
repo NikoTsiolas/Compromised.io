@@ -3,10 +3,11 @@
 // stories, the widget rail and the feed. On desktop the rail runs beside both and can sit on
 // either side; below 1024px it stacks between the featured stories and the feed.
 import Link from "next/link";
+import { ViewTransition } from "react";
 
 import { WidgetRail, type RailWidget } from "@/components/bencho-pro/arrange/widget-rail";
 import { NewEventsBar } from "@/components/bencho-pro/new-events-bar";
-import { MarkSeen } from "@/components/bencho-pro/text-fade/arrival-fade";
+import { ArrivalItem, MarkSeen } from "@/components/bencho-pro/text-fade/arrival-fade";
 import { Featured } from "@/components/feed/featured";
 import { FeedRow } from "@/components/feed/feed-row";
 import { SectionTabs } from "@/components/feed/section-tabs";
@@ -60,13 +61,20 @@ export function HomeView({
       )}
       <MarkSeen ids={items.map((i) => i.id)} />
       <div className="home-grid">
+        {/* Switching tabs crossfades the stories; the rail beside them does not move. */}
         <div className="home-featured min-w-0">
-          {featured.lead && (
-            <Featured key={featured.lead.id} featured={featured} now={now} />
-          )}
+          <ViewTransition key={tab} name="home-featured" share="auto" enter="auto" default="none">
+            <div>
+              {featured.lead && (
+                <Featured key={featured.lead.id} featured={featured} now={now} />
+              )}
+            </div>
+          </ViewTransition>
         </div>
         <WidgetRail widgets={widgets} />
         <section aria-label={`${label} events`} className="home-feed min-w-0">
+          <ViewTransition key={tab} name="home-feed" share="auto" enter="auto" default="none">
+          <div>
           {featured.lead && featured.rest.length > 0 && (
             <h2 className="mt-8 border-b border-rule-strong pb-2 font-mono text-[11px] leading-4 font-medium tracking-[0.06em] text-ink-3 uppercase">
               Latest
@@ -80,10 +88,10 @@ export function HomeView({
           ) : (
             <ol>
               {featured.rest.map((item, i) => (
-                <li key={item.id}>
+                <ArrivalItem key={item.id} id={item.id}>
                   {i > 0 && <Separator className="bg-rule" />}
                   <FeedRow item={item} now={now} />
-                </li>
+                </ArrivalItem>
               ))}
             </ol>
           )}
@@ -97,6 +105,8 @@ export function HomeView({
               </Link>
             </div>
           )}
+          </div>
+          </ViewTransition>
         </section>
       </div>
     </>

@@ -35,3 +35,16 @@ export function ArrivalFade({ id, text }: { id: string; text: string }) {
   const [fresh] = useState(() => typeof window !== "undefined" && booted && !seen.has(id));
   return fresh ? <TextFade text={text} /> : <>{text}</>;
 }
+
+/**
+ * A feed row that arrived after the page loaded opens to its own height and fades in
+ * (.arrival in globals.css); rows that were already there render as they are.
+ */
+export function ArrivalItem({ id, children }: { id: string; children: React.ReactNode }) {
+  const [fresh] = useState(() => typeof window !== "undefined" && booted && !seen.has(id));
+  return (
+    <li className="arrival" data-fresh={fresh || undefined}>
+      <div>{children}</div>
+    </li>
+  );
+}

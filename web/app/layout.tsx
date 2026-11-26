@@ -10,21 +10,24 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f6f5f1" },
-    { media: "(prefers-color-scheme: dark)", color: "#111111" },
-  ],
+  themeColor: "#ffffff",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     // next-themes sets the theme class on <html> before hydration, hence the warning suppression.
     <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Without script, pictures show at once instead of waiting to fade in. */}
+        <noscript>
+          <style>{`.event-img{opacity:1}`}</style>
+        </noscript>
+      </head>
       <body className="min-h-dvh">
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
-          enableSystem
+          defaultTheme="light"
+          enableSystem={false}
           disableTransitionOnChange
         >
           {children}

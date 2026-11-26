@@ -7,6 +7,8 @@ import { expect, test, type Page } from "@playwright/test";
 const rail = (page: Page) => page.getByRole("complementary", { name: "Widgets" });
 const widgetTitles = (page: Page) => rail(page).getByRole("heading", { level: 2 });
 const feed = (page: Page) => page.getByRole("region", { name: "All events" });
+/** The rail's handlers are live once it has read the stored arrangement. */
+const railReady = (page: Page) => expect(rail(page)).toHaveAttribute("data-ready", "true");
 
 const DEFAULT_ORDER = [
   "Exploited flaws by month",
@@ -53,6 +55,7 @@ test("source status shows each source's last successful check", async ({ page })
 
 test("a widget moves by keyboard and stays there after a reload", async ({ page }) => {
   await page.goto("/");
+  await railReady(page);
 
   const grip = rail(page).getByRole("button", { name: "Move Source status" });
   await grip.focus();
@@ -80,6 +83,7 @@ test("a widget moves by keyboard and stays there after a reload", async ({ page 
 
 test("a widget can be dragged to a new place by its handle", async ({ page }) => {
   await page.goto("/");
+  await railReady(page);
 
   const grip = rail(page).getByRole("button", { name: "Move Most reported organisations" });
   const target = rail(page).getByRole("region", { name: "Exploited flaws by month" });
@@ -98,15 +102,21 @@ test("a widget can be dragged to a new place by its handle", async ({ page }) =>
 
 test("the rail moves to the left side and is remembered", async ({ page }) => {
   await page.goto("/");
+  await railReady(page);
 
   await rail(page).getByRole("button", { name: "Move widgets to the left" }).click();
-  let railBox = (await rail(page).boundingBox())!;
-  let feedBox = (await feed(page).boundingBox())!;
-  expect(railBox.x + railBox.width).toBeLessThanOrEqual(feedBox.x + 1);
+  // The switch plays as a view transition, so the new layout lands a moment later.
+  await expect
+    .poll(async () => {
+      const r = (await rail(page).boundingBox())!;
+      const f = (await feed(page).boundingBox())!;
+      return r.x + r.width <= f.x + 1;
+    })
+    .toBe(true);
 
   await page.reload();
-  railBox = (await rail(page).boundingBox())!;
-  feedBox = (await feed(page).boundingBox())!;
+  const railBox = (await rail(page).boundingBox())!;
+  const feedBox = (await feed(page).boundingBox())!;
   expect(railBox.x + railBox.width).toBeLessThanOrEqual(feedBox.x + 1);
   await expect(
     rail(page).getByRole("button", { name: "Move widgets to the right" }),
@@ -126,6 +136,7 @@ test("the page works when the browser refuses local storage", async ({ page }) =
   await page.goto("/");
 
   await expect(widgetTitles(page)).toHaveText(DEFAULT_ORDER);
+  await railReady(page);
   await rail(page).getByRole("button", { name: "Move Source status" }).focus();
   await page.keyboard.press("Home");
   await expect(widgetTitles(page).first()).toHaveText("Source status");

@@ -82,7 +82,7 @@ function Lead({ item, now }: { item: FeedItem; now?: Date }) {
             href={item.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="decoration-2 underline-offset-[5px] hover:underline focus-visible:underline"
+            className="story-link decoration-2 underline-offset-[5px]"
           >
             <TextFade text={item.headline} />
             <ArrowUpRight
@@ -145,7 +145,7 @@ function Card({ item, now }: { item: FeedItem; now?: Date }) {
             href={item.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="decoration-1 underline-offset-[3px] hover:underline focus-visible:underline"
+            className="story-link decoration-1 underline-offset-[3px]"
           >
             <ArrivalFade id={item.id} text={item.headline} />
           </a>

@@ -50,6 +50,11 @@ test("new events wait behind the bar until the reader asks for them", async ({
 }, testInfo) => {
   await page.clock.install();
   await page.goto("/");
+  // Hydrated (the widget rail marks itself ready), so the 60-second poll is running.
+  await expect(page.getByRole("complementary", { name: "Widgets" })).toHaveAttribute(
+    "data-ready",
+    "true",
+  );
 
   const rows = page.getByRole("article");
   const topHeading = rows.first().getByRole("heading");

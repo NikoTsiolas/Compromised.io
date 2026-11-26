@@ -25,6 +25,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { flushSync } from "react-dom";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -36,6 +37,7 @@ import {
   prePaintScript,
   save,
   type Arrangement,
+  type RailSide,
 } from "./arrangement";
 
 export type RailWidget = {
@@ -59,6 +61,8 @@ export function WidgetRail({ widgets }: { widgets: RailWidget[] }) {
   // The first render matches the server (default order); the stored one arrives after mount.
   const [arrangement, setArrangement] = useState<Arrangement>(() => normalise(null, ids));
   const [held, setHeld] = useState<string | null>(null);
+  // True once the stored arrangement is read and the handlers are live (data-ready).
+  const [ready, setReady] = useState(false);
   const [announcement, setAnnouncement] = useState("");
   const refocus = useRef<string | null>(null);
   const items = useRef(new Map<string, HTMLLIElement>());
@@ -73,6 +77,7 @@ export function WidgetRail({ widgets }: { widgets: RailWidget[] }) {
     // Reading the reader's stored arrangement is a sync with an external system (storage).
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setArrangement(stored);
+    setReady(true);
   }, [idKey]);
 
   const commit = useCallback((next: Arrangement) => {
@@ -171,10 +176,29 @@ export function WidgetRail({ widgets }: { widgets: RailWidget[] }) {
     }
   };
 
-  const otherSide = arrangement.side === "right" ? "left" : "right";
+  const otherSide: RailSide = arrangement.side === "right" ? "left" : "right";
+
+  // The rail and the stories glide to their new sides as a view transition where the browser
+  // supports one (names are set only for its duration, see .rail-switching in globals.css).
+  const switchSide = () => {
+    const next = { ...arrangement, side: otherSide };
+    const run = () => flushSync(() => commit(next));
+    const doc = document as Document & {
+      startViewTransition?: (update: () => void) => { finished: Promise<void> };
+    };
+    if (still || !doc.startViewTransition) {
+      run();
+      return;
+    }
+    const root = document.documentElement;
+    root.classList.add("rail-switching");
+    doc
+      .startViewTransition(run)
+      .finished.finally(() => root.classList.remove("rail-switching"));
+  };
 
   return (
-    <aside aria-label="Widgets" className="home-rail min-w-0">
+    <aside aria-label="Widgets" data-ready={ready || undefined} className="home-rail min-w-0">
       <script
         // Applies a stored arrangement before first paint; see arrangement.ts.
         dangerouslySetInnerHTML={{ __html: prePaintScript(ids) }}
@@ -185,7 +209,7 @@ export function WidgetRail({ widgets }: { widgets: RailWidget[] }) {
         </p>
         <button
           type="button"
-          onClick={() => commit({ ...arrangement, side: otherSide })}
+          onClick={switchSide}
           className="inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-[2px] px-1.5 text-xs text-ink-3 hover:bg-surface hover:text-ink"
         >
           <ArrowLeftRight aria-hidden className="size-3.5" strokeWidth={1.75} />

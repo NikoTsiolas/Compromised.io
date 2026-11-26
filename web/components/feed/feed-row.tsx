@@ -49,7 +49,7 @@ export function FeedRow({ item, now }: { item: FeedItem; now?: Date }) {
             href={item.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="decoration-1 underline-offset-[3px] hover:underline focus-visible:underline"
+            className="story-link decoration-1 underline-offset-[3px]"
           >
             <ArrivalFade id={item.id} text={item.headline} />
             <ArrowUpRight

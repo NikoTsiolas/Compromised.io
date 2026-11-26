@@ -1,9 +1,9 @@
 // The homepage is the feed. Everything from the API is rendered as React text, never as HTML.
 // Next.js 16 runs with cacheComponents, so the data-fetching parts sit inside <Suspense>.
-import { Suspense } from "react";
+import { Suspense, ViewTransition } from "react";
 
+import { HomeSkeleton } from "@/components/bencho-pro/home-skeleton";
 import { HomeView } from "@/components/feed/home-view";
-import { FeedSkeleton } from "@/components/feed/feed-skeleton";
 import { IngestionIndicator, SourceStatus } from "@/components/ingestion-status";
 import { SiteHeader } from "@/components/site/site-header";
 import { railWidgets } from "@/components/widgets/rail-widgets";
@@ -22,8 +22,17 @@ export default function Home({ searchParams }: PageProps<"/">) {
         }
       />
       <main className="mx-auto max-w-[1240px] px-4 pb-16 sm:px-6 lg:px-10">
-        <Suspense fallback={<FeedSkeleton />}>
-          <Feed searchParams={searchParams} />
+        {/* The skeleton fades out as the content fades in (a Suspense reveal). */}
+        <Suspense
+          fallback={
+            <ViewTransition exit="auto" default="none">
+              <HomeSkeleton />
+            </ViewTransition>
+          }
+        >
+          <ViewTransition enter="auto" default="none">
+            <Feed searchParams={searchParams} />
+          </ViewTransition>
         </Suspense>
       </main>
     </>

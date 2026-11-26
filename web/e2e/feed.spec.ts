@@ -297,7 +297,7 @@ test("the theme switch moves between light and dark and is remembered", async ({
     page.evaluate(() => getComputedStyle(document.body).backgroundColor);
 
   await expect(toggle).toHaveAttribute("aria-checked", "false");
-  expect(await background()).toBe("rgb(246, 245, 241)");
+  expect(await background()).toBe("rgb(255, 255, 255)");
 
   await toggle.click();
   await expect(html).toHaveClass(/\bdark\b/);
@@ -310,6 +310,22 @@ test("the theme switch moves between light and dark and is remembered", async ({
 
   await toggle.click();
   await expect(html).not.toHaveClass(/\bdark\b/);
+});
+
+test.describe("when the operating system prefers dark", () => {
+  test.use({ colorScheme: "dark" });
+
+  test("a first-time visitor still gets the white page", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.locator("html")).not.toHaveClass(/\bdark\b/);
+    expect(
+      await page.evaluate(() => getComputedStyle(document.body).backgroundColor),
+    ).toBe("rgb(255, 255, 255)");
+    await expect(page.getByRole("switch", { name: "Dark theme" })).toHaveAttribute(
+      "aria-checked",
+      "false",
+    );
+  });
 });
 
 test.describe("at phone width", () => {
@@ -359,4 +375,16 @@ test.describe("at phone width", () => {
     await toggle.tap();
     await expect(lead(page).getByText("CVE identifiers")).toBeVisible();
   });
+});
+
+test("the content security policy lets pictures load only over https, with no referrer", async ({
+  page,
+}) => {
+  const response = await page.goto("/");
+  const csp = response!.headers()["content-security-policy"];
+  const imgSrc = csp.split(";").map((d) => d.trim()).find((d) => d.startsWith("img-src"));
+  expect(imgSrc).toBe("img-src 'self' data: https:");
+  expect(csp).toContain("object-src 'none'");
+  expect(csp).toContain("frame-ancestors 'none'");
+  expect(response!.headers()["referrer-policy"]).toBe("no-referrer");
 });

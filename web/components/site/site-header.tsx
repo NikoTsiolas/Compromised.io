@@ -1,6 +1,6 @@
 // Masthead: wordmark left; live status, search and theme right. A 1px rule beneath (the section
 // tabs below carry the heavy 2px rule, NYT / FT style).
-import type { ReactNode } from "react";
+import { ViewTransition, type ReactNode } from "react";
 import { Search } from "lucide-react";
 import Link from "next/link";
 
@@ -16,6 +16,8 @@ export function SiteHeader({
 }) {
   const indicator = status;
   return (
+    // Named, so the masthead holds still while the page under it changes.
+    <ViewTransition name="site-header" default="none">
     <header className="border-b border-rule">
       <div className="mx-auto flex max-w-[1240px] items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-10">
         <Wordmark />
@@ -40,5 +42,6 @@ export function SiteHeader({
         {indicator}
       </div>
     </header>
+    </ViewTransition>
   );
 }
