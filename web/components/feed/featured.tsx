@@ -99,7 +99,7 @@ function Lead({ item, now }: { item: FeedItem; now?: Date }) {
           </span>
         </p>
         {summary && (
-          <p className="mt-4 max-w-[60ch] text-[16px] leading-[24px] text-ink-2">
+          <p className="mt-4 line-clamp-5 max-w-[60ch] text-[16px] leading-[24px] text-ink-2">
             {summary.ai && <AiLabel />}
             <TextFade text={summary.text} delay={summaryDelay} step={12} />
           </p>

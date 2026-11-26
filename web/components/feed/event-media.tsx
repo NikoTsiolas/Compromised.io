@@ -49,7 +49,7 @@ export function EventMedia({
   }, []);
 
   const showImage = Boolean(image) && !failed;
-  return (
+  const picture = (
     <AspectRatio
       ratio={ratio}
       className={cn("overflow-hidden rounded-[2px] bg-surface", className)}
@@ -73,15 +73,17 @@ export function EventMedia({
             data-loaded={loaded || undefined}
             className="event-img absolute inset-0 size-full object-cover"
           />
-          <span
-            className={cn(
-              "absolute right-1.5 bottom-1.5 transition-opacity duration-(--motion-base) max-w-[80%] truncate rounded-[2px] bg-[#111111]/75 px-1.5 py-0.5 font-mono leading-4 text-[#f6f5f1]",
-              size === "thumb" ? "text-[9px]" : "text-[10px]",
-              loaded ? "opacity-100" : "opacity-0",
-            )}
-          >
-            Image: {image!.publisher}
-          </span>
+          {size !== "thumb" && (
+            <span
+              className={cn(
+                size === "card" && "hidden sm:block",
+                "absolute right-1.5 bottom-1.5 max-w-[80%] truncate rounded-[2px] bg-[#111111]/75 px-1.5 py-0.5 font-mono text-[10px] leading-4 text-[#f6f5f1] transition-opacity duration-(--motion-base)",
+                loaded ? "opacity-100" : "opacity-0",
+              )}
+            >
+              Image: {image!.publisher}
+            </span>
+          )}
         </>
       ) : (
         <EventTile
@@ -92,5 +94,22 @@ export function EventMedia({
         />
       )}
     </AspectRatio>
+  );
+  if (size === "lead") return picture;
+  // Small pictures (feed rows always, cards on phones) carry their credit on a line of its own
+  // beneath them, always reserved, so the row is the same height whether the picture loads,
+  // fails or never existed.
+  return (
+    <div>
+      {picture}
+      <p
+        className={cn(
+          "mt-1 h-3.5 truncate font-mono text-[10px] leading-3.5 text-ink-3",
+          size === "card" && "sm:hidden",
+        )}
+      >
+        {showImage && loaded ? `Image: ${image!.publisher}` : ""}
+      </p>
+    </div>
   );
 }
