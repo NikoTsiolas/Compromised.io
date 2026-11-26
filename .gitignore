@@ -1,0 +1,12 @@
+.env
+.env.*
+!.env.example
+node_modules/
+.next/
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+.scratch/
+.pytest_cache/
+.ruff_cache/
