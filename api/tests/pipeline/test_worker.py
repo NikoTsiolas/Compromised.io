@@ -28,9 +28,9 @@ SAMPLES = {
     "darkreading": "darkreading.xml",
     "securityaffairs": "securityaffairs.xml",
     "krebsonsecurity": "krebsonsecurity.xml",
-    "ciscotalos": "cisco-talos.xml",
+    "cisco-talos": "cisco-talos.xml",
     "unit42": "unit42.xml",
-    "googlethreatintel": "google-threat-intelligence.xml",
+    "google-threat-intelligence": "google-threat-intelligence.xml",
 }
 BY_ENDPOINT = {by_id(sid).endpoint: sid for sid in SAMPLES}
 
@@ -150,7 +150,7 @@ async def test_each_source_is_due_again_only_after_its_own_interval(conn):
         "darkreading",
         "securityaffairs",
         "krebsonsecurity",
-        "ciscotalos",
+        "cisco-talos",
         "unit42",
     }
     assert len(due(conn, REGISTRY, now=T0 + timedelta(minutes=60))) == 10

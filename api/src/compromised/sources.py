@@ -89,7 +89,7 @@ KREBS = _rss(
     crawl_delay_seconds=35,
 )
 CISCO_TALOS = _rss(
-    "ciscotalos",
+    "cisco-talos",
     "Cisco Talos",
     "https://blog.talosintelligence.com/rss/",
     Tier.OFFICIAL,
@@ -98,7 +98,7 @@ CISCO_TALOS = _rss(
 )
 UNIT_42 = _rss("unit42", "Unit 42", "https://unit42.paloaltonetworks.com/feed/", Tier.OFFICIAL, 30)
 GOOGLE_THREAT_INTEL = _rss(
-    "googlethreatintel",
+    "google-threat-intelligence",
     "Google Threat Intelligence",
     "https://feeds.feedburner.com/threatintelligence/pvexyqv7v0v",
     Tier.OFFICIAL,

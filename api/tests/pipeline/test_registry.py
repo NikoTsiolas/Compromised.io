@@ -57,7 +57,7 @@ EXPECTED = [
         30 * MIN,
     ),
     (
-        "ciscotalos",
+        "cisco-talos",
         "Cisco Talos",
         "https://blog.talosintelligence.com/rss/",
         Tier.OFFICIAL,
@@ -73,7 +73,7 @@ EXPECTED = [
         30 * MIN,
     ),
     (
-        "googlethreatintel",
+        "google-threat-intelligence",
         "Google Threat Intelligence",
         "https://feeds.feedburner.com/threatintelligence/pvexyqv7v0v",
         Tier.OFFICIAL,
@@ -100,8 +100,8 @@ def test_every_endpoint_is_https_and_has_a_response_size_cap():
 
 def test_the_full_text_feeds_fit_under_their_size_cap():
     # Measured on 2026-11-26: Talos served 1.1 MB; Google's 20 items run to 90 KB each.
-    assert by_id("ciscotalos").max_bytes >= 3 * 1024 * 1024
-    assert by_id("googlethreatintel").max_bytes >= 4 * 1024 * 1024
+    assert by_id("cisco-talos").max_bytes >= 3 * 1024 * 1024
+    assert by_id("google-threat-intelligence").max_bytes >= 4 * 1024 * 1024
 
 
 def test_the_allow_list_is_exactly_the_registry_hosts():

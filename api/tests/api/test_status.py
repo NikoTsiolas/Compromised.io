@@ -77,13 +77,13 @@ def test_a_failing_source_makes_ingestion_degraded_without_exposing_the_error(cl
 def test_when_the_worker_has_stopped_sources_go_stale_and_ingestion_is_down(client, conn):
     hours_ago = datetime.now(UTC) - timedelta(hours=4)
     checked(conn, "therecord", hours_ago)  # polled every 5 minutes
-    checked(conn, "googlethreatintel", hours_ago)  # polled hourly
+    checked(conn, "google-threat-intelligence", hours_ago)  # polled hourly
 
     body = client.get("/v1/status").json()
 
     assert body["status"] == "down"
     states = {s["id"]: s["state"] for s in body["sources"]}
-    assert (states["therecord"], states["googlethreatintel"]) == ("stale", "stale")
+    assert (states["therecord"], states["google-threat-intelligence"]) == ("stale", "stale")
 
 
 def test_status_is_short_lived_in_caches(client):

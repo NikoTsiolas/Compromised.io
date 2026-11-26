@@ -48,6 +48,12 @@ class Event:
     published_at: datetime
     first_seen_at: datetime
     sources: list[EventSource]
+    category: str = "other"
+    commentary: bool = False
+    affected_organization: str = "unknown"  # "unknown" when no organization is known
+    organization_key: str | None = None
+    logo_key: str | None = None
+    tabs: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)

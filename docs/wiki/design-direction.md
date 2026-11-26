@@ -15,3 +15,11 @@ A subagent used all three required tools and wrote `design-references.md` in the
 - 2026-11-26: Bencho: 6 blocks recorded (notify-widget, faq-accordion, theme-switch, seek, rolling-counter, gauge; the gauge was recommended against). Three need a Bencho Pro licence; whether Niko holds one was unknown.
 - 2026-11-26: shadcn: 19 components listed with Tailwind v4 and next-themes setup. Its docs disagreed on whether Toast is deprecated in favour of Sonner.
 - 2026-11-26: Proposed direction, not yet seen by Niko: text-only rows divided by thin lines, a monospace time column on the left, company name and plain-language summary first; #111111 on #F6F5F1, reversed in dark mode; muted red #A3322C only for live items and attacker claims; trust label and score as one component that distinguishes statuses by square markers, not colour. Colour contrast had not been measured.
+
+## Homepage design built for sign-off, 2026-11-26
+As of `NikoTsiolas/Compromised.io@bd56fbb` on branch `ticket-9-homepage-design` (ticket #9, built by an Opus subagent, CI green, not merged pending Niko's sign-off):
+- Wordmark: "Compromised" in title case with the tagline beneath.
+- The proposed dark-theme accent failed contrast on its tint (4.42:1) and was changed to #D9706A (5.08:1); all text and accent pairs then passed WCAG AA in both themes.
+- Bencho blocks used: notify-widget, faq-accordion, theme-switch (Pro), seek and rolling-counter (MIT); gauge skipped. shadcn: item, tabs, collapsible, badge, separator, empty, skeleton, input, button.
+- Screenshots and the reference list were in `docs/design/checkpoint/` on that branch. A `/preview` route showed the populated design under a "Sample data" banner and was excluded from production builds.
+- Gaps reported: the search control pointed at `/search`, which did not exist yet; the new-events count came from a Next route handler because the API had no count endpoint; times were shown in UTC; tablet was captured in light only and had no test.

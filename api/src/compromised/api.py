@@ -1,7 +1,9 @@
 """Read-only JSON API, versioned under /v1."""
 
 from contextlib import asynccontextmanager
+from dataclasses import asdict
 from datetime import UTC, datetime
+from enum import StrEnum
 from typing import Annotated
 
 from fastapi import FastAPI, HTTPException, Query, Request, Response
@@ -10,7 +12,13 @@ from psycopg_pool import ConnectionPool
 from pydantic import BaseModel, PlainSerializer
 
 from compromised import config, health, storage
+from compromised.pipeline.classifier import CATEGORIES
+from compromised.pipeline.scope import TABS
 from compromised.sources import REGISTRY
+
+# Query values accepted for ?tab=, one per feed tab.
+TabId = StrEnum("TabId", {tab_id: tab_id for tab_id in TABS})
+DEFAULT_TAB = TabId("all")
 
 UtcTimestamp = Annotated[
     datetime,
@@ -33,7 +41,19 @@ class EventOut(BaseModel):
     title: str
     published_at: UtcTimestamp
     first_seen_at: UtcTimestamp
+    category: str
+    category_label: str
+    commentary: bool
+    affected_organization: str  # "unknown" when no organization is known
+    organization_key: str | None
+    logo_key: str | None
+    tabs: list[str]
     sources: list[SourceOut]
+
+
+class TabOut(BaseModel):
+    id: str
+    label: str
 
 
 class EventPageOut(BaseModel):
@@ -78,13 +98,27 @@ def create_app(database_url: str | None = None) -> FastAPI:
         request: Request,
         limit: Annotated[int, Query(ge=1, le=storage.MAX_PAGE_SIZE)] = 20,
         cursor: str | None = None,
+        tab: TabId = DEFAULT_TAB,
     ):
+        if tab == "trending":
+            # Trending is ranked by its own ticket (#10); until then it has no events.
+            return EventPageOut(events=[], next_cursor=None)
         with request.app.state.pool.connection() as conn:
             try:
-                page = storage.list_events(conn, limit=limit, cursor=cursor)
+                page = storage.list_events(conn, limit=limit, cursor=cursor, tab=tab.value)
             except storage.InvalidCursor:
                 raise HTTPException(status_code=400, detail="Invalid cursor") from None
-        return EventPageOut.model_validate(page, from_attributes=True)
+        return EventPageOut(
+            events=[
+                EventOut.model_validate({**asdict(e), "category_label": CATEGORIES[e.category]})
+                for e in page.events
+            ],
+            next_cursor=page.next_cursor,
+        )
+
+    @app.get("/v1/tabs", response_model=list[TabOut])
+    def list_tabs():
+        return [TabOut(id=tab_id, label=label) for tab_id, label in TABS.items()]
 
     @app.get("/v1/status", response_model=StatusOut)
     def status(request: Request, response: Response):

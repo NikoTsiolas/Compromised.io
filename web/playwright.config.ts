@@ -2,7 +2,7 @@ import { defineConfig, devices } from "@playwright/test";
 
 // The browser suite starts its own API (port 8100) and web app (port 3100) against a test
 // database seeded from captured samples, so it never touches the dev servers or dev data.
-// E2E_API_PORT and E2E_WEB_PORT override the ports (for running several checkouts at once).
+// E2E_API_PORT and E2E_WEB_PORT move them, e.g. to run beside another checkout.
 const databaseUrl =
   process.env.E2E_DATABASE_URL ?? "postgresql:///compromised_test";
 const apiPort = Number(process.env.E2E_API_PORT ?? 8100);
@@ -25,6 +25,7 @@ export default defineConfig({
         "uv run python -m compromised.seed --reset" +
         " bleepingcomputer=tests/fixtures/real/bleepingcomputer.xml" +
         " bleepingcomputer=tests/fixtures/synthetic/text-not-markup.xml" +
+        " bleepingcomputer=tests/fixtures/synthetic/vulnerability-gate.xml" +
         ` && uv run uvicorn compromised.api:create_app --factory --port ${apiPort}`,
       cwd: "../api",
       env: { DATABASE_URL: databaseUrl, ENVIRONMENT: "test" },

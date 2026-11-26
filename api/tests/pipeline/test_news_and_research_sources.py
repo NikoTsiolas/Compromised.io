@@ -92,7 +92,7 @@ CASES = {
             "Who Runs the Ransomware Group Qilin?",
         ],
     ),
-    "ciscotalos": (
+    "cisco-talos": (
         "cisco-talos.xml",
         "Cisco Talos",
         datetime(2026, 11, 25, 19, 0, 0, tzinfo=UTC),
@@ -113,7 +113,7 @@ CASES = {
             "Recent Trends and Tactics of Agentic AI Attacks",
         ],
     ),
-    "googlethreatintel": (
+    "google-threat-intelligence": (
         "google-threat-intelligence.xml",
         "Google Threat Intelligence",
         datetime(2026, 11, 19, 14, 0, 0, tzinfo=UTC),
@@ -157,7 +157,7 @@ def test_a_tag_cut_off_mid_way_through_the_body_is_dropped_not_kept_as_text(conn
     # The capture cut Google's escaped-HTML body inside an <a href=...> tag.
     ingest(
         conn,
-        by_id("googlethreatintel"),
+        by_id("google-threat-intelligence"),
         real_sample("google-threat-intelligence.xml"),
         fetched_at=FETCHED_AT,
     )

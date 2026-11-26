@@ -8,6 +8,7 @@
     "dev:worker": "uv run --directory api python -m compromised.worker",
     "dev:web": "pnpm --filter web dev",
     "db:migrate": "uv run --directory api python -m compromised.storage migrate",
+    "db:reclassify": "dotenv -e .env -- uv run --directory api python -m compromised.reclassify",
     "worker:once": "dotenv -e .env -- uv run --directory api python -m compromised.worker --once",
     "test": "pnpm test:api && pnpm test:e2e",
     "test:api": "uv run --directory api pytest",
