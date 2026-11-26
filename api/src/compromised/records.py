@@ -15,6 +15,8 @@ class ParsedItem:
     summary_html: str
     published: datetime | None  # timezone-aware
     metadata: dict[str, Any] = field(default_factory=dict)
+    # The image the publisher attached to the item in its own feed, unchecked.
+    image_url: str | None = None
 
 
 @dataclass(frozen=True)
@@ -31,6 +33,8 @@ class SourceRecord:
     fetched_at: datetime  # UTC
     metadata: dict[str, Any] = field(default_factory=dict)
     cves: tuple[str, ...] = ()  # CVE identifiers named in the headline or summary, upper case
+    # The publisher's own feed image: https only, never downloaded, None when there is none.
+    image_url: str | None = None
 
 
 @dataclass(frozen=True)
@@ -41,6 +45,8 @@ class EventSource:
     headline: str
     excerpt: str
     published_at: datetime
+    image_url: str | None = None
+    source_id: str = ""
 
 
 @dataclass(frozen=True)
@@ -59,6 +65,12 @@ class Event:
     summary: str | None = None  # plain-language summary written by the model (#8)
     action_line: str | None = None  # only when a source states the action
     enrichment: str = "rules"  # "ai" once the model's reply was accepted, else "rules"
+    # Trust (#7): set together or not at all; a score is never shown without its label and
+    # sources. None until the event is assessed.
+    status: str | None = None  # confirmed | reported | claimed | investigating | disputed
+    status_label: str | None = None  # the reader-facing wording
+    score: int | None = None  # 0-100 from the published formula
+    score_sources: tuple[str, ...] = ()  # publishers the score counted
 
 
 @dataclass(frozen=True)

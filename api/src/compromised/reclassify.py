@@ -1,8 +1,9 @@
-"""Re-derive every event's category, organization and tabs from its stored source records.
+"""Re-derive every event's category, organization, tabs, status and score from its stored source
+records.
 
     uv run python -m compromised.reclassify     (pnpm db:reclassify)
 
-Run it after migration 002 on a database that already holds events, or after changing the
+Run it after migration 002 or 007 on a database that already holds events, or after changing the
 classifier rules or the alias dictionary.
 """
 

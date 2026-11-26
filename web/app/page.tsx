@@ -1,43 +1,50 @@
-// Deliberately bare: the walking skeleton proves data reaches the page. Design is #9.
-// Everything from the API is rendered as React text children, never as HTML.
-import Link from "next/link";
-import { Suspense } from "react";
+// The homepage is the feed. Everything from the API is rendered as React text, never as HTML.
+// Next.js 16 runs with cacheComponents, so the data-fetching parts sit inside <Suspense>.
+import { Suspense, ViewTransition } from "react";
 
-import { IngestionIndicator, SourceHealthList } from "@/components/ingestion-status";
+import { HomeSkeleton } from "@/components/bencho-pro/home-skeleton";
+import { HomeView } from "@/components/feed/home-view";
+import { IngestionIndicator, SourceStatus } from "@/components/ingestion-status";
+import { SiteHeader } from "@/components/site/site-header";
+import { railWidgets } from "@/components/widgets/rail-widgets";
 import { listEvents, listTabs, type EventPage, type Tab } from "@/lib/api";
-import { formatOriginal, formatRelative } from "@/lib/time";
-
-const DEFAULT_TAB = "all";
+import { DEFAULT_TAB, toFeedItem } from "@/lib/feed";
+import { withLogo } from "@/lib/logos";
 
 export default function Home({ searchParams }: PageProps<"/">) {
   return (
     <>
-      <header>
-        <h1>Compromised</h1>
-        <Suspense fallback={null}>
-          <IngestionIndicator />
-        </Suspense>
-      </header>
-      <main>
-        <Suspense fallback={<p>Loading events…</p>}>
-          <Feed searchParams={searchParams} />
-        </Suspense>
-        <section aria-labelledby="sources-heading">
-          <h2 id="sources-heading">Sources</h2>
+      <SiteHeader
+        status={
           <Suspense fallback={null}>
-            <SourceHealthList />
+            <IngestionIndicator />
           </Suspense>
-        </section>
+        }
+      />
+      <main className="mx-auto max-w-[1240px] px-4 pb-16 sm:px-6 lg:px-10">
+        {/* The skeleton fades out as the content fades in (a Suspense reveal). */}
+        <Suspense
+          fallback={
+            <ViewTransition exit="auto" default="none">
+              <HomeSkeleton />
+            </ViewTransition>
+          }
+        >
+          <ViewTransition enter="auto" default="none">
+            <Feed searchParams={searchParams} />
+          </ViewTransition>
+        </Suspense>
       </main>
     </>
   );
 }
 
-function tabHref(tab: string, cursor?: string) {
-  const query: Record<string, string> = {};
-  if (tab !== DEFAULT_TAB) query.tab = tab;
-  if (cursor) query.cursor = cursor;
-  return { pathname: "/", query };
+function olderHref(tab: string, cursor: string | null) {
+  if (!cursor) return undefined;
+  const query = new URLSearchParams();
+  if (tab !== DEFAULT_TAB) query.set("tab", tab);
+  query.set("cursor", cursor);
+  return `/?${query}`;
 }
 
 async function Feed({
@@ -59,77 +66,33 @@ async function Feed({
       typeof cursor === "string" ? cursor : undefined,
     );
   } catch {
-    return <p>Events could not be loaded.</p>;
+    return (
+      <p className="py-12 text-[15px] text-ink-2">
+        Events could not be loaded. Please try again in a minute.
+      </p>
+    );
   }
 
+  // Widgets other than source status have no API yet (#15): they get null and say so.
+  const widgets = railWidgets({
+    frequency: null,
+    recentlyExploited: null,
+    mostReported: null,
+    sourceStatus: (
+      <Suspense fallback={<p className="text-[13px] text-ink-3">Loading sources…</p>}>
+        <SourceStatus />
+      </Suspense>
+    ),
+  });
+
   return (
-    <>
-      <nav aria-label="Feed tabs">
-        <ul>
-          {tabs.map((t) => (
-            <li key={t.id}>
-              <Link
-                href={tabHref(t.id)}
-                aria-current={t.id === tab ? "page" : undefined}
-              >
-                {t.label}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </nav>
-      {page.events.length === 0 ? (
-        <p>No events yet.</p>
-      ) : (
-        <ul aria-label="Events">
-          {page.events.map((event) => {
-            const source = event.sources[0];
-            return (
-              <li key={event.id}>
-                {event.affected_organization}
-                {" · "}
-                {event.category_label}
-                {" — "}
-                <a href={source.url} target="_blank" rel="noopener noreferrer">
-                  {event.title}
-                </a>
-                {" — "}
-                {source.publisher}
-                {" — "}
-                <time dateTime={event.published_at}>
-                  {formatOriginal(event.published_at)}
-                </time>
-                {" ("}
-                {formatRelative(event.published_at)}
-                {")"}
-                {event.summary && <p>AI summary: {event.summary}</p>}
-                {event.action_line && <p>Action: {event.action_line}</p>}
-                {event.source_count > 1 && (
-                  <details>
-                    <summary>{event.source_count} sources</summary>
-                    <ul aria-label="Other sources">
-                      {event.sources.slice(1).map((other) => (
-                        <li key={other.record_id}>
-                          <a
-                            href={other.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            {other.publisher}: {other.headline}
-                          </a>
-                        </li>
-                      ))}
-                    </ul>
-                  </details>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      )}
-      {page.next_cursor && (
-        <Link href={tabHref(tab, page.next_cursor)}>Older events</Link>
-      )}
-    </>
+    <HomeView
+      items={page.events.map(toFeedItem).map(withLogo)}
+      tabs={tabs}
+      tab={tab}
+      withFeatured={tab === DEFAULT_TAB && typeof cursor !== "string"}
+      widgets={widgets}
+      olderHref={olderHref(tab, page.next_cursor)}
+    />
   );
 }

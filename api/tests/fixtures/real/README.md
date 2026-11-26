@@ -30,6 +30,15 @@ characters and end in ` [truncated for fixture]`.
 | `msrc-update-guide.xml` | https://api.msrc.microsoft.com/update-guide/rss | 5,776 | 5 newest | none (keeps its UTF-8 BOM) |
 | `cisa-kev.json` | https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json | 1,805 entries | 3 most recently added | none; top-level `count` still says 1805 |
 
+`cisa-kev-wordpress.json` holds one real KEV entry that the trimmed `cisa-kev.json` does not:
+CVE-2026-119977, vendor `WordPress`, product `WordPress Core`, whose CISA name repeats the
+vendor. It is not a byte-for-byte capture. It was rebuilt on 2026-11-26 from the source record
+the project's fetcher stored from the live catalog that day (13:24 US Eastern, in a local
+development database), with only the fields the KEV adapter reads, each value unchanged:
+`cveID`, `vendorProject`, `product`, `vulnerabilityName` (the stored title minus the template's
+suffix), `dateAdded`, `shortDescription`, `requiredAction`, `dueDate`,
+`knownRansomwareCampaignUse`. `notes`, `cwes` and `forensicTriage` were not stored and are absent.
+
 Ransomware.live items are attacker claims relayed by a third party; their descriptions are
 attacker-supplied text. None of the 3 kept items links to a leak site or `.onion` address.
 

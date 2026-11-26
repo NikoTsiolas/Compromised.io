@@ -1,0 +1,29 @@
+/* ══ Image shimmer ═════════════════════════════════════════
+   From the Bencho "Image shimmer" block (Bencho Pro licence, see README.md).
+   Kept: the placeholder a picture leaves while it loads, with a soft band of
+   light passing across it on a loop, and "no script: gradients and keyframes".
+   Changed: the colour prism (pale blue, lilac, peach) and its rim are dropped;
+   only the block's faint grey shade band remains, on our surface colour, so the
+   page stays monochrome. Tokens: --fill-slab -> --c-surface, --fill-on ->
+   --c-ink. Stops under reduced motion. */
+.ish-tile {
+  background:
+    linear-gradient(104deg, transparent 32%, color-mix(in srgb, var(--c-ink) 5%, transparent) 50%, transparent 68%) 0 0 / 300% 100% no-repeat,
+    var(--c-surface);
+  animation: ish-sweep 2.4s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ish-tile {
+    animation: none;
+  }
+}
+
+@keyframes ish-sweep {
+  from {
+    background-position: 120% 0, 0 0;
+  }
+  to {
+    background-position: -20% 0, 0 0;
+  }
+}

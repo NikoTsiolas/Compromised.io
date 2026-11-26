@@ -27,6 +27,7 @@ from compromised import config, storage
 from compromised.pipeline import ParseError, ingest, msrc
 from compromised.pipeline.enricher import Enricher
 from compromised.pipeline.fetcher import FetchError, FetchPolicy, FetchResult, Validators, fetch
+from compromised.pipeline.previews import fill_previews
 from compromised.sources import REGISTRY, Source, allowed_hosts
 
 log = logging.getLogger("compromised.worker")
@@ -97,7 +98,24 @@ async def run_once(
             enricher.enrich_pending(conn)
         except Exception:  # enrichment must never stop ingestion
             log.exception("enrichment pass failed")
+    # Records are stored before any article page is asked for a preview image, so a preview
+    # can never hold up or undo ingestion. Publishers are worked through in parallel, each one
+    # politely in sequence.
+    await asyncio.gather(*(_previews(conn, client, policy, s) for s in sources))
     return outcomes
+
+
+async def _previews(conn, client, policy, source: Source) -> None:
+    try:
+        outcome = await fill_previews(conn, client, policy, source)
+    except Exception:  # never let a preview problem reach ingestion or other sources
+        log.exception("previews failed", extra={"source": source.id})
+        return
+    if outcome.attempted:
+        log.info(
+            "previews",
+            extra={"source": source.id, "pages": outcome.attempted, "found": outcome.found},
+        )
 
 
 @dataclass(frozen=True)

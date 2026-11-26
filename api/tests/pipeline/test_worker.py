@@ -51,8 +51,13 @@ class FakeSources:
         self.overrides: dict[str, httpx.Response] = {}
 
     def __call__(self, request: httpx.Request) -> httpx.Response:
+        is_sug = request.url.copy_with(query=None) == httpx.URL(MSRC_SUG.endpoint)
+        if str(request.url) not in BY_ENDPOINT and not is_sug:
+            # robots.txt or an article page asked for a preview image: unreachable here, which
+            # makes the preview step fetch nothing (pipeline/test_article_previews.py covers it).
+            return httpx.Response(503)
         self.requests.append(request)
-        if request.url.copy_with(query=None) == httpx.URL(MSRC_SUG.endpoint):
+        if is_sug:
             if "msrc-sug" in self.overrides:
                 return self.overrides["msrc-sug"]
             return httpx.Response(200, content=real_sample("msrc-sug.json"))
