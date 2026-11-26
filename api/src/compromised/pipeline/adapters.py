@@ -38,17 +38,19 @@ def parse_kev(body: bytes) -> list[ParsedItem]:
         added = _date(entry.get("dateAdded"))
         if not (cve and name and added):
             continue
+        vendor = _str(entry.get("vendorProject"))
+        product = _str(entry.get("product"))
         items.append(
             ParsedItem(
                 guid=cve,
                 link=KEV_LINK.format(cve=cve),
-                title=KEV_TITLE.format(name=name, cve=cve),
+                title=KEV_TITLE.format(name=_kev_name(name, vendor, product), cve=cve),
                 summary_html=_str(entry.get("shortDescription")),
                 published=added,
                 metadata=_present(
                     cve=cve,
-                    vendor=_str(entry.get("vendorProject")),
-                    product=_str(entry.get("product")),
+                    vendor=vendor,
+                    product=product,
                     date_added=added.date().isoformat(),
                     due_date=_str(entry.get("dueDate")),
                     required_action=_str(entry.get("requiredAction")),
@@ -58,6 +60,18 @@ def parse_kev(body: bytes) -> list[ParsedItem]:
             )
         )
     return items
+
+
+def _kev_name(name: str, vendor: str, product: str) -> str:
+    """CISA's vulnerabilityName is "<vendor> <product> <weakness>", so a product whose name already
+    starts with the vendor repeats it ("WordPress WordPress Core ..."). Only then is the leading
+    vendor dropped; every other name is kept exactly as CISA wrote it."""
+    if not (vendor and product):
+        return name
+    product_names_vendor = product == vendor or product.startswith(f"{vendor} ")
+    if product_names_vendor and name.startswith(f"{vendor} {product}"):
+        return name.removeprefix(f"{vendor} ")
+    return name
 
 
 CLAIM_TITLE = "{group} claims {victim} as a ransomware victim"

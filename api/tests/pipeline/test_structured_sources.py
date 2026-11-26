@@ -81,6 +81,19 @@ def test_kev_entries_get_a_fixed_title_and_carry_vendor_product_cve_action_and_d
     )
 
 
+def test_a_kev_title_names_the_vendor_once_when_the_product_name_already_starts_with_it(conn):
+    # Real entry: vendorProject "WordPress", product "WordPress Core"; CISA's own
+    # vulnerabilityName reads "WordPress WordPress Core ...".
+    ingest(conn, by_id("cisa-kev"), real_sample("cisa-kev-wordpress.json"), fetched_at=FETCHED_AT)
+
+    assert list(metadata_by_title(conn)) == [
+        (
+            "WordPress Core Time-of-check Time-of-use (TOCTOU) Race Condition Vulnerability"
+            " (CVE-2026-119977) added to CISA's Known Exploited Vulnerabilities catalog"
+        )
+    ]
+
+
 def stored_text(conn) -> str:
     """Every stored source record and event, as text, to prove something is nowhere in them."""
     rows = conn.execute(
