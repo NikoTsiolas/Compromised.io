@@ -10,4 +10,6 @@
 ## Open questions on 2026-11-26
 - What the "Impeccable" library is.
 - Whether monospace for timestamps and identifiers matches what Niko said.
-- Whether the MSRC feed carries severity.
+- Whether the MSRC feed carries severity. (Answered 2026-11-26: it does not; see Feed scope and sources.)
+- Whether Niko holds a Bencho Pro licence.
+- Which Postgres version Railway provisions.
