@@ -58,7 +58,10 @@ def search(
         # Exact identifiers: the event names at least one of them.
         conditions.append("cves && %s::text[]")
         params.append(cves)
-    if re.search(r"\w", words):
+    if query and not cves and not re.search(r"\w", words):
+        # Only punctuation or operators: there is nothing to search for, so nothing matches.
+        conditions.append("false")
+    elif re.search(r"\w", words):
         # websearch_to_tsquery accepts any text without raising: quotes, "or" and "-" have their
         # web-search meaning and every other operator character is ignored.
         conditions.append("search_vector @@ websearch_to_tsquery('english', %s)")
