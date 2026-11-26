@@ -74,3 +74,9 @@ As of `NikoTsiolas/Compromised.io@da2efc0` on branch `ticket-4-structured-source
 
 ## User agent changed, 2026-11-26
 On branch `merge-tickets-4-5-8` (merge of #4, #5 and #8, by an Opus subagent): the default user agent became `Compromised/0.1 (+https://github.com/NikoTsiolas/Compromised.io)`, still identifying, without "Bot", never a browser string; supersedes `CompromisedBot/0.1` above. One fetch of the CISA advisories feed with it answered HTTP 200.
+
+## MSRC re-ratings as revisions, 2026-11-26
+As of `NikoTsiolas/Compromised.io@4863218` on branch `merge-tickets-4-5-8` (merge of #4, #5 and #8, by an Opus subagent):
+- Contradiction found at the merge: #4 overwrote a stored MSRC record's metadata when a later revision changed Microsoft's rating, while #5's trigger (`004_grouping.sql`) refused any change to a source record other than `event_id`. Merged as built, a re-rating failed the whole MSRC poll.
+- Decision (coordinating session, 2026-11-26): source records stay exactly as fetched. A re-rating is new information from a later fetch, not a correction of the earlier one, so it is appended, never written over; the spec keeps original records so that grouping mistakes and later corrections never lose data.
+- As built: migration `006_record_revisions.sql` added `source_record_revisions` (record id, fetch time, the source's `revised_at`, the changed fields), append-only by trigger. `storage.append_record_revision` replaced `update_record_metadata`. A record's effective metadata, its own overlaid with its revisions in order, is computed in one place (`storage.EFFECTIVE_METADATA`) and is what `event_records` and `record_by_id` return, so the classifier, scope rules and vulnerability gate (and #7 later) read the latest rating. The API exposes nothing new.
