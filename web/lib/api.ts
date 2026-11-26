@@ -21,6 +21,11 @@ export type FeedEvent = {
   organization_key: string | null;
   logo_key: string | null;
   tabs: string[];
+  /** Plain-language summary written by the model; show it labelled "AI summary". */
+  summary: string | null;
+  /** Only when a source states the action. */
+  action_line: string | null;
+  enrichment: "ai" | "rules";
   sources: EventSource[];
 };
 

@@ -52,7 +52,9 @@ def migrate(database_url: str) -> list[str]:
 
 
 def reset_for_tests(conn: psycopg.Connection) -> None:
-    conn.execute("truncate source_records, events, sources restart identity cascade")
+    conn.execute(
+        "truncate source_records, events, sources, enrichment_usage restart identity cascade"
+    )
 
 
 # --- writes -----------------------------------------------------------------------------------
@@ -179,6 +181,78 @@ def save_classification(conn: psycopg.Connection, event_id: int, facts, tabs) ->
     )
 
 
+def save_action_line(conn: psycopg.Connection, event_id: int, action_line: str | None) -> None:
+    conn.execute("update events set action_line = %s where id = %s", (action_line, event_id))
+
+
+# --- enrichment (#8) --------------------------------------------------------------------------
+
+
+def take_enrichment_call(conn: psycopg.Connection, day, cap: int) -> bool:
+    """Count one model call against ``day``'s cap. False, and nothing counted, once it is reached."""
+    if cap <= 0:
+        return False
+    row = conn.execute(
+        "insert into enrichment_usage as u (day, calls) values (%s, 1)"
+        " on conflict (day) do update set calls = u.calls + 1 where u.calls < %s"
+        " returning calls",
+        (day, cap),
+    ).fetchone()
+    return row is not None
+
+
+def enrichment_calls(conn: psycopg.Connection, day) -> int:
+    row = conn.execute("select calls from enrichment_usage where day = %s", (day,)).fetchone()
+    return row[0] if row else 0
+
+
+def save_enrichment(conn: psycopg.Connection, event_id: int, enrichment, *, at: datetime) -> None:
+    """Store a checked model reply (pipeline.enricher.Enrichment). Touches enrichment columns only."""
+    conn.execute(
+        "update events set enrichment_state = 'enriched', enriched_at = %s, summary = %s,"
+        " ai_category = %s, ai_commentary = %s, ai_organization = %s, ai_action_line = %s"
+        " where id = %s",
+        (
+            at,
+            enrichment.summary,
+            enrichment.category,
+            enrichment.commentary,
+            enrichment.organization,
+            enrichment.action_line,
+            event_id,
+        ),
+    )
+
+
+def record_rejected_enrichment(conn: psycopg.Connection, event_id: int) -> None:
+    conn.execute(
+        "update events set enrichment_attempts = enrichment_attempts + 1 where id = %s",
+        (event_id,),
+    )
+
+
+def enrichment_of(conn: psycopg.Connection, event_id: int) -> dict | None:
+    """The model's stored output for an event, or None if it was never enriched."""
+    with conn.cursor(row_factory=dict_row) as cur:
+        row = cur.execute(
+            "select ai_category as category, ai_commentary as commentary,"
+            " ai_organization as organization, ai_action_line as action_line"
+            " from events where id = %s and enrichment_state = 'enriched'",
+            (event_id,),
+        ).fetchone()
+    return row
+
+
+def awaiting_enrichment(conn: psycopg.Connection, limit: int, max_rejected: int) -> list[int]:
+    """Events not yet enriched, newest first, skipping those whose replies keep being rejected."""
+    rows = conn.execute(
+        "select id from events where enrichment_state = 'awaiting'"
+        " and enrichment_attempts < %s order by published_at desc, id desc limit %s",
+        (max_rejected, limit),
+    ).fetchall()
+    return [r[0] for r in rows]
+
+
 # --- reads ------------------------------------------------------------------------------------
 
 
@@ -223,7 +297,8 @@ def list_events(
     with conn.cursor(row_factory=dict_row) as cur:
         rows = cur.execute(
             "select id, title, published_at, first_seen_at, category, commentary, organization,"
-            f" organization_key, logo_key, tabs from events {where}"
+            " organization_key, logo_key, tabs, summary, action_line, enrichment_state"
+            f" from events {where}"
             " order by published_at desc, id desc limit %s",
             [*params, limit + 1],
         ).fetchall()
@@ -243,6 +318,9 @@ def list_events(
             organization_key=r["organization_key"],
             logo_key=r["logo_key"],
             tabs=tuple(r["tabs"]),
+            summary=r["summary"],
+            action_line=r["action_line"],
+            enrichment="ai" if r["enrichment_state"] == "enriched" else "rules",
         )
         for r in rows
     ]

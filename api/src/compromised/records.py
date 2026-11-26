@@ -54,6 +54,9 @@ class Event:
     organization_key: str | None = None
     logo_key: str | None = None
     tabs: tuple[str, ...] = ()
+    summary: str | None = None  # plain-language summary written by the model (#8)
+    action_line: str | None = None  # only when a source states the action
+    enrichment: str = "rules"  # "ai" once the model's reply was accepted, else "rules"
 
 
 @dataclass(frozen=True)

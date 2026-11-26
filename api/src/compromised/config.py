@@ -10,6 +10,8 @@ class Settings:
     web_origins: tuple[str, ...]
     user_agent: str
     environment: str
+    anthropic_api_key: str | None  # None: no enrichment, rules only (#8)
+    enrichment_daily_cap: int
 
 
 def load() -> Settings:
@@ -25,4 +27,16 @@ def load() -> Settings:
             "CompromisedBot/0.1 (+https://github.com/NikoTsiolas/Compromised.io)",
         ),
         environment=os.environ.get("ENVIRONMENT", "development"),
+        anthropic_api_key=os.environ.get("ANTHROPIC_API_KEY") or None,
+        enrichment_daily_cap=_int("ENRICHMENT_DAILY_CAP", 500),
     )
+
+
+def _int(name: str, default: int) -> int:
+    raw = os.environ.get(name, "").strip()
+    if not raw:
+        return default
+    try:
+        return int(raw)
+    except ValueError:
+        raise SystemExit(f"{name} must be a whole number, got {raw!r}") from None

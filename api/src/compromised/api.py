@@ -48,6 +48,9 @@ class EventOut(BaseModel):
     organization_key: str | None
     logo_key: str | None
     tabs: list[str]
+    summary: str | None  # plain-language summary written by the model; show as "AI summary"
+    action_line: str | None  # only when a source states the action
+    enrichment: str  # "ai" when the model's reply was accepted, "rules" otherwise
     sources: list[SourceOut]
 
 
