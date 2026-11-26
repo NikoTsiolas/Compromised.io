@@ -28,6 +28,7 @@ export default defineConfig({
         " thehackernews=tests/fixtures/real/thehackernews.xml" +
         " bleepingcomputer=tests/fixtures/synthetic/text-not-markup.xml" +
         " bleepingcomputer=tests/fixtures/synthetic/vulnerability-gate.xml" +
+        " --sample-enrichment tests/fixtures/synthetic/enrichment-replies.json" +
         ` && uv run uvicorn compromised.api:create_app --factory --port ${apiPort}`,
       cwd: "../api",
       env: { DATABASE_URL: databaseUrl, ENVIRONMENT: "test" },

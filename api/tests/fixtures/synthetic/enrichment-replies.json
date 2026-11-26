@@ -1,0 +1,19 @@
+{
+  "_comment": "SYNTHETIC TEST DATA: model replies for the browser seam, keyed by synthetic headline. Not real model output, not a real incident.",
+  "[Synthetic test item] Critical Chrome flaw fixed in security update": {
+    "category": "vulnerability",
+    "affected_organization": null,
+    "commentary": false,
+    "summary": "Synthetic summary: a serious flaw in Chrome has been fixed in an update.",
+    "action_line": "Synthetic action: install the latest Chrome update.",
+    "action_quote": "an update is available"
+  },
+  "[Synthetic test item] Windows zero-day exploited in attacks": {
+    "category": "zero_day",
+    "affected_organization": null,
+    "commentary": false,
+    "summary": "Synthetic summary: attackers are using an unfixed Windows flaw.",
+    "action_line": null,
+    "action_quote": null
+  }
+}

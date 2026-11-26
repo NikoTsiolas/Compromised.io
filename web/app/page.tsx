@@ -102,6 +102,8 @@ async function Feed({
                 {" ("}
                 {formatRelative(event.published_at)}
                 {")"}
+                {event.summary && <p>AI summary: {event.summary}</p>}
+                {event.action_line && <p>Action: {event.action_line}</p>}
                 {event.source_count > 1 && (
                   <details>
                     <summary>{event.source_count} sources</summary>

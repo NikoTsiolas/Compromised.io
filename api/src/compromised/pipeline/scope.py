@@ -8,18 +8,19 @@ Rules (docs/wiki/feed-scope-and-sources.md):
   or exploited; it then shows in All and Update now, and in Under attack when exploited.
 - An attacker claim with no other coverage appears only under Ransomware.
 
-``refresh_event`` derives an event's facts from all of its source records and stores them with
-its tabs. Call it whenever an event gains or loses a record (#5) or its status changes (#7). The
-LLM enricher (#8) may override category or organization: build ``EventFacts`` with its values
-and store them with ``storage.save_classification(conn, event_id, facts, tabs_for(facts))``.
+``refresh_event`` derives an event's facts from all of its source records, lays the enricher's
+stored output over them (#8: category and commentary flag; the organization only when the rules
+found none) and stores them with its tabs and action line. Call it whenever an event gains or
+loses a record (#5) or its status changes (#7).
 Trending is ranked by a query (#10), so it is never stored as a tab.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 import psycopg
 
-from compromised import storage
+from compromised import catalog, storage
+from compromised.pipeline.actions import required_action_line
 from compromised.pipeline.classifier import VULNERABILITY_CATEGORIES, classify
 from compromised.pipeline.extractor import extract
 
@@ -94,9 +95,43 @@ def facts_for(records) -> EventFacts:
     )
 
 
+def with_enrichment(facts: EventFacts, ai: dict | None) -> EventFacts:
+    """Facts with the model's checked output laid over the rules' (see pipeline.enricher)."""
+    if not ai:
+        return facts
+    facts = replace(facts, category=ai["category"], commentary=ai["commentary"])
+    if facts.organization is None and ai["organization"]:
+        entry = catalog.load().by_name(ai["organization"])
+        facts = replace(
+            facts,
+            organization=entry.name if entry else ai["organization"],
+            organization_key=entry.key if entry else None,
+            logo=entry.logo if entry else None,
+            people_use=entry.people_use if entry else False,
+        )
+    return facts
+
+
+def action_line_for(records, facts: EventFacts, ai: dict | None) -> str | None:
+    """A source's structured required action first; else the model's, if the input stated it.
+
+    An attacker's own words are never turned into advice: claim-only events get none from the
+    model.
+    """
+    stated = required_action_line(records)
+    if stated:
+        return stated
+    if ai and ai["action_line"] and not facts.claim_only:
+        return ai["action_line"]
+    return None
+
+
 def refresh_event(conn: psycopg.Connection, event_id: int) -> EventFacts:
-    facts = facts_for(storage.event_records(conn, event_id))
+    records = storage.event_records(conn, event_id)
+    ai = storage.enrichment_of(conn, event_id)
+    facts = with_enrichment(facts_for(records), ai)
     storage.save_classification(conn, event_id, facts, tabs_for(facts))
+    storage.save_action_line(conn, event_id, action_line_for(records, facts, ai))
     return facts
 
 

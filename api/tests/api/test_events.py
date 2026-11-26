@@ -116,6 +116,10 @@ def test_events_carry_category_commentary_flag_organization_and_logo_key(client)
         "organization_key": "1password",
         "logo_key": "1password",
         "tabs": ["all", "breaches"],
+        # Ingested without an enricher (rules only, #8).
+        "summary": None,
+        "action_line": None,
+        "enrichment": "rules",
     }
 
     claim = client.get("/v1/events", params={"tab": "ransomware", "limit": 1}).json()["events"][0]

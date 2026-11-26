@@ -5,6 +5,7 @@ description = "Compromised API and ingestion worker"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "anthropic>=2.14.0",
     "fastapi>=0.165.0",
     "feedparser>=6.0.14",
     "httpx>=0.28.1",
