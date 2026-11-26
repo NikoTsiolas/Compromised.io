@@ -92,8 +92,7 @@ async def test_one_pass_fetches_every_source_once_politely_and_stores_its_events
     # KEV Juniper entry joins SecurityWeek's story on the same CVE.
     joined = {"securityaffairs", "thehackernews", "cisa-advisories", "cisa-kev"}
     assert {sid: (o.new_events, o.grouped) for sid, o in outcomes.items()} == {
-        sid: (NEW_EVENTS[sid] - 1, 1) if sid in joined else (NEW_EVENTS[sid], 0)
-        for sid in SAMPLES
+        sid: (NEW_EVENTS[sid] - 1, 1) if sid in joined else (NEW_EVENTS[sid], 0) for sid in SAMPLES
     }
     assert len(storage.list_events(conn, limit=100).events) == 36
     seen = health_by_id(conn)

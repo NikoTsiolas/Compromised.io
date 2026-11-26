@@ -21,7 +21,7 @@ import json
 import logging
 import re
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, date, datetime
 from typing import Annotated, Literal, Protocol
 
@@ -29,7 +29,7 @@ import psycopg
 from pydantic import BaseModel, ConfigDict, StringConstraints, ValidationError
 
 from compromised import catalog, storage
-from compromised.pipeline import scope
+from compromised.pipeline import classifier, scope
 from compromised.pipeline.classifier import CATEGORIES
 from compromised.pipeline.normalizer import plain_text
 
@@ -224,6 +224,10 @@ class Enricher:
             if raw is None:
                 raise Rejected(f"model declined: {declined}")
             enrichment = check(raw, item)
+            if _attacker_claim(lead):
+                # The model read an attacker's words: never keep advice drawn from them, not
+                # even once a press story joins the event and it stops being claim-only.
+                enrichment = replace(enrichment, action_line=None)
         except Rejected as exc:
             storage.record_rejected_enrichment(conn, event_id)
             log.warning("model reply rejected", extra={"event_id": event_id, "error": str(exc)})
@@ -242,6 +246,12 @@ class Enricher:
             if outcome.reason in STOP_THE_PASS:
                 break
         return outcomes
+
+
+def _attacker_claim(record) -> bool:
+    return classifier.source_prior(record.source_id) == "claim" or bool(
+        (record.metadata or {}).get("attacker_claim")
+    )
 
 
 def _utc_day(moment: datetime) -> date:

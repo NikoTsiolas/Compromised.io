@@ -14,3 +14,4 @@ headline, and links point at `example.com`. Test data only: never loaded into pr
 | `same-canonical-url.xml` | Pipeline seam: a second source whose item links the real BleepingComputer 1Password article (with tracking parameters and a fragment) under an unrelated headline. No two real captures shared a URL. |
 | `adversarial-headlines.xml` | Pipeline seam: headlines and excerpts that try to instruct the LLM enricher (set a status or score, break out of the untrusted-data wrapper, plant an action line or a link). |
 | `enrichment-replies.json` | Browser seam: stand-in model replies for two synthetic items (`compromised.seed --sample-enrichment`), so the page shows an AI summary and a stated action line without calling the model. |
+| `press-on-a-ransomware-claim.xml` | Pipeline seam (#4 with #5 and #8): a press item naming the victim of a real Ransomware.live claim, as a feed tag, so that it joins the claim's event. No real capture covered a claimed victim. |
