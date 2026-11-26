@@ -65,6 +65,13 @@ export function FeedRow({ item, now }: { item: FeedItem; now?: Date }) {
         </h3>
         <p className="mt-1.5 font-mono text-xs leading-4 text-ink-3">
           <LocalTime iso={item.publishedAt} style="short-relative" now={now} />
+          {item.inFeed === false && (
+            // Search covers every incident; this one is kept out of every feed tab.
+            <>
+              <span aria-hidden> · </span>
+              <span className="font-sans text-[13px]">Not shown in the feed</span>
+            </>
+          )}
         </p>
       </div>
 

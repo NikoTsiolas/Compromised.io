@@ -43,6 +43,8 @@ export type FeedItem = {
   actionLine?: string | null;
   /** Under active attack right now: earns the red LIVE kicker. */
   live?: boolean;
+  /** False when the event is in no feed tab (search finds it anyway and says so). */
+  inFeed?: boolean;
 };
 
 export function toFeedItem(event: FeedEvent | EventDetail): FeedItem {
@@ -73,6 +75,7 @@ export function toFeedItem(event: FeedEvent | EventDetail): FeedItem {
     attackVector: event.attack_vector,
     threatActors: event.threat_actors,
     actionLine: event.action_line,
+    inFeed: event.tabs.length > 0,
   };
 }
 

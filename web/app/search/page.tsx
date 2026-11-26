@@ -128,7 +128,7 @@ async function Results({ searchParams }: { searchParams: PageProps<"/search">["s
         empty={{
           title: "No events match",
           description:
-            "Try another spelling, fewer words or fewer filters. Search covers the events shown in the feed's tabs.",
+            "Try another spelling, fewer words or fewer filters. Search covers every incident we have stored, including those not shown in the feed.",
         }}
         more={
           page.next_cursor

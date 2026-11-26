@@ -137,6 +137,39 @@ def test_events_carry_their_cves_threat_actors_and_attack_vector(client):
     assert event(client, OROVA_E_XING)["threat_actors"] == ["Orova"]
 
 
+# --- scope: every stored incident, never commentary ---------------------------------------------
+
+# Incidents the feed rules keep out of every tab (flaws in products outside the "people use" list,
+# a fixed flaw that is not exploited) but that a reader may still look up by name.
+DRUPAL = "Drupal Warns of New Highly Critical Site Takeover Vulnerability Under Active Exploitation"
+PAN_OS = "Palo Alto Networks warns of Fragnesia flaw exploited in PAN-OS attacks"
+WINDOWS_FIXED = "[Synthetic test item] Windows flaw fixed in security update"
+# Commentary: opinion and features, not incidents. Never found, in a tab or not.
+COMMENTARY = [
+    "Most Wanted: The Phishing Kits and Techniques Getting Past Security Controls",
+    "UK’s long-awaited National Cyber Action Plan delayed until December",
+    "It's a Bot World. We're Just Living in It",
+    "The AI Threat Horizon: Why Speed, Edge AI and Baselines Are Our Best Defense",
+]
+
+
+def test_search_covers_incidents_that_appear_in_no_tab_and_says_so(client):
+    assert titles(client, q="Drupal") == [DRUPAL]
+    assert titles(client, q="PAN-OS") == [PAN_OS]
+    assert WINDOWS_FIXED in titles(client, q="Windows")
+    # The event carries its tabs, empty here, so the page can say it is not in the feed.
+    assert event(client, DRUPAL)["tabs"] == []
+    assert event(client, ONEPASSWORD)["tabs"] == ["all", "breaches"]
+
+
+def test_search_never_returns_commentary(client):
+    everything = titles(client, limit=100)
+    assert DRUPAL in everything and PAN_OS in everything and WINDOWS_FIXED in everything
+    assert not set(COMMENTARY) & set(everything)
+    assert titles(client, q="Phishing Kits") == []
+    assert titles(client, q="National Cyber Action Plan") == []
+
+
 # --- filters, combined with search and with each other, paginated -------------------------------
 
 BREACHES = [FLIGHT_CENTRE, ONEPASSWORD, FIFA]
@@ -150,12 +183,16 @@ def test_each_filter_narrows_the_results(client):
         OROVA_TACORP,
         OROVA_E_XING,
     ]
-    # Both dates are inclusive UTC days; the synthetic items are dated 2 November at 11:00-12:00.
+    # Both dates are inclusive UTC days; the synthetic items are dated 2 November at 11:00-12:00
+    # (the fixed Windows flaw is in no tab, and search covers it too).
     assert titles(client, **{"from": "2026-11-01", "to": "2026-11-02"}) == [
         WINDOWS_ZERO_DAY,
         CHROME_CRITICAL,
+        WINDOWS_FIXED,
     ]
-    assert not {WINDOWS_ZERO_DAY, CHROME_CRITICAL} & set(titles(client, **{"from": "2026-11-03"}))
+    assert not {WINDOWS_ZERO_DAY, CHROME_CRITICAL, WINDOWS_FIXED} & set(
+        titles(client, **{"from": "2026-11-03"})
+    )
 
 
 def test_filters_combine_with_each_other_and_with_search(client):

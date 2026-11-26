@@ -1,8 +1,11 @@
-"""Search, filters and Trending over published events (#10). All queries are parameterised.
+"""Search, filters and Trending (#10). All queries are parameterised.
 
-Scope: only events that appear in at least one feed tab, so search never surfaces what the feed
-rules keep out (commentary, unknown organization, gated vulnerabilities). Results are newest
-first and paginated with the feed's cursor (publication time, id).
+Search scope (decided for Niko at the merge of #10, #11, #15 and #16): every stored event that
+is an incident, that is, not commentary, including those the feed rules keep out of every tab
+(unknown organization, flaws outside the "people use" list). Each result carries its tabs, so
+one in no tab can say it is not shown in the feed. Commentary is never a search result. Results
+are newest first and paginated with the feed's cursor (publication time, id). Trending ranks
+only events shown in a tab.
 """
 
 import base64
@@ -52,7 +55,7 @@ def search(
     conn: psycopg.Connection, filters: Filters, *, limit: int = 20, cursor: str | None = None
 ) -> EventPage:
     limit = max(1, min(limit, MAX_PAGE_SIZE))
-    conditions = ["cardinality(tabs) > 0"]
+    conditions = ["not commentary"]
     params: list = []
 
     query = clean_query(filters.query)

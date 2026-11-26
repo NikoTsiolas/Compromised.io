@@ -49,6 +49,24 @@ test("filters combine with the query and with each other", async ({ page }) => {
   await expect(headlines(page)).toContainText([FLIGHT_CENTRE, ONEPASSWORD]);
 });
 
+test("search covers incidents kept out of every tab, and says they are not in the feed", async ({
+  page,
+}) => {
+  // A fixed flaw nobody is exploiting is in no tab; it is still an incident a reader may look up.
+  const outOfFeed = "[Synthetic test item] Windows flaw fixed in security update";
+  await page.goto(`/search?q=${encodeURIComponent("Windows flaw fixed")}`);
+  const result = results(page)
+    .getByRole("article")
+    .filter({ has: page.getByRole("link", { name: outOfFeed, exact: true }) });
+  await expect(result).toHaveCount(1);
+  await expect(result).toContainText("Not shown in the feed");
+
+  // An event that is in the feed carries no such note.
+  await page.goto("/search?q=1Password");
+  await expect(headlines(page)).toHaveText([ONEPASSWORD]);
+  await expect(results(page)).not.toContainText("Not shown in the feed");
+});
+
 test("hostile text in the query is searched as text and shown as text", async ({ page }) => {
   const hostile = `<img src=x onerror="document.title='owned'"> ' OR 1=1 --`;
   await page.goto(`/search?q=${encodeURIComponent(hostile)}`);
