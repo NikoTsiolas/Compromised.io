@@ -111,6 +111,8 @@ export const SAMPLE_ITEMS: FeedItem[] = [
     publishedAt: "2026-11-26T11:40:00Z",
     organization: "Tailspin Logistics",
     category: "ransomware",
+    // Present on purpose: attacker claims never show a photo, so every page must draw the tile.
+    image: { url: "https://images.example.com/sample/claim-screenshot.png", publisher: "Sample Claims Tracker" },
     summary:
       "A criminal group says it stole files from Tailspin Logistics. No company, government or news outlet has confirmed this yet.",
     trust: {

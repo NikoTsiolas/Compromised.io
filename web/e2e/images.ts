@@ -5,7 +5,7 @@
 import type { Page } from "@playwright/test";
 
 // A 4x3 grey PNG.
-const PNG = Buffer.from(
+export const PNG = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAQAAAADCAIAAAA7ljmRAAAAE0lEQVR4nGP4z8DwHwYYYBwGBgB3vQ7yOJ7OXgAAAABJRU5ErkJggg==",
   "base64",
 );

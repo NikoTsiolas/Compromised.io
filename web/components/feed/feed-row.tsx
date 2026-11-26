@@ -13,6 +13,7 @@ import {
   DetailsToggle,
   Kicker,
   SourceNames,
+  storyImage,
   summaryText,
 } from "@/components/feed/story-parts";
 import { Trust } from "@/components/feed/trust";
@@ -30,7 +31,7 @@ export function FeedRow({ item, now }: { item: FeedItem; now?: Date }) {
     >
       <div className="col-start-2 row-start-1 sm:col-start-1 sm:row-span-2">
         <EventMedia
-          image={item.image}
+          image={storyImage(item)}
           logo={item.logo}
           organization={item.organization}
           fallbackLabel={categoryName(item) ?? "Security incident"}

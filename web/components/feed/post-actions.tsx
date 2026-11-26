@@ -84,7 +84,8 @@ export function PostActions({
           {open ? "Hide details" : "Details"}
         </CollapsibleTrigger>
         <ShareButton {...share} />
-        {organization && <WatchButton company={organization} />}
+        {/* On phones Watch sits in the post's header instead (Option C), so the row fits. */}
+        {organization && <WatchButton company={organization} className="hidden sm:inline-flex" />}
       </div>
     </Collapsible>
   );
@@ -159,7 +160,16 @@ function ShareButton({ title, url }: { title: string; url: string }) {
   );
 }
 
-function WatchButton({ company }: { company: string }) {
+export function WatchButton({
+  company,
+  variant = "quiet",
+  className,
+}: {
+  company: string;
+  /** "quiet": in the action row (Option A). "pill": in a phone post's header (Option C). */
+  variant?: "quiet" | "pill";
+  className?: string;
+}) {
   const list = useWatchlist();
   const on = list.includes(company);
   return (
@@ -170,6 +180,9 @@ function WatchButton({ company }: { company: string }) {
       className={cn(
         action,
         "h-auto min-w-0 px-0 hover:bg-transparent aria-pressed:bg-transparent aria-pressed:text-ink focus-visible:ring-0",
+        variant === "pill" &&
+          "my-0 -mt-1.5 min-h-8 flex-none rounded-full bg-surface px-3 hover:bg-surface aria-pressed:bg-surface before:absolute before:inset-x-0 before:-inset-y-1.5 before:content-['']",
+        className,
       )}
     >
       <Eye aria-hidden className="size-4" strokeWidth={on ? 2.5 : 1.75} />

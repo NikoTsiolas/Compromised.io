@@ -2,8 +2,8 @@
 //
 //   BASE_URL=http://127.0.0.1:3000 node scripts/capture-checkpoint.mjs
 //
-// Needs a running web app built with SAMPLE_PREVIEW=1 (for /preview) and an API with real
-// ingested events. Full-page images of the real feed and the sample-data preview, each at
+// Needs a running web app built with SAMPLE_PREVIEW=1 (for /preview and /preview/feed) and an
+// API with real ingested events. Full-page images of the real feed and the sample-data preview, each at
 // desktop, phone and tablet width in light and dark. OUT_DIR writes them elsewhere (to review
 // before committing). Times are shown as a reader in London would see them.
 import { mkdirSync } from "node:fs";
@@ -18,9 +18,12 @@ const out =
   path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../docs/design/checkpoint");
 mkdirSync(out, { recursive: true });
 
+// Featured and the Feed (#16), on the real feed and on the sample-data preview.
 const pages = [
-  { name: "feed", path: "/" },
-  { name: "sample-preview", path: "/preview" },
+  { name: "featured", path: "/" },
+  { name: "feed", path: "/feed" },
+  { name: "sample-featured", path: "/preview" },
+  { name: "sample-feed", path: "/preview/feed" },
 ];
 const looks = [
   { name: "light", viewport: { width: 1440, height: 900 }, colorScheme: "light" },
@@ -70,12 +73,12 @@ for (const look of looks) {
       null,
       { timeout: 30_000 },
     );
-    // Open one row's Technical details so the expand is part of the record.
+    // Open one story's technical details so the expand is part of the record.
     const toggle = page
-      .getByRole("region", { name: /events$/ })
-      .getByRole("button", { name: "Technical details" })
+      .getByRole("region", { name: /(events|posts)$/ })
+      .getByRole("button", { name: /^(Technical details|Details)$/ })
       .first();
-    if (await toggle.count()) await toggle.click();
+    if ((await toggle.count()) && (await toggle.isVisible())) await toggle.click();
     // Let lazy pictures below the fold load before the full-page capture.
     await page.evaluate(async () => {
       for (const img of document.querySelectorAll("img")) img.loading = "eager";

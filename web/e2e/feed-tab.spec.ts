@@ -74,7 +74,7 @@ test("a post follows Option A: avatar, company line, headline, summary, picture,
   // The affected company as avatar, then company · category · local time on one line.
   await expect(chrome.locator("[data-avatar]")).toHaveAttribute("data-avatar", /logo|lettermark/);
   await expect(chrome.locator("p").first()).toContainText(/^Chrome· Vulnerability/);
-  await expect(chrome.locator("time").first()).toBeVisible();
+  await expect(chrome.locator("time").filter({ visible: true })).toHaveCount(1);
   // The original headline, linking to the publisher.
   const link = chrome.getByRole("link", { name: SYNTHETIC_CRITICAL, exact: true });
   await expect(link).toHaveAttribute("target", "_blank");
@@ -397,6 +397,25 @@ test.describe("on a phone", () => {
 
     const details = posts(page).first().getByRole("button", { name: "Details" });
     expect((await details.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    // On phones Watch sits in the post's header (Option C) and the action row fits one line.
+    const first = posts(page).first();
+    await expect(first.getByRole("button", { name: /^Watch / })).toHaveCount(1);
+    const watchBox = (await first.getByRole("button", { name: /^Watch / }).boundingBox())!;
+    const headlineBox = (await first.getByRole("heading").boundingBox())!;
+    expect(watchBox.y + watchBox.height).toBeLessThanOrEqual(headlineBox.y + 8);
+    const rowItems = await first
+      .getByRole("group", { name: "Actions" })
+      .locator(":scope > *")
+      .evaluateAll((els) =>
+        els
+          .filter((e) => e.getClientRects().length)
+          .map((e) => {
+            const r = e.getBoundingClientRect();
+            return r.y + r.height / 2;
+          }),
+      );
+    // Every item's middle on the same line (within a few pixels).
+    expect(Math.max(...rowItems) - Math.min(...rowItems)).toBeLessThan(6);
 
     await bar.getByRole("link", { name: "Charts" }).tap();
     await expect(page).toHaveURL(/\/feed\?view=charts$/);
@@ -426,3 +445,60 @@ test.describe("on a tablet", () => {
     ).toBe(0);
   });
 });
+
+for (const theme of ["light", "dark"] as const) {
+  test(`text on the Feed meets WCAG AA contrast in the ${theme} theme`, async ({ page }) => {
+    await page.addInitScript((t) => {
+      try {
+        localStorage.setItem("theme", t);
+      } catch {}
+    }, theme);
+    await page.setViewportSize({ width: 820, height: 1180 });
+    await page.goto("/feed");
+    await expect(posts(page).first()).toBeVisible();
+    // Every visible text node in the header, navigation, posts and tab bar, against the first
+    // opaque background behind it (pictures excluded: their credit chip is measured by
+    // scripts/contrast.mjs against the worst case).
+    const { failures, checked } = await page.evaluate(() => {
+      const parse = (c: string) => {
+        const m = c.match(/rgba?\(([^)]+)\)/);
+        if (!m) return null;
+        const [r, g, b, a = "1"] = m[1].split(/[ ,/]+/).filter(Boolean);
+        return [Number(r), Number(g), Number(b), Number(a)];
+      };
+      const lum = ([r, g, b]: number[]) => {
+        const f = (v: number) => {
+          const c = v / 255;
+          return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+        };
+        return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+      };
+      const background = (el: Element | null): number[] => {
+        for (let e = el; e; e = e.parentElement) {
+          const c = parse(getComputedStyle(e).backgroundColor);
+          if (c && c[3] > 0.5) return c;
+        }
+        return [255, 255, 255, 1];
+      };
+      const out: string[] = [];
+      let checked = 0;
+      const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+      for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+        const el = n.parentElement!;
+        if (!n.textContent?.trim() || el.closest("[data-slot=aspect-ratio], [aria-hidden=true], .sr-only, script, style"))
+          continue;
+        const cs = getComputedStyle(el);
+        if (cs.visibility === "hidden" || Number(cs.opacity) === 0 || !el.getClientRects().length) continue;
+        const fg = parse(cs.color)!;
+        const bg = background(el);
+        const [hi, lo] = [lum(fg), lum(bg)].sort((a, b) => b - a);
+        const ratio = (hi + 0.05) / (lo + 0.05);
+        checked++;
+        if (ratio < 4.5) out.push(`${ratio.toFixed(2)} "${n.textContent.trim().slice(0, 40)}"`);
+      }
+      return { failures: out, checked };
+    });
+    expect(checked).toBeGreaterThan(100);
+    expect(failures).toEqual([]);
+  });
+}

@@ -9,6 +9,7 @@ import { PrimaryNav, type Destination } from "@/components/site/primary-nav";
 import { SearchField } from "@/components/site/search-field";
 import { ThemeSwitch } from "@/components/bencho-pro/theme-switch";
 import { Wordmark } from "@/components/site/wordmark";
+import { cn } from "@/lib/utils";
 
 export function SiteHeader({
   status,
@@ -30,15 +31,10 @@ export function SiteHeader({
           <PrimaryNav current={current} className="hidden sm:block" />
         </div>
         <div className="flex items-center gap-3 sm:gap-4">
-          <div className="hidden md:block">
+          <div className="hidden lg:block">
             {indicator}
           </div>
-          <Link
-            href="/how-we-score"
-            className="text-[13px] leading-[18px] font-medium text-ink-2 underline-offset-4 hover:text-ink hover:underline"
-          >
-            How we score
-          </Link>
+          <HowWeScore className="hidden sm:inline" />
           <div className="hidden sm:block">
             <SearchField />
           </div>
@@ -52,11 +48,29 @@ export function SiteHeader({
           <ThemeSwitch />
         </div>
       </div>
-      <div className="mx-auto flex max-w-[1240px] items-center justify-between gap-4 px-4 sm:px-6 md:hidden">
-        <PrimaryNav current={current} className="sm:hidden" />
-        <div className="py-2">{indicator}</div>
+      {/* Phones: the destinations and "How we score" on a row of their own, then the status. */}
+      <div className="mx-auto flex max-w-[1240px] items-center justify-between gap-4 px-4 sm:hidden">
+        <PrimaryNav current={current} />
+        <HowWeScore />
+      </div>
+      <div className="mx-auto max-w-[1240px] px-4 pb-2 sm:px-6 lg:hidden">
+        {indicator}
       </div>
     </header>
     </ViewTransition>
+  );
+}
+
+function HowWeScore({ className }: { className?: string }) {
+  return (
+    <Link
+      href="/how-we-score"
+      className={cn(
+        "text-[13px] leading-[18px] font-medium whitespace-nowrap text-ink-2 underline-offset-4 hover:text-ink hover:underline",
+        className,
+      )}
+    >
+      How we score
+    </Link>
   );
 }

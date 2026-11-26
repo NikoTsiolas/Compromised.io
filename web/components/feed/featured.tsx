@@ -15,6 +15,7 @@ import {
   Kicker,
   SourceNames,
   sourceCount,
+  storyImage,
   summaryText,
 } from "@/components/feed/story-parts";
 import { Trust } from "@/components/feed/trust";
@@ -63,7 +64,7 @@ function Lead({ item, now }: { item: FeedItem; now?: Date }) {
     >
       <div className="md:order-2">
         <EventMedia
-          image={item.image}
+          image={storyImage(item)}
           logo={item.logo}
           organization={item.organization}
           fallbackLabel={categoryName(item) ?? "Security incident"}
@@ -131,7 +132,7 @@ function Card({ item, now }: { item: FeedItem; now?: Date }) {
     >
       <div className="col-start-2 row-start-1 sm:order-first">
         <EventMedia
-          image={item.image}
+          image={storyImage(item)}
           logo={item.logo}
           organization={item.organization}
           fallbackLabel={categoryName(item) ?? "Security incident"}

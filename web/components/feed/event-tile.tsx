@@ -53,7 +53,7 @@ export function EventTile({
             viewBox="0 0 24 24"
             className={cn(
               "fill-current text-ink",
-              size === "thumb" ? "size-[38cqmin]" : "size-[26cqmin]",
+              size === "thumb" ? "size-[38cqmin]" : size === "post" ? "size-[18cqmin]" : "size-[26cqmin]",
             )}
           >
             <path d={logo!.path} />
@@ -65,7 +65,7 @@ export function EventTile({
           aria-hidden
           className={cn(
             "leading-none font-bold tracking-[-0.04em] text-ink",
-            size === "thumb" ? "text-[36cqmin]" : "text-[30cqmin]",
+            size === "thumb" ? "text-[36cqmin]" : size === "post" ? "text-[20cqmin]" : "text-[30cqmin]",
           )}
         >
           {lettermark(organization!)}

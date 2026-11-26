@@ -12,13 +12,14 @@ import { ArrivalFade } from "@/components/bencho-pro/text-fade/arrival-fade";
 import { CompanyAvatar } from "@/components/feed/company-avatar";
 import { EventMedia } from "@/components/feed/event-media";
 import { LocalTime } from "@/components/feed/local-time";
-import { PostActions } from "@/components/feed/post-actions";
+import { PostActions, WatchButton } from "@/components/feed/post-actions";
 import {
   AiLabel,
   categoryName,
   Details,
   outletCount,
   SourceNames,
+  storyImage,
   summaryText,
 } from "@/components/feed/story-parts";
 import { Trust } from "@/components/feed/trust";
@@ -56,9 +57,16 @@ export function Post({ item, now }: { item: FeedItem; now?: Date }) {
               {category}
             </span>
           )}
-          <span className="ml-auto flex-none font-mono text-xs leading-4 text-ink-3">
+          {/* Phones show the clock time only; wider screens add how long ago. */}
+          <span className="ml-auto flex-none font-mono text-xs leading-4 text-ink-3 sm:hidden">
+            <LocalTime iso={item.publishedAt} style="short" now={now} />
+          </span>
+          <span className="ml-auto hidden flex-none font-mono text-xs leading-4 text-ink-3 sm:inline">
             <LocalTime iso={item.publishedAt} style="short-relative" now={now} />
           </span>
+          {item.organization && (
+            <WatchButton company={item.organization} variant="pill" className="ml-1 sm:hidden" />
+          )}
         </p>
 
         <h3
@@ -80,7 +88,7 @@ export function Post({ item, now }: { item: FeedItem; now?: Date }) {
         </h3>
 
         {summary && (
-          <p className="text-[15px] leading-[22px] text-ink-2">
+          <p className="line-clamp-5 text-[15px] leading-[22px] text-ink-2">
             {summary.ai && <AiLabel />}
             {summary.text}
           </p>
@@ -96,7 +104,7 @@ export function Post({ item, now }: { item: FeedItem; now?: Date }) {
         )}
 
         <EventMedia
-          image={claimed ? null : item.image}
+          image={storyImage(item)}
           logo={item.logo}
           organization={item.organization}
           fallbackLabel={category ?? "Security incident"}

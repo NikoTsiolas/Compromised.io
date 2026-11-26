@@ -77,12 +77,14 @@ export function FeedView({
             </div>
           )}
           {polling && !comingSoon && (
+            <div className="px-4 sm:px-5">
             <NewEventsBar
               key={newest?.id ?? "none"}
               newestId={newest?.id ?? null}
               newestPublishedAt={newest?.publishedAt ?? null}
               tab={watching ? DEFAULT_TAB : tab}
             />
+            </div>
           )}
           <MarkSeen ids={items.map((i) => i.id)} />
           <ViewTransition key={`${tab}-${watching}`} name="feed-posts" share="auto" enter="auto" default="none">

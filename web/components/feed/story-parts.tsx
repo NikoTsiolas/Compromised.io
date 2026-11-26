@@ -64,6 +64,14 @@ export function Kicker({ item, className }: { item: FeedItem; className?: string
   );
 }
 
+/**
+ * The publisher picture a story may show. Attacker claims never show one, whatever a source
+ * sent (a claims tracker's images are leak-site screenshots): they get the designed tile.
+ */
+export function storyImage(item: FeedItem): FeedItem["image"] {
+  return item.trust?.status === "claimed" ? null : (item.image ?? null);
+}
+
 /** The plain-language AI summary, labelled; else the publisher's own excerpt, unlabelled. */
 export function summaryText(item: FeedItem): { text: string; ai: boolean } | null {
   if (item.summary) return { text: item.summary, ai: true };
