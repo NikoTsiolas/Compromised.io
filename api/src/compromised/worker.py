@@ -1,7 +1,11 @@
 """Ingestion worker process.
 
-uv run python -m compromised.worker          # poll every source on its interval, forever
+uv run python -m compromised.worker          # poll every source on its own interval, forever
 uv run python -m compromised.worker --once   # one pass over every source, then exit
+
+Each source is due ``interval_seconds`` after its last check (stored in the database, so a
+restart does not re-poll everything). Due sources are fetched concurrently and stored one by
+one. A source that fails to fetch or parse is recorded as failing and never stops the others.
 """
 
 import argparse
@@ -9,53 +13,127 @@ import asyncio
 import json
 import logging
 import sys
-import time
-from datetime import UTC, datetime
+from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
 
 import httpx
 import psycopg
 
-from compromised import config
-from compromised.pipeline import IngestResult, ingest
-from compromised.pipeline.fetcher import FetchError, fetch
-from compromised.sources import REGISTRY
+from compromised import config, storage
+from compromised.pipeline import ParseError, ingest
+from compromised.pipeline.fetcher import FetchError, FetchPolicy, FetchResult, Validators, fetch
+from compromised.sources import REGISTRY, Source, allowed_hosts
 
 log = logging.getLogger("compromised.worker")
 
+TICK_SECONDS = 15
+
+
+@dataclass(frozen=True)
+class PollOutcome:
+    error: str | None = None
+    not_modified: bool = False
+    items: int | None = None  # None when nothing was parsed
+    new_events: int = 0
+
+
+def due(conn: psycopg.Connection, sources: tuple[Source, ...], *, now: datetime) -> list[Source]:
+    """Sources never checked, or whose last check is at least one interval old."""
+    rows = storage.source_rows(conn, [s.id for s in sources])
+    out = []
+    for source in sources:
+        last = rows.get(source.id, {}).get("last_attempt_at")
+        if last is None or now - last >= timedelta(seconds=source.interval_seconds):
+            out.append(source)
+    return out
+
 
 async def run_once(
-    conn: psycopg.Connection, *, client: httpx.AsyncClient, user_agent: str, sources=REGISTRY
-) -> dict[str, IngestResult | None]:
-    """Fetch and ingest each source once. A failing source is logged and does not stop others."""
-    results: dict[str, IngestResult | None] = {}
+    conn: psycopg.Connection,
+    *,
+    client: httpx.AsyncClient,
+    policy: FetchPolicy,
+    sources: tuple[Source, ...] | list[Source] = REGISTRY,
+    now: datetime | None = None,
+) -> dict[str, PollOutcome]:
+    """Fetch and store each source once, recording its health."""
+    now = now or datetime.now(UTC)
+    validators = {}
     for source in sources:
-        try:
-            body = await fetch(client, source, user_agent=user_agent)
-            result = ingest(conn, source, body, fetched_at=datetime.now(UTC))
-        except FetchError as exc:
-            log.warning("fetch failed", extra={"source": source.id, "error": str(exc)})
-            results[source.id] = None
-            continue
-        log.info(
-            "ingested",
-            extra={"source": source.id, "items": result.items, "new_events": result.new_events},
+        storage.upsert_source(conn, source)
+        validators[source.id] = Validators(*storage.stored_validators(conn, source.id))
+    fetched = await asyncio.gather(*(_fetch(client, s, policy, validators[s.id]) for s in sources))
+    return {
+        source.id: _store(conn, source, result, now)
+        for source, result in zip(sources, fetched, strict=True)
+    }
+
+
+async def _fetch(client, source, policy, validators) -> FetchResult | FetchError:
+    try:
+        return await fetch(client, source, policy, validators)
+    except FetchError as exc:
+        return exc
+
+
+def _store(
+    conn: psycopg.Connection, source: Source, result: FetchResult | FetchError, now: datetime
+) -> PollOutcome:
+    if isinstance(result, FetchError):
+        return _failed(conn, source, now, str(result))
+    if result.not_modified:
+        storage.record_success(
+            conn,
+            source.id,
+            now,
+            etag=result.validators.etag,
+            last_modified=result.validators.last_modified,
         )
-        results[source.id] = result
-    return results
+        log.info("not modified", extra={"source": source.id})
+        return PollOutcome(not_modified=True)
+    try:
+        ingested = ingest(conn, source, result.body, fetched_at=now)
+    except ParseError as exc:
+        return _failed(conn, source, now, str(exc))
+    except Exception as exc:  # one source's bad data must not stop the others
+        log.exception("ingest failed", extra={"source": source.id})
+        return _failed(conn, source, now, f"ingest failed: {type(exc).__name__}")
+    storage.record_success(
+        conn,
+        source.id,
+        now,
+        etag=result.validators.etag,
+        last_modified=result.validators.last_modified,
+    )
+    log.info(
+        "ingested",
+        extra={"source": source.id, "items": ingested.items, "new_events": ingested.new_events},
+    )
+    return PollOutcome(items=ingested.items, new_events=ingested.new_events)
+
+
+def _failed(conn: psycopg.Connection, source: Source, now: datetime, error: str) -> PollOutcome:
+    storage.record_failure(conn, source.id, now, error)
+    log.warning("source failed", extra={"source": source.id, "error": error})
+    return PollOutcome(error=error)
+
+
+def policy_from(settings: config.Settings) -> FetchPolicy:
+    return FetchPolicy(user_agent=settings.user_agent, allowed_hosts=allowed_hosts())
 
 
 async def run_forever(settings: config.Settings) -> None:
-    next_due = {source.id: 0.0 for source in REGISTRY}
+    policy = policy_from(settings)
     async with httpx.AsyncClient() as client:
         while True:
-            now = time.monotonic()
-            due = [s for s in REGISTRY if next_due[s.id] <= now]
-            if due:
+            try:
                 with psycopg.connect(settings.database_url, autocommit=True) as conn:
-                    await run_once(conn, client=client, user_agent=settings.user_agent, sources=due)
-                for source in due:
-                    next_due[source.id] = now + source.interval_seconds
-            await asyncio.sleep(max(1.0, min(next_due.values()) - time.monotonic()))
+                    sources = due(conn, REGISTRY, now=datetime.now(UTC))
+                    if sources:
+                        await run_once(conn, client=client, policy=policy, sources=sources)
+            except Exception:
+                log.exception("pass failed")
+            await asyncio.sleep(TICK_SECONDS)
 
 
 class JsonFormatter(logging.Formatter):
@@ -80,6 +158,7 @@ def main(argv: list[str] | None = None) -> None:
     handler = logging.StreamHandler(sys.stdout)
     handler.setFormatter(JsonFormatter())
     logging.basicConfig(level=logging.INFO, handlers=[handler])
+    logging.getLogger("httpx").setLevel(logging.WARNING)
 
     settings = config.load()
     if args.once:
@@ -87,7 +166,7 @@ def main(argv: list[str] | None = None) -> None:
         async def once():
             async with httpx.AsyncClient() as client:
                 with psycopg.connect(settings.database_url, autocommit=True) as conn:
-                    await run_once(conn, client=client, user_agent=settings.user_agent)
+                    await run_once(conn, client=client, policy=policy_from(settings))
 
         asyncio.run(once())
     else:

@@ -10,8 +10,12 @@ import { expect, test } from "@playwright/test";
 
 import { databaseUrl } from "./env";
 
+// The newest real event on the All tab (which lists only events with a named organization).
 const NEWEST_REAL =
-  "SYS010 malware abuses browser management to spy on Gmail, Outlook";
+  "1Password customer data stolen after employee GitHub account breach";
+// Names a catalogued product and an attack, so the scope rules put it on the All tab.
+const SYNTHETIC_HEADLINE =
+  "[Synthetic test item] Windows zero-day exploited in attacks while the page is open";
 
 function syntheticFeed(id: string, publishedAt: Date): string {
   return `<?xml version="1.0" encoding="utf-8"?>
@@ -20,7 +24,7 @@ function syntheticFeed(id: string, publishedAt: Date): string {
   <title>Synthetic test feed</title><link>https://example.com/</link>
   <description>Synthetic test data</description>
   <item>
-    <title>[Synthetic test item] A newer event arrives while the page is open</title>
+    <title>${SYNTHETIC_HEADLINE}</title>
     <link>https://example.com/synthetic-newer-event/${id}</link>
     <guid>https://example.com/synthetic-newer-event/${id}</guid>
     <pubDate>${publishedAt.toUTCString()}</pubDate>
@@ -67,9 +71,7 @@ test("new events wait behind the bar until the reader asks for them", async ({
   expect((await rows.first().boundingBox())!.y).toBe(topBefore);
 
   await bar.click();
-  await expect(topHeading).toHaveText(
-    "[Synthetic test item] A newer event arrives while the page is open",
-  );
+  await expect(topHeading).toHaveText(SYNTHETIC_HEADLINE);
   await expect(bar).toHaveCount(0);
   await expect(page.getByRole("heading", { name: NEWEST_REAL })).toBeVisible();
 });

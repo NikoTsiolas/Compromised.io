@@ -32,6 +32,9 @@ export type FeedItem = {
   organization?: string | null;
   summary?: string | null;
   category?: string | null;
+  /** The API's plain-language name for the category, when it sends one. */
+  categoryName?: string;
+  logoKey?: string | null;
   trust?: Trust | null;
   sources: FeedSource[];
   cves?: string[];
@@ -58,9 +61,12 @@ export function toFeedItem(event: FeedEvent): FeedItem {
     publisher: first?.publisher ?? "",
     publishedAt: event.published_at,
     excerpt: first?.excerpt || undefined,
-    organization: event.organization,
+    organization:
+      event.affected_organization === "unknown" ? null : event.affected_organization,
     summary: event.summary,
     category: event.category,
+    categoryName: event.category_label,
+    logoKey: event.logo_key,
     trust,
     sources: event.sources.map((s) => ({
       publisher: s.publisher,
@@ -74,22 +80,8 @@ export function toFeedItem(event: FeedEvent): FeedItem {
   };
 }
 
-/** Section tabs from the product page. Slugs are what appears in the URL (?tab=). */
-export const TABS = [
-  { slug: "all", label: "All" },
-  { slug: "breaches", label: "Breaches" },
-  { slug: "ransomware", label: "Ransomware" },
-  { slug: "under-attack", label: "Under attack" },
-  { slug: "update-now", label: "Update now" },
-  { slug: "research", label: "Research" },
-  { slug: "trending", label: "Trending" },
-] as const;
-
-export type TabSlug = (typeof TABS)[number]["slug"];
-
-export function tabFrom(value: unknown): TabSlug {
-  return TABS.find((t) => t.slug === value)?.slug ?? "all";
-}
+/** Section tabs come from the API (GET /v1/tabs); this is the fallback label for "all". */
+export const DEFAULT_TAB = "all";
 
 /** Plain-language category names for the row kicker. Unknown values are shown as given. */
 const CATEGORY_LABELS: Record<string, string> = {

@@ -31,12 +31,10 @@ def main(argv: list[str] | None = None) -> None:
             storage.reset_for_tests(conn)
         for sample in args.samples:
             source_id, _, path = sample.partition("=")
-            result = ingest(
-                conn,
-                sources.by_id(source_id),
-                Path(path).read_bytes(),
-                fetched_at=datetime.now(UTC),
-            )
+            now = datetime.now(UTC)
+            result = ingest(conn, sources.by_id(source_id), Path(path).read_bytes(), fetched_at=now)
+            # Loading a sample stands in for one successful check of that source.
+            storage.record_success(conn, source_id, now, etag=None, last_modified=None)
             print(f"{path}: {result.new_events} new event(s)")
 
 

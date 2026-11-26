@@ -6,9 +6,10 @@
 import Link from "next/link";
 
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { TABS, type TabSlug } from "@/lib/feed";
+import type { Tab } from "@/lib/api";
+import { DEFAULT_TAB } from "@/lib/feed";
 
-export function SectionTabs({ active }: { active: TabSlug }) {
+export function SectionTabs({ tabs, active }: { tabs: Tab[]; active: string }) {
   return (
     <Tabs value={active} className="gap-0">
       <div className="-mx-4 overflow-x-auto px-4 [scrollbar-width:none] sm:mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden">
@@ -17,14 +18,14 @@ export function SectionTabs({ active }: { active: TabSlug }) {
           aria-label="Sections"
           className="h-auto! gap-5 p-0 sm:gap-6"
         >
-          {TABS.map((tab) => (
+          {tabs.map((tab) => (
             <TabsTrigger
-              key={tab.slug}
-              value={tab.slug}
+              key={tab.id}
+              value={tab.id}
               nativeButton={false}
               render={
                 <Link
-                  href={tab.slug === "all" ? "/" : `/?tab=${tab.slug}`}
+                  href={tab.id === DEFAULT_TAB ? "/" : `/?tab=${tab.id}`}
                   scroll={false}
                 />
               }

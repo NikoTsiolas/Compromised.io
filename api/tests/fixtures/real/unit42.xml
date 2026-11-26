@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"
+	xmlns:content="http://purl.org/rss/1.0/modules/content/"
+	xmlns:wfw="http://wellformedweb.org/CommentAPI/"
+	xmlns:dc="http://purl.org/dc/elements/1.1/"
+	xmlns:atom="http://www.w3.org/2005/Atom"
+	xmlns:sy="http://purl.org/rss/1.0/modules/syndication/"
+	xmlns:slash="http://purl.org/rss/1.0/modules/slash/"
+	xmlns:dcterms="http://purl.org/dc/terms/"
+>
+
+<channel>
+	<title>Unit 42</title>
+	<atom:link href="https://unit42.paloaltonetworks.com/feed/" rel="self" type="application/rss+xml" />
+	<link>https://unit42.paloaltonetworks.com/</link>
+	<description>Palo Alto Networks</description>
+	<lastBuildDate>Wed, 25 Nov 2026 13:39:41 +0000</lastBuildDate>
+	<language>en-US</language>
+	<sy:updatePeriod>
+	hourly	</sy:updatePeriod>
+	<sy:updateFrequency>
+	1	</sy:updateFrequency>
+	<generator>https://wordpress.org/?v=7.1.5</generator>
+
+<image>
+	<url>https://unit42.paloaltonetworks.com/wp-content/uploads/2024/06/icon-Unit42-180x180-1.png</url>
+	<title>Unit 42</title>
+	<link>https://unit42.paloaltonetworks.com/</link>
+	<width>32</width>
+	<height>32</height>
+</image> 
+	<item>
+		<title>The AI Threat Horizon: Why Speed, Edge AI and Baselines Are Our Best Defense</title>
+		<link>https://unit42.paloaltonetworks.com/ai-threat-horizon/</link>
+		
+		<dc:creator><![CDATA[Yoni Allon]]></dc:creator>
+		<pubDate>Wed, 25 Nov 2026 15:00:09 +0000</pubDate>
+				<category><![CDATA[General]]></category>
+		<category><![CDATA[Insights]]></category>
+		<category><![CDATA[Agentic AI]]></category>
+		<category><![CDATA[AI]]></category>
+		<category><![CDATA[endpoint]]></category>
+		<category><![CDATA[real-time detection]]></category>
+		<guid isPermaLink="false">https://unit42.paloaltonetworks.com/?p=190215</guid>
+
+					<description><![CDATA[<p>Unit 42 examines the evolution of AI-driven cyberattacks and outlines proactive defense strategies for security teams.</p>
+<p>The post <a href="https://unit42.paloaltonetworks.com/ai-threat-horizon/">The AI Threat Horizon: Why Speed, Edge AI and Baselines Are Our Best Defense</a> appeared first on <a href="https://unit42.paloaltonetworks.com">Unit 42</a>.</p>
+]]></description>
+		
+		
+		
+		<readTime>4</readTime>
+		<featuredImage>https://unit42.paloaltonetworks.com/wp-content/uploads/2026/11/05_Opinion_Category_1505x922-300x300.jpg</featuredImage>
+		<dcterms:extent>4</dcterms:extent>
+		<enclosure url="https://unit42.paloaltonetworks.com/wp-content/uploads/2026/11/05_Opinion_Category_1505x922.jpg" type="image/jpeg"  length="481462"/>
+			</item>
+		<item>
+		<title>NGINX HTTP/2 Use-After-Free: CVE-2026-123633</title>
+		<link>https://unit42.paloaltonetworks.com/cve-2026-123633-nginx-http2-vulnerability/</link>
+		
+		<dc:creator><![CDATA[Bon Berry]]></dc:creator>
+		<pubDate>Tue, 24 Nov 2026 23:00:14 +0000</pubDate>
+				<category><![CDATA[Threat Research]]></category>
+		<category><![CDATA[Vulnerabilities]]></category>
+		<category><![CDATA[CVE-2026-123633]]></category>
+		<category><![CDATA[memN0ps]]></category>
+		<category><![CDATA[NGINX]]></category>
+		<category><![CDATA[Proxy]]></category>
+		<guid isPermaLink="false">https://unit42.paloaltonetworks.com/?p=190150</guid>
+
+					<description><![CDATA[<p>Technical analysis of CVE-2026-123633, an NGINX HTTP/2 use-after-free flaw, with details on affected versions, sanitizer tests, and patch guidance.</p>
+<p>The post <a href="https://unit42.paloaltonetworks.com/cve-2026-123633-nginx-http2-vulnerability/">NGINX HTTP/2 Use-After-Free: CVE-2026-123633</a> appeared first on <a href="https://unit42.paloaltonetworks.com">Unit 42</a>.</p>
+]]></description>
+		
+		
+		
+		<readTime>10</readTime>
+		<featuredImage>https://unit42.paloaltonetworks.com/wp-content/uploads/2026/11/06_Security-Technology_Category_1920x900-300x300.jpg</featuredImage>
+		<dcterms:extent>10</dcterms:extent>
+		<enclosure url="https://unit42.paloaltonetworks.com/wp-content/uploads/2026/11/06_Security-Technology_Category_1920x900.jpg" type="image/jpeg"  length="954235"/>
+			</item>
+		<item>
+		<title>Recent Trends and Tactics of Agentic AI Attacks</title>
+		<link>https://unit42.paloaltonetworks.com/autonomous-ai-agent-threat-campaigns/</link>
+		
+		<dc:creator><![CDATA[Noa Dekel and Tom Fakterman]]></dc:creator>
+		<pubDate>Tue, 24 Nov 2026 15:00:19 +0000</pubDate>
+				<category><![CDATA[Malware]]></category>
+		<category><![CDATA[Threat Research]]></category>
+		<category><![CDATA[AI agents]]></category>
+		<category><![CDATA[Credential Harvesting]]></category>
+		<category><![CDATA[Lateral Movement]]></category>
+		<category><![CDATA[privilege escalation]]></category>
+		<category><![CDATA[Reconnaissance]]></category>
+		<category><![CDATA[Remote Access Trojan]]></category>
+		<guid isPermaLink="false">https://unit42.paloaltonetworks.com/?p=190007</guid>
+
+					<description><![CDATA[<p>We tracked campaigns where attackers deployed autonomous AI agents to automate multi-platform intrusions, using standard tools while leaving distinct operational traces.</p>
+<p>The post <a href="https://unit42.paloaltonetworks.com/autonomous-ai-agent-threat-campaigns/">Recent Trends and Tactics of Agentic AI Attacks</a> appeared first on <a href="https://unit42.paloaltonetworks.com">Unit 42</a>.</p>
+]]></description>
+		
+		
+		
+		<readTime>17</readTime>
+		<featuredImage>https://unit42.paloaltonetworks.com/wp-content/uploads/2026/11/AdobeStock_260323351-2-300x300.jpeg</featuredImage>
+		<dcterms:extent>17</dcterms:extent>
+		<enclosure url="https://unit42.paloaltonetworks.com/wp-content/uploads/2026/11/AdobeStock_260323351-2.jpeg" type="image/jpeg"  length="845233"/>
+			</item>
+	</channel>
+</rss>

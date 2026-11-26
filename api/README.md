@@ -7,7 +7,7 @@ map is in `src/compromised/__init__.py`. Local setup is in the repository README
 uv run python -m compromised.storage migrate                  # apply SQL migrations
 uv run uvicorn compromised.api:create_app --factory --port 8000
 uv run python -m compromised.worker [--once]
-uv run pytest                                                  # pipeline and API seams
+uv run pytest                                                  # pipeline, fetcher and API seams
 ```
 
 Tests use the `compromised_test` database (override with `TEST_DATABASE_URL`).

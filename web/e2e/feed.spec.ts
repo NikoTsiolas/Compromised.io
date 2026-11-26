@@ -1,35 +1,47 @@
 // Browser seam: the running web app against the API and a database seeded with the real
-// BleepingComputer capture plus one synthetic item (see api/tests/fixtures/*/README.md).
-import { expect, test } from "@playwright/test";
+// BleepingComputer capture plus synthetic items (see api/tests/fixtures/*/README.md).
+import { expect, test, type Page } from "@playwright/test";
 
-const NEWEST =
-  "SYS010 malware abuses browser management to spy on Gmail, Outlook";
+const ONEPASSWORD =
+  "1Password customer data stolen after employee GitHub account breach";
+const SYNTHETIC_MARKUP =
+  "[Synthetic test item] Builds < 2.4 & AT&T breach renders as text";
+const SYNTHETIC_ZERO_DAY =
+  "[Synthetic test item] Windows zero-day exploited in attacks";
+const SYNTHETIC_CRITICAL =
+  "[Synthetic test item] Critical Chrome flaw fixed in security update";
 
-test("the feed lists real events newest first, linking to the publisher", async ({
+const eventRows = (page: Page) => page.getByRole("article");
+const headlines = (page: Page) => eventRows(page).getByRole("heading");
+
+test("the All tab lists in-scope events newest first, linking to the publisher", async ({
   page,
 }) => {
   await page.goto("/");
 
-  const rows = page.getByRole("article");
-  await expect(rows).toHaveCount(4);
-  await expect(rows.nth(0).getByRole("heading")).toHaveText(NEWEST);
-  await expect(rows.nth(2).getByRole("heading")).toHaveText(
-    "1Password customer data stolen after employee GitHub account breach",
-  );
+  const rows = eventRows(page);
+  await expect(headlines(page)).toHaveText([
+    ONEPASSWORD,
+    SYNTHETIC_ZERO_DAY,
+    SYNTHETIC_CRITICAL,
+    SYNTHETIC_MARKUP,
+  ]);
 
-  const headline = page.getByRole("link", { name: NEWEST });
+  const headline = page.getByRole("link", { name: ONEPASSWORD });
   await expect(headline).toHaveAttribute(
     "href",
-    "https://www.bleepingcomputer.com/news/security/sys010-malware-abuses-browser-management-to-spy-on-gmail-outlook/",
+    "https://www.bleepingcomputer.com/news/security/1password-customer-data-stolen-after-employee-github-account-breach/",
   );
   await expect(headline).toHaveAttribute("target", "_blank");
   await expect(headline).toHaveAttribute("rel", "noopener noreferrer");
 
   const first = rows.nth(0);
+  await expect(first).toContainText("1Password");
+  await expect(first).toContainText("Data breach");
   await expect(first).toContainText("BleepingComputer");
   const time = first.locator("time").first();
-  await expect(time).toHaveAttribute("datetime", "2026-11-26T11:50:17Z");
-  await expect(time).toContainText("11:50");
+  await expect(time).toHaveAttribute("datetime", "2026-11-25T21:33:33Z");
+  await expect(time).toContainText("21:33");
   await expect(first).toContainText(/ ago|yesterday/);
 });
 
@@ -62,16 +74,52 @@ test("fields that later tickets fill show a quiet empty state, never invented va
   await expect(page.getByText("Sample data")).toHaveCount(0);
 });
 
+test("section tabs come from the API, each with its own URL, and filter the feed", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const tab = (name: string) => page.getByRole("tab", { name });
+  await expect(page.getByRole("tab")).toHaveText([
+    "All",
+    "Breaches",
+    "Ransomware",
+    "Under attack",
+    "Update now",
+    "Research",
+    "Trending",
+  ]);
+  await expect(tab("All")).toHaveAttribute("aria-selected", "true");
+
+  await tab("Research").click();
+  await expect(page).toHaveURL(/\?tab=research$/);
+  await expect(tab("Research")).toHaveAttribute("aria-selected", "true");
+  await expect(headlines(page)).toHaveText([
+    "SYS010 malware abuses browser management to spy on Gmail, Outlook",
+  ]);
+
+  await tab("Under attack").click();
+  await expect(page).toHaveURL(/\?tab=under-attack$/);
+  await expect(headlines(page)).toHaveText([SYNTHETIC_ZERO_DAY]);
+
+  await tab("Breaches").click();
+  await expect(headlines(page)).toHaveText([ONEPASSWORD, SYNTHETIC_MARKUP]);
+
+  await tab("Trending").click();
+  await expect(eventRows(page)).toHaveCount(0);
+  await expect(page.getByText("Nothing under Trending yet")).toBeVisible();
+
+  await tab("All").click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(eventRows(page)).toHaveCount(4);
+});
+
 test("text from the API is rendered as text, never as markup", async ({
   page,
 }) => {
   await page.goto("/");
 
   await expect(
-    page.getByRole("link", {
-      name: "[Synthetic test item] Builds < 2.4 & AT&T render as text",
-      exact: true,
-    }),
+    page.getByRole("link", { name: SYNTHETIC_MARKUP, exact: true }),
   ).toBeVisible();
   expect(
     await page.evaluate(() => (window as { __injected?: number }).__injected),
@@ -91,41 +139,13 @@ test("technical details expand inline under the row and collapse again", async (
   await toggle.click();
   await expect(toggle).toHaveAttribute("aria-expanded", "true");
   await expect(first.getByText("CVE identifiers")).toBeVisible();
-  await expect(first.getByText("26 Nov 2026, 11:50 UTC")).toBeVisible();
-  const source = first.getByRole("link", { name: NEWEST }).last();
+  await expect(first.getByText("25 Nov 2026, 21:33 UTC")).toBeVisible();
+  const source = first.getByRole("link", { name: ONEPASSWORD }).last();
   await expect(source).toHaveAttribute("rel", "noopener noreferrer");
 
   await toggle.click();
   await expect(toggle).toHaveAttribute("aria-expanded", "false");
   await expect(first.getByText("CVE identifiers")).toBeHidden();
-});
-
-test("section tabs each have their own URL and say plainly when a section is empty", async ({
-  page,
-}) => {
-  await page.goto("/");
-  const all = page.getByRole("tab", { name: "All" });
-  const breaches = page.getByRole("tab", { name: "Breaches" });
-  await expect(all).toHaveAttribute("aria-selected", "true");
-  await expect(page.getByRole("tab")).toHaveText([
-    "All",
-    "Breaches",
-    "Ransomware",
-    "Under attack",
-    "Update now",
-    "Research",
-    "Trending",
-  ]);
-
-  await breaches.click();
-  await expect(page).toHaveURL(/\?tab=breaches$/);
-  await expect(breaches).toHaveAttribute("aria-selected", "true");
-  await expect(page.getByRole("article")).toHaveCount(0);
-  await expect(page.getByText("Nothing filed under Breaches yet")).toBeVisible();
-
-  await all.click();
-  await expect(page).toHaveURL(/\/$/);
-  await expect(page.getByRole("article")).toHaveCount(4);
 });
 
 test("the theme switch moves between light and dark and is remembered", async ({
@@ -170,7 +190,7 @@ test.describe("at phone width", () => {
 
     const first = page.getByRole("article").first();
     await expect(
-      first.getByRole("link", { name: NEWEST }).first(),
+      first.getByRole("link", { name: ONEPASSWORD }).first(),
     ).toBeVisible();
     await expect(
       first.getByText("Not yet assessed").filter({ visible: true }),

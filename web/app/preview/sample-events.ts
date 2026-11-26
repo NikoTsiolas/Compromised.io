@@ -210,3 +210,14 @@ export const SAMPLE_ITEMS: FeedItem[] = [
     ],
   },
 ];
+
+/** The tab list the API serves (GET /v1/tabs), so the preview needs no API. */
+export const SAMPLE_TABS = [
+  { id: "all", label: "All" },
+  { id: "breaches", label: "Breaches" },
+  { id: "ransomware", label: "Ransomware" },
+  { id: "under-attack", label: "Under attack" },
+  { id: "update-now", label: "Update now" },
+  { id: "research", label: "Research" },
+  { id: "trending", label: "Trending" },
+];

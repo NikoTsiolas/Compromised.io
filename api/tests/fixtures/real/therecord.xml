@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0">
+    <channel>
+        <title>The Record from Recorded Future News</title>
+        <link>https://therecord.media/feed</link>
+        <description>The Record by Recorded Future News gives exclusive, behind-the-scenes access to leaders, policymakers, researchers, and the shadows of the cyber underground.</description>
+        <lastBuildDate>Thu, 26 Nov 2026 00:00:00 GMT</lastBuildDate>
+        <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
+        <generator>The Record from Recorded Future News</generator>
+        <language>en</language>
+        <copyright>Copyright © 2026 | The Record from Recorded Future News</copyright>
+        <item>
+            <title><![CDATA[UK’s long-awaited National Cyber Action Plan delayed until December]]></title>
+            <link>https://therecord.media/britain-delays-national-cyber-action-plan-again</link>
+            <guid>https://therecord.media/britain-delays-national-cyber-action-plan-again</guid>
+            <pubDate>Thu, 26 Nov 2026 00:00:00 GMT</pubDate>
+            <description><![CDATA[Officials, who had planned to publish the document in mid-November, now aim to unveil the strategy for defending the wider economy against state-backed and criminal hackers on December 9.]]></description>
+            <category>Government</category>
+            <category>Industry</category>
+            <category>Cybercrime</category>
+            <category>Nation-state</category>
+            <category>News</category>
+            <enclosure url="http://cms.therecord.media/uploads/westminster_alexander_martin_the_record_133745e9ba.jpg" length="0" type="image/jpg"/>
+        </item>
+        <item>
+            <title><![CDATA[Microsoft: China’s Salt Typhoon hackers are using Artex ]]></title>
+            <link>https://therecord.media/microsoft-china-salt-typhoon-using-artex-ai-tool</link>
+            <guid>https://therecord.media/microsoft-china-salt-typhoon-using-artex-ai-tool</guid>
+            <pubDate>Wed, 25 Nov 2026 21:18:00 GMT</pubDate>
+            <description><![CDATA[An AI tool implicated in several high-profile breaches is rapidly being integrated into the hacking suites of groups from China and North Korea, Microsoft said.]]></description>
+            <category>China</category>
+            <category>Cybercrime</category>
+            <category>News</category>
+            <category>Industry</category>
+            <enclosure url="http://cms.therecord.media/uploads/microsoft_sign_pexels_altabena_efbc5ae4db.jpg" length="0" type="image/jpg"/>
+        </item>
+        <item>
+            <title><![CDATA[FIFA says hackers accessed ‘limited set of personal and business information’]]></title>
+            <link>https://therecord.media/fifa-data-breach-limited</link>
+            <guid>https://therecord.media/fifa-data-breach-limited</guid>
+            <pubDate>Wed, 25 Nov 2026 20:40:00 GMT</pubDate>
+            <description><![CDATA[The Switzerland-based international governing body for soccer says it's working with relevant authorities and law enforcement to investigate a recent breach.]]></description>
+            <category>Industry</category>
+            <category>Cybercrime</category>
+            <category>News Briefs</category>
+            <category>News</category>
+            <enclosure url="http://cms.therecord.media/uploads/fifa_sign_wc_final_202655407277531_c63256a9d9_o_77bc61d70a.jpg" length="0" type="image/jpg"/>
+        </item>
+    </channel>
+</rss><!-- generated at 2026-11-26T14:52:53.251Z -->

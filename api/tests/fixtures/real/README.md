@@ -7,3 +7,28 @@ They are test data only and are never loaded into a production database.
 | File | Source URL | Captured | Trimming |
 |---|---|---|---|
 | `bleepingcomputer.xml` | https://www.bleepingcomputer.com/feed/ | 2026-11-26, 14:54:06–14:54:07 UTC (`curl -L -A "feed-check/0.1"`, HTTP 200) | 15 items served; the 3 newest kept byte for byte, with header and tail unchanged. Summary only, nothing truncated. |
+
+The files below come from the same capture (all 14 sources requested in parallel between
+14:54:06 and 14:54:07 UTC on 2026-11-26, `curl -L --max-time 60 -A "feed-check/0.1"`, every
+response HTTP 200). Each file's name is the source id used in the tests. Headers, kept items and
+tails are byte for byte as served, except that some full-text bodies were cut to their first 600
+characters and end in ` [truncated for fixture]`.
+
+| File | Source URL | Items served | Kept | Truncation |
+|---|---|---|---|---|
+| `therecord.xml` | https://therecord.media/feed | 5 | 3 newest | none (no body element) |
+| `securityweek.xml` | https://www.securityweek.com/feed/ | 10 | 3 newest | none |
+| `thehackernews.xml` | https://feeds.feedburner.com/TheHackersNews | 50 | 3 newest | none |
+| `darkreading.xml` | https://www.darkreading.com/rss.xml | 50 | 3 newest | none |
+| `securityaffairs.xml` | https://securityaffairs.com/feed | 10 | 3 newest | `content:encoded` in all 3 |
+| `krebsonsecurity.xml` | https://krebsonsecurity.com/feed/ | 10 | 3 newest | `content:encoded` in all 3 |
+| `cisa-advisories.xml` | https://www.cisa.gov/cybersecurity-advisories/all.xml | 30 | 3 newest | `description` in all 3 (entity-escaped; cut moved back before a split entity) |
+| `cisco-talos.xml` | https://blog.talosintelligence.com/rss/ | 15 | 3 newest | `content:encoded` in all 3 |
+| `unit42.xml` | https://unit42.paloaltonetworks.com/feed/ | 15 | 3 newest | none |
+| `google-threat-intelligence.xml` | https://feeds.feedburner.com/threatintelligence/pvexyqv7v0v | 20 | 3 newest | `description` in all 3 |
+| `ransomware-live.xml` | https://www.ransomware.live/rss.xml | 200 | 3 newest | none |
+| `msrc-update-guide.xml` | https://api.msrc.microsoft.com/update-guide/rss | 5,776 | 5 newest | none (keeps its UTF-8 BOM) |
+| `cisa-kev.json` | https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json | 1,805 entries | 3 most recently added | none; top-level `count` still says 1805 |
+
+Ransomware.live items are attacker claims relayed by a third party; their descriptions are
+attacker-supplied text. None of the 3 kept items links to a leak site or `.onion` address.

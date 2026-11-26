@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xml:base="https://www.cisa.gov/" xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <channel>
+    <title>All CISA Advisories</title>
+    <link>https://www.cisa.gov/</link>
+    <description></description>
+    <language>en</language>
+    
+    <item>
+  <title>CISA Adds 10 Known Exploited Vulnerabilities to Catalog</title>
+  <link>https://www.cisa.gov/news-events/alerts/2026/11/25/cisa-adds-10-known-exploited-vulnerabilities-catalog</link>
+  <description>&lt;div class=&quot;OutlineElement Ltr SCXW1462417 BCX8&quot;&gt;
+&lt;p&gt;CISA has added 10 new vulnerabilities to its &lt;a class=&quot;Hyperlink SCXW1462417 BCX8&quot; href=&quot;https://www.cisa.gov/known-exploited-vulnerabilities-catalog&quot; rel=&quot;noreferrer noopener&quot;&gt;&lt;u&gt;Known Exploited Vulnerabilities (KEV) Catalog&lt;/u&gt;&lt;/a&gt;, based on evidence of active exploitation.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&quot;https://www.cve.org/CVERecord?id=CVE-2023-25914&quot; target=&quot;_blank&quot;&gt;CVE-2023-25914&lt;/a&gt; Danfoss AK-SM 800A Series Path Travers [truncated for fixture]</description>
+  <pubDate>Wed, 25 Nov 26 12:00:00 +0000</pubDate>
+    <dc:creator>CISA</dc:creator>
+    <guid isPermaLink="false">/node/25859</guid>
+    </item>
+<item>
+  <title>AutomationDirect C-More EA9 Programming Software</title>
+  <link>https://www.cisa.gov/news-events/ics-advisories/icsa-26-328-01</link>
+  <description>&lt;p&gt;&lt;a href=&quot;https://github.com/cisagov/CSAF/blob/develop/csaf_files/OT/white/2026/icsa-26-328-01.json&quot;&gt;&lt;strong&gt;View CSAF&lt;/strong&gt;&lt;/a&gt;&lt;/p&gt;
+&lt;h2&gt;Summary&lt;/h2&gt;
+&lt;p&gt;&lt;strong&gt;Successful exploitation of this vulnerability could allow attackers to corrupt application memory and cause instability or a crash, potentially leading to arbitrary code execution, if a user is convinced to open a malicious file.&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;The following versions of AutomationDirect C-More EA9 Programming Software are affected:&lt;/p&gt;
+ [truncated for fixture]</description>
+  <pubDate>Tue, 24 Nov 26 12:00:00 +0000</pubDate>
+    <dc:creator>CISA</dc:creator>
+    <guid isPermaLink="false">/node/25840</guid>
+    </item>
+<item>
+  <title>CISA Adds Three Known Exploited Vulnerabilities to Catalog</title>
+  <link>https://www.cisa.gov/news-events/alerts/2026/11/24/cisa-adds-three-known-exploited-vulnerabilities-catalog</link>
+  <description>&lt;div class=&quot;OutlineElement Ltr SCXW1462417 BCX8&quot;&gt;
+&lt;p&gt;CISA has added three new vulnerabilities to its &lt;a class=&quot;Hyperlink SCXW1462417 BCX8&quot; href=&quot;https://www.cisa.gov/known-exploited-vulnerabilities-catalog&quot; rel=&quot;noreferrer noopener&quot;&gt;&lt;u&gt;Known Exploited Vulnerabilities (KEV) Catalog&lt;/u&gt;&lt;/a&gt;, based on evidence of active exploitation.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;div class=&quot;ListContainerWrapper SCXW85334591 BCX8&quot;&gt;
+&lt;p&gt;&lt;a href=&quot;https://www.cve.org/CVERecord?id=CVE-2026-131914&quot; target= [truncated for fixture]</description>
+  <pubDate>Tue, 24 Nov 26 12:00:00 +0000</pubDate>
+    <dc:creator>CISA</dc:creator>
+    <guid isPermaLink="false">/node/25848</guid>
+    </item>
+
+  </channel>
+</rss>

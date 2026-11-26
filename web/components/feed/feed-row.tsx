@@ -126,7 +126,7 @@ function Kicker({ item }: { item: FeedItem }) {
         key="cat"
         className="text-[11px] font-medium tracking-[0.06em] text-ink-3 uppercase"
       >
-        {categoryLabel(item.category)}
+        {item.categoryName ?? categoryLabel(item.category)}
       </span>,
     );
   }
@@ -200,7 +200,7 @@ function Details({ item }: { item: FeedItem }) {
       <dd className={item.category ? "text-ink" : "text-ink-3"}>
         {item.category ? (
           <>
-            {categoryLabel(item.category)}{" "}
+            {item.categoryName ?? categoryLabel(item.category)}{" "}
             <span className="font-mono text-xs text-ink-3">
               {item.category}
             </span>

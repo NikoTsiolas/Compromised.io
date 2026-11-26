@@ -7,7 +7,7 @@ import type { Metadata } from "next";
 import { FeedView } from "@/components/feed/feed-view";
 import { SiteHeader } from "@/components/site/site-header";
 
-import { SAMPLE_ITEMS, SAMPLE_NOW } from "./sample-events";
+import { SAMPLE_ITEMS, SAMPLE_NOW, SAMPLE_TABS } from "./sample-events";
 
 export const metadata: Metadata = {
   title: "Sample data preview · Compromised",
@@ -36,6 +36,7 @@ export default function SamplePreview() {
       <main className="mx-auto max-w-[1120px] px-4 pb-16 sm:px-6 lg:px-10">
         <FeedView
           items={SAMPLE_ITEMS}
+          tabs={SAMPLE_TABS}
           tab="all"
           now={SAMPLE_NOW}
           polling={false}

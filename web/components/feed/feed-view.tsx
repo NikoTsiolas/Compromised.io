@@ -13,28 +13,31 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { Separator } from "@/components/ui/separator";
-import { groupByDay, TABS, type FeedItem, type TabSlug } from "@/lib/feed";
+import type { Tab } from "@/lib/api";
+import { DEFAULT_TAB, groupByDay, type FeedItem } from "@/lib/feed";
 
 export function FeedView({
   items,
+  tabs,
   tab,
   olderHref,
   now = new Date(),
   polling = true,
 }: {
   items: FeedItem[];
-  tab: TabSlug;
+  tabs: Tab[];
+  tab: string;
   olderHref?: string;
   now?: Date;
   /** Off on the sample preview, which has nothing to poll. */
   polling?: boolean;
 }) {
   const newest = items[0];
-  const label = TABS.find((t) => t.slug === tab)?.label ?? "All";
+  const label = tabs.find((t) => t.id === tab)?.label ?? "All";
 
   return (
     <>
-      <SectionTabs active={tab} />
+      <SectionTabs tabs={tabs} active={tab} />
       {polling && (
         <NewEventsBar
           key={newest?.id ?? "none"}
@@ -43,15 +46,10 @@ export function FeedView({
         />
       )}
       <section aria-label={`${label} events`}>
-        {tab !== "all" ? (
+        {items.length === 0 ? (
           <FeedEmpty
-            title={`Nothing filed under ${label} yet`}
-            description="Events are not sorted into sections yet. Until they are, every event appears under All."
-          />
-        ) : items.length === 0 ? (
-          <FeedEmpty
-            title="No events yet"
-            description="Events appear here as soon as the first sources have been checked."
+            title={tab === DEFAULT_TAB ? "No events yet" : `Nothing under ${label} yet`}
+            description="Events appear here as soon as sources report them."
           />
         ) : (
           groupByDay(items, now).map((group) => (
@@ -71,7 +69,7 @@ export function FeedView({
           ))
         )}
       </section>
-      {olderHref && tab === "all" && (
+      {olderHref && (
         <div className="mt-2 border-t border-rule-strong pt-4">
           <Link
             href={olderHref}

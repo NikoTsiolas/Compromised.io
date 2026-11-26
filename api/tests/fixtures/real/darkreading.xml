@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xml:base="https://www.darkreading.com"
+    xmlns:dc="http://purl.org/dc/elements/1.1/"
+    xmlns:atom="http://www.w3.org/2005/Atom"
+    xmlns:media="http://search.yahoo.com/mrss/"
+    xmlns:content="http://purl.org/rss/1.0/modules/content/">
+    <channel>
+        <title>darkreading</title>
+        <link>https://www.darkreading.com</link>
+        <description>Public RSS feed</description>
+                <language>en</language>
+        <atom:link href="https://www.darkreading.com/feeds/rss.xml" rel="self" type="application/rss+xml" />
+                 <item>
+            <title><![CDATA[Cyprus Becomes Espionage Target for Iranian Hackers]]></title>
+            <link><![CDATA[https://www.darkreading.com/cyberattacks-data-breaches/cyprus-espionage-target-iranian-hackers]]></link>
+                        <description><![CDATA[A previously undocumented Iranian threat group called &quot;Volant Manticore&quot; is targeting Cypriot organizations as part of an intelligence-gathering effort for Tehran.]]></description>
+                                                        <pubDate>Thu, 26 Nov 2026 08:00:00 GMT</pubDate>
+                                                                <dc:creator>Jai Vijayan</dc:creator>
+                                    <guid isPermaLink="false"><![CDATA[https://www.darkreading.com/cyberattacks-data-breaches/cyprus-espionage-target-iranian-hackers]]></guid>
+                             
+                <media:thumbnail url="https://eu-images.contentstack.com/v3/assets/blt6d90778a997de1cd/blt08316e419aab95b8/6b071dfb870042f8e04904af/cyprus-tunart-GettyImages-961759390.jpg?width=720&amp;quality=80&amp;disable=upscale" />
+                <media:content url="https://eu-images.contentstack.com/v3/assets/blt6d90778a997de1cd/blt08316e419aab95b8/6b071dfb870042f8e04904af/cyprus-tunart-GettyImages-961759390.jpg?width=720&amp;quality=80&amp;disable=upscale" medium="image">
+                    <media:title type="html">cyprus-tunart-GettyImages-961759390.jpg</media:title>
+                </media:content>
+                                    </item>        <item>
+            <title><![CDATA[Attackers Target .NET Developers With Poisoned Job Assessments]]></title>
+            <link><![CDATA[https://www.darkreading.com/threat-intelligence/attackers-net-developers-poisoned-job-assessments]]></link>
+                        <description><![CDATA[Researchers discovered 13 malicious NuGet packages as part of a fake recruitment campaign that spreads malware and gives attackers access to developers' machines.]]></description>
+                                                        <pubDate>Wed, 25 Nov 2026 15:48:04 GMT</pubDate>
+                                                                <dc:creator>Elizabeth Montalbano</dc:creator>
+                                    <guid isPermaLink="false"><![CDATA[https://www.darkreading.com/threat-intelligence/attackers-net-developers-poisoned-job-assessments]]></guid>
+                             
+                <media:thumbnail url="https://eu-images.contentstack.com/v3/assets/blt6d90778a997de1cd/blt62eb1a39d76dff3b/6b06d44d51725d29015e8423/Gorodenkoff-developer-coding-shutterstock.png?width=720&amp;quality=80&amp;disable=upscale" />
+                <media:content url="https://eu-images.contentstack.com/v3/assets/blt6d90778a997de1cd/blt62eb1a39d76dff3b/6b06d44d51725d29015e8423/Gorodenkoff-developer-coding-shutterstock.png?width=720&amp;quality=80&amp;disable=upscale" medium="image">
+                    <media:title type="html">Gorodenkoff-developer-coding-shutterstock.png</media:title>
+                </media:content>
+                                    </item>        <item>
+            <title><![CDATA[It's a Bot World. We're Just Living in It]]></title>
+            <link><![CDATA[https://www.darkreading.com/cyber-risk/bot-world-just-living]]></link>
+                        <description><![CDATA[Bot detection has become a losing game. Security teams need to limit privileged access for humans and their machine counterparts equally.]]></description>
+                                                        <pubDate>Wed, 25 Nov 2026 15:20:27 GMT</pubDate>
+                                                                <dc:creator>Arielle Waldman</dc:creator>
+                                    <guid isPermaLink="false"><![CDATA[https://www.darkreading.com/cyber-risk/bot-world-just-living]]></guid>
+                             
+                <media:thumbnail url="https://eu-images.contentstack.com/v3/assets/blt6d90778a997de1cd/bltd16db4afaa70e4cc/6a91d9495d308674a5d86232/Bots-MASTER-Getty.jpg?width=720&amp;quality=80&amp;disable=upscale" />
+                <media:content url="https://eu-images.contentstack.com/v3/assets/blt6d90778a997de1cd/bltd16db4afaa70e4cc/6a91d9495d308674a5d86232/Bots-MASTER-Getty.jpg?width=720&amp;quality=80&amp;disable=upscale" medium="image">
+                    <media:title type="html">Bots-MASTER-Getty.jpg</media:title>
+                </media:content>
+                                    </item>    </channel>
+</rss>

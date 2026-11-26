@@ -41,3 +41,23 @@ A subagent fetched each of the 14 endpoints once at 14:54 UTC and saved trimmed 
 - 2026-11-26: The MSRC Update Guide RSS carries no severity or exploited field, and 979 of its 5,776 items repeat a guid (one item per revision). This settles the open question above. The MSRC SUG API (`api.msrc.microsoft.com/sug/v2.0/en-US/vulnerability`, filtered by CVE number) returned `severity` and `exploited` without a key; its rate limits are undocumented. NVD 2.0 gives only a CVSS band, at 5 requests per 30 seconds without a key. Decision by Claude: use the SUG API for Microsoft severity, queried only for entries whose product is on the curated list.
 - 2026-11-26: CISA KEV fields: `vendorProject`, `product`, `dateAdded`, `requiredAction`, `dueDate`, `knownRansomwareCampaignUse`.
 - 2026-11-26: Ransomware.live RSS: the victim is in the title after " : ", the group in the title and the `/group/<slug>` guid, and `pubDate` is when Ransomware.live recorded the claim. No item linked to a leak site, but descriptions contained an attacker contact email, a Session ID and victim URLs. Decision by Claude: descriptions from this source are never stored; this narrows the 300-character excerpt rule for this one source.
+
+## Classification and scope as built, 2026-11-26
+As of `NikoTsiolas/Compromised.io@e61b7a0` (ticket #6, built by an Opus subagent, CI green on that commit):
+- The alias dictionary was `api/src/compromised/data/catalog.json`: 368 entries, 262 flagged as products people use, each with a logo key, plus threat actors and reporters/countries that are never treated as the affected organization. Enterprise gear was flagged as not used by ordinary people.
+- Run over 41 real captured headlines: research 8, active exploitation 7, vulnerability 6, data breach 5, espionage 4, ransomware 4, other 3, malware 2, zero-day 1, supply chain 1. Six were filtered as commentary, 17 had an unknown organization, and 22 appeared in no tab.
+- Known weakness: the phrase rules ignored negation ("not exploited").
+- Interfaces left for later tickets: adapters fill metadata keys `victim`, `vendor`, `product`, `exploited`, `severity`; `scope.refresh_event` is called after a merge or status change; the enricher uses `scope.tabs_for` with `storage.save_classification`; source ids equal the fixture file names; `GET /v1/tabs` existed; Trending returned empty; `pnpm db:reclassify` reclassified an existing dev database.
+
+## Fetching as built, 2026-11-26
+As of `NikoTsiolas/Compromised.io@0066781` (ticket #3, built by an Opus subagent, CI green on that commit):
+- All 10 RSS news and research sources had registry entries with tier, weight, interval and size cap; weight defaulted to the tier's base score (official 90, press 50, claim 20). Krebs carried a 35-second crawl delay.
+- Only registry hosts over HTTPS were fetched. Redirects were followed by hand, at most three, each target re-checked; off-list, downgraded or over-limit redirects were refused.
+- Connect, read and whole-attempt timeouts; a size cap on the decompressed body; retries on 429, 5xx and timeouts with doubling backoff never shorter than the crawl delay. Tested against a local HTTPS stub server in a CI step named "Fetcher seam".
+- ETag and Last-Modified were stored and sent; a 304 skipped parsing. Any DOCTYPE before the root element was refused, in addition to feedparser not resolving external entities.
+- `GET /v1/status` returned overall status (starting, live, degraded, down) and each source's state and last success, without error text.
+- The worker derived what was due from `last_attempt_at` in the database, so a restart did not re-poll every source.
+- Source ids `cisco-talos` and `google-threat-intelligence` matched the fixture names. The migration was `003_source_registry_and_health.sql`. Browser-suite ports could be overridden with `E2E_API_PORT` and `E2E_WEB_PORT`.
+- A real check on this date fetched each of the 10 sources once; all succeeded (200 items). SecurityWeek's second fetch returned 304.
+
+Friction the subagent reported: `mvp` moved twice under it and the ticket #6 merge conflicted in 8 files; the auto-mode classifier blocked running the long-lived worker loop, so real feeds were checked with one-off passes.
