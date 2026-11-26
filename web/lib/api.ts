@@ -28,6 +28,11 @@ export type Trust = {
   sources: string[];
 };
 
+/**
+ * One event as the API returns it. The optional fields at the end (CVEs, attack vector) are
+ * filled by later tickets; until the API sends them they are absent and the page shows a quiet
+ * empty state.
+ */
 export type FeedEvent = {
   id: number;
   title: string;
@@ -51,6 +56,15 @@ export type FeedEvent = {
   sources: EventSource[];
   /** Null only before the event is first assessed. */
   trust: Trust | null;
+  /** The publisher's own feed image, or null (none, or images switched off). */
+  image?: PublisherImage | null;
+  cves?: string[];
+  attack_vector?: string | null;
+};
+
+export type PublisherImage = {
+  url: string;
+  publisher: string;
 };
 
 /** The confidence formula's numbers as the API's code uses them. */
@@ -104,10 +118,12 @@ export async function getStatus(): Promise<IngestionStatus> {
 export async function listEvents(
   tab: string,
   cursor?: string,
+  limit?: number,
 ): Promise<EventPage> {
   const url = new URL("/v1/events", API_URL);
   url.searchParams.set("tab", tab);
   if (cursor) url.searchParams.set("cursor", cursor);
+  if (limit) url.searchParams.set("limit", String(limit));
   return getJson(url);
 }
 

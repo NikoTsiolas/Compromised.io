@@ -42,6 +42,12 @@ class Source:
     # or products. Its posts about anyone else are security research.
     government: bool = False
     organization: str | None = None
+    # Hosts that serve this publisher's own article pages, stated here and never inferred from
+    # feed content. Only these are ever asked for an article's preview image (pipeline.previews).
+    # A feed host such as feeds.feedburner.com is not an article host.
+    article_hosts: tuple[str, ...] = ()
+    # Show this publisher's images at all. PUBLISHER_IMAGES_OFF_FOR overrides it at run time.
+    publisher_images: bool = True
 
     def __post_init__(self):
         if self.weight < 0:
@@ -64,16 +70,29 @@ def _rss(id, name, endpoint, tier, minutes, **kwargs) -> Source:
     )
 
 
-THE_RECORD = _rss("therecord", "The Record", "https://therecord.media/feed", Tier.PRESS, 5)
+THE_RECORD = _rss(
+    "therecord",
+    "The Record",
+    "https://therecord.media/feed",
+    Tier.PRESS,
+    5,
+    article_hosts=("therecord.media",),
+)
 BLEEPINGCOMPUTER = _rss(
     "bleepingcomputer",
     "BleepingComputer",
     "https://www.bleepingcomputer.com/feed/",
     Tier.PRESS,
     10,
+    article_hosts=("www.bleepingcomputer.com",),
 )
 SECURITYWEEK = _rss(
-    "securityweek", "SecurityWeek", "https://www.securityweek.com/feed/", Tier.PRESS, 10
+    "securityweek",
+    "SecurityWeek",
+    "https://www.securityweek.com/feed/",
+    Tier.PRESS,
+    10,
+    article_hosts=("www.securityweek.com",),
 )
 THE_HACKER_NEWS = _rss(
     "thehackernews",
@@ -81,12 +100,23 @@ THE_HACKER_NEWS = _rss(
     "https://feeds.feedburner.com/TheHackersNews",
     Tier.PRESS,
     15,
+    article_hosts=("thehackernews.com",),
 )
 DARK_READING = _rss(
-    "darkreading", "Dark Reading", "https://www.darkreading.com/rss.xml", Tier.PRESS, 15
+    "darkreading",
+    "Dark Reading",
+    "https://www.darkreading.com/rss.xml",
+    Tier.PRESS,
+    15,
+    article_hosts=("www.darkreading.com",),
 )
 SECURITY_AFFAIRS = _rss(
-    "securityaffairs", "Security Affairs", "https://securityaffairs.com/feed", Tier.PRESS, 15
+    "securityaffairs",
+    "Security Affairs",
+    "https://securityaffairs.com/feed",
+    Tier.PRESS,
+    15,
+    article_hosts=("securityaffairs.com",),
 )
 KREBS = _rss(
     "krebsonsecurity",
@@ -95,6 +125,7 @@ KREBS = _rss(
     Tier.PRESS,
     30,
     crawl_delay_seconds=35,
+    article_hosts=("krebsonsecurity.com",),
 )
 CISCO_TALOS = _rss(
     "cisco-talos",
@@ -104,6 +135,7 @@ CISCO_TALOS = _rss(
     30,
     organization="cisco",
     max_bytes=4 * MB,  # full text in feed, 1.1 MB on 2026-11-26
+    article_hosts=("blog.talosintelligence.com",),
 )
 UNIT_42 = _rss(
     "unit42",
@@ -112,6 +144,7 @@ UNIT_42 = _rss(
     Tier.OFFICIAL,
     30,
     organization="palo-alto-networks",
+    article_hosts=("unit42.paloaltonetworks.com",),
 )
 GOOGLE_THREAT_INTEL = _rss(
     "google-threat-intelligence",
@@ -121,6 +154,7 @@ GOOGLE_THREAT_INTEL = _rss(
     60,
     organization="google",
     max_bytes=6 * MB,  # full articles in feed, up to 90 KB each across 20 items
+    article_hosts=("cloud.google.com",),
 )
 
 CISA_KEV = Source(

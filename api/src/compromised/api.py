@@ -15,7 +15,7 @@ from compromised import config, health, storage
 from compromised.pipeline import verifier
 from compromised.pipeline.classifier import CATEGORIES
 from compromised.pipeline.scope import TABS
-from compromised.sources import REGISTRY, TIER_WEIGHT, Tier
+from compromised.sources import REGISTRY, TIER_WEIGHT, Tier, by_id
 
 # Query values accepted for ?tab=, one per feed tab.
 TabId = StrEnum("TabId", {tab_id: tab_id for tab_id in TABS})
@@ -48,6 +48,14 @@ class TrustOut(BaseModel):
     sources: list[str]
 
 
+class ImageOut(BaseModel):
+    """The image a publisher put in its own feed. The browser loads it from the publisher with
+    no referrer and credits the publisher; our servers never fetch or store it."""
+
+    url: str
+    publisher: str
+
+
 class EventOut(BaseModel):
     id: int
     title: str
@@ -66,6 +74,7 @@ class EventOut(BaseModel):
     source_count: int
     sources: list[SourceOut]  # earliest first; the first one's headline is the title
     trust: TrustOut | None  # None only before the event's first assessment
+    image: ImageOut | None  # the earliest source's feed image; None when off or absent
 
 
 class ScoredSourceOut(BaseModel):
@@ -114,6 +123,22 @@ class StatusOut(BaseModel):
     sources: list[SourceHealthOut]
 
 
+def _image(event, settings: config.Settings) -> ImageOut | None:
+    """The earliest source's image, skipping sources whose images are switched off."""
+    if not settings.publisher_images:
+        return None
+    for source in event.sources:
+        if not source.image_url or source.source_id in settings.publisher_images_off_for:
+            continue
+        try:
+            if not by_id(source.source_id).publisher_images:
+                continue
+        except KeyError:
+            pass  # a source no longer in the registry keeps its stored image
+        return ImageOut(url=source.image_url, publisher=source.publisher)
+    return None
+
+
 def create_app(database_url: str | None = None) -> FastAPI:
     settings = config.load()
     url = database_url or settings.database_url
@@ -152,6 +177,7 @@ def create_app(database_url: str | None = None) -> FastAPI:
                         "category_label": CATEGORIES[e.category],
                         "source_count": len(e.sources),
                         "trust": _trust(e),
+                        "image": _image(e, settings),
                     }
                 )
                 for e in page.events

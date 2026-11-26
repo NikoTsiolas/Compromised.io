@@ -53,7 +53,8 @@ def migrate(database_url: str) -> list[str]:
 
 def reset_for_tests(conn: psycopg.Connection) -> None:
     conn.execute(
-        "truncate source_record_revisions, source_records, events, sources, enrichment_usage"
+        "truncate article_previews, source_record_revisions, source_records, events, sources,"
+        " enrichment_usage"
         " restart identity cascade"
     )
 
@@ -249,8 +250,8 @@ def refresh_event_header(conn: psycopg.Connection, event_id: int) -> None:
 def insert_record(conn: psycopg.Connection, record: SourceRecord, event_id: int) -> None:
     conn.execute(
         "insert into source_records (source_id, guid, canonical_url, original_url, headline,"
-        " excerpt, published_at, fetched_at, metadata, cves, event_id)"
-        " values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+        " excerpt, published_at, fetched_at, metadata, cves, event_id, image_url)"
+        " values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
         (
             record.source_id,
             record.guid,
@@ -263,6 +264,7 @@ def insert_record(conn: psycopg.Connection, record: SourceRecord, event_id: int)
             Jsonb(record.metadata),
             list(record.cves),
             event_id,
+            record.image_url,
         ),
     )
 
@@ -441,7 +443,7 @@ EFFECTIVE_METADATA = (
 
 _RECORD_COLUMNS = (
     "r.source_id, r.guid, r.canonical_url, r.original_url, r.headline, r.excerpt,"
-    f" r.published_at, r.fetched_at, {EFFECTIVE_METADATA} as metadata, r.cves"
+    f" r.published_at, r.fetched_at, {EFFECTIVE_METADATA} as metadata, r.cves, r.image_url"
 )
 
 
@@ -538,8 +540,10 @@ def _sources_for(cur, event_ids: list[int]) -> dict[int, list[EventSource]]:
     if not event_ids:
         return {}
     rows = cur.execute(
-        "select r.event_id, r.id, s.name, r.original_url, r.headline, r.excerpt, r.published_at"
+        "select r.event_id, r.id, s.id as source_id, s.name, r.original_url, r.headline,"
+        " r.excerpt, r.published_at, coalesce(r.image_url, p.image_url) as image_url"
         " from source_records r join sources s on s.id = r.source_id"
+        " left join article_previews p on p.record_id = r.id"
         " where r.event_id = any(%s) order by r.published_at, r.id",
         (event_ids,),
     ).fetchall()
@@ -553,6 +557,8 @@ def _sources_for(cur, event_ids: list[int]) -> dict[int, list[EventSource]]:
                 headline=r["headline"],
                 excerpt=r["excerpt"],
                 published_at=r["published_at"],
+                image_url=r["image_url"],
+                source_id=r["source_id"],
             )
         )
     return out
@@ -573,3 +579,31 @@ def _decode_cursor(cursor: str) -> tuple[datetime, int]:
         return published_at, int(event_id)
     except (binascii.Error, UnicodeDecodeError, ValueError) as exc:
         raise InvalidCursor(cursor) from exc
+
+
+# --- article previews (pipeline.previews) ------------------------------------------------------
+
+
+def records_awaiting_preview(
+    conn: psycopg.Connection, source_id: str, *, limit: int
+) -> list[tuple[int, str]]:
+    """The source's newest records with no image that have never been asked for a preview."""
+    rows = conn.execute(
+        "select r.id, r.original_url from source_records r"
+        " left join article_previews p on p.record_id = r.id"
+        " where r.source_id = %s and r.image_url is null and p.record_id is null"
+        " order by r.published_at desc, r.id desc limit %s",
+        (source_id, limit),
+    ).fetchall()
+    return [(r[0], r[1]) for r in rows]
+
+
+def save_preview(
+    conn: psycopg.Connection, record_id: int, image_url: str | None, state: str, at: datetime
+) -> None:
+    """Record the one attempt at a record's article preview (the record itself never changes)."""
+    conn.execute(
+        "insert into article_previews (record_id, state, image_url, attempted_at)"
+        " values (%s, %s, %s, %s) on conflict (record_id) do nothing",
+        (record_id, state, image_url, at),
+    )

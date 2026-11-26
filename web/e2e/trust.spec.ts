@@ -2,10 +2,12 @@
 // and the "How we score" page stating the formula's numbers. Expected numbers are the anchors in
 // docs/wiki/trust-labels-and-score.md, written out by hand. The seed holds the real
 // BleepingComputer, Security Affairs and The Hacker News captures plus synthetic items.
-import { expect, test, type Page } from "@playwright/test";
+import { offline, expect, test, type Page } from "./test";
 
-const eventRows = (page: Page) =>
-  page.getByRole("list", { name: "Events" }).getByRole("listitem");
+offline();
+
+// Every story on the designed page (#9) is an article: the featured lead, its cards, the feed.
+const eventRows = (page: Page) => page.getByRole("article");
 
 const eventRow = (page: Page, title: string) =>
   eventRows(page).filter({

@@ -14,7 +14,7 @@ from compromised.pipeline.enricher import STOP_THE_PASS, Enricher
 from compromised.pipeline.normalizer import normalize
 from compromised.pipeline.parsers import parse_rss
 from compromised.records import ParsedItem
-from compromised.sources import Source
+from compromised.sources import Source, Tier
 
 # Registry ``format`` -> adapter.
 PARSERS: dict[str, Callable[[bytes], list[ParsedItem]]] = {
@@ -64,7 +64,12 @@ def ingest(
     with conn.transaction():
         storage.upsert_source(conn, source)
         for item in items:
-            record = normalize(item, source_id=source.id, fetched_at=fetched_at)
+            record = normalize(
+                item,
+                source_id=source.id,
+                fetched_at=fetched_at,
+                images=source.tier != Tier.ATTACKER_CLAIM,
+            )
             if record is None:
                 continue
             assignment = deduplicator.assign(conn, record)

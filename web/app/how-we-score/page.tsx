@@ -1,10 +1,19 @@
 // "How we score": the confidence formula, with every number read from the API's own constants
-// (GET /v1/scoring), so the page cannot drift from the code. Deliberately bare; design is #9.
+// (GET /v1/scoring), so the page cannot drift from the code. Set in the homepage's masthead,
+// column and type (#9); no design of its own.
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Suspense } from "react";
 
+import { IngestionIndicator } from "@/components/ingestion-status";
+import { SiteHeader } from "@/components/site/site-header";
 import { getScoring, type Scoring } from "@/lib/api";
+
+// The homepage's section heading ("Latest") and body text.
+const H2 =
+  "mt-10 border-b border-rule-strong pb-2 font-mono text-[11px] leading-4 font-medium tracking-[0.06em] text-ink-3 uppercase";
+const P = "mt-4 max-w-[68ch] text-[15px] leading-[22px] text-ink-2";
+const LIST =
+  "mt-4 flex max-w-[68ch] list-disc flex-col gap-2 pl-5 text-[15px] leading-[22px] text-ink marker:text-ink-3";
 
 export const metadata: Metadata = { title: "How we score · Compromised" };
 
@@ -16,21 +25,29 @@ const TIER_NAMES: Record<Scoring["sources"][number]["tier"], string> = {
 
 export default function HowWeScore() {
   return (
-    <main>
-      <p>
-        <Link href="/">Compromised</Link>
-      </p>
-      <h1>How we score</h1>
-      <p>
-        Every event has a label saying who reported it and a confidence score from 0 to 100. The
-        score is not a measured probability: it is a fixed formula, below. It is always shown
-        with its label and the names of the sources it counted. Neither the label nor the score
-        is ever set by AI.
-      </p>
-      <Suspense fallback={<p>Loading the scoring rules…</p>}>
-        <Rules />
-      </Suspense>
-    </main>
+    <>
+      <SiteHeader
+        status={
+          <Suspense fallback={null}>
+            <IngestionIndicator />
+          </Suspense>
+        }
+      />
+      <main className="mx-auto max-w-[1240px] px-4 pt-8 pb-16 sm:px-6 sm:pt-10 lg:px-10">
+        <h1 className="text-[26px] leading-[30px] font-bold tracking-[-0.02em] text-ink sm:text-[32px] sm:leading-[36px]">
+          How we score
+        </h1>
+        <p className={P}>
+          Every event has a label saying who reported it and a confidence score from 0 to 100. The
+          score is not a measured probability: it is a fixed formula, below. It is always shown
+          with its label and the names of the sources it counted. Neither the label nor the score
+          is ever set by AI.
+        </p>
+        <Suspense fallback={<p className={P}>Loading the scoring rules…</p>}>
+          <Rules />
+        </Suspense>
+      </main>
+    </>
   );
 }
 
@@ -39,13 +56,13 @@ async function Rules() {
   try {
     s = await getScoring();
   } catch {
-    return <p>The scoring rules could not be loaded.</p>;
+    return <p className={P}>The scoring rules could not be loaded.</p>;
   }
   return (
     <>
-      <h2>The formula</h2>
-      <p>The strongest kind of source behind an event sets its label and its score:</p>
-      <ul aria-label="Formula">
+      <h2 className={H2}>The formula</h2>
+      <p className={P}>The strongest kind of source behind an event sets its label and its score:</p>
+      <ul aria-label="Formula" className={LIST}>
         <li>Claimed by attackers, with no other coverage: {s.claim_only}.</li>
         <li>Reported by one news outlet: {s.one_outlet}.</li>
         <li>
@@ -59,41 +76,41 @@ async function Rules() {
         <li>Official confirmation plus news coverage: {s.official_and_press}.</li>
         <li>Disputed or retracted by a later source: {s.disputed}.</li>
       </ul>
-      <p>
+      <p className={P}>
         Independent means a different publisher: two articles from one outlet count once. An
         attacker&apos;s claim is upgraded only when a news outlet or an official source covers the
         same incident. &ldquo;Disputed&rdquo; is set only when a later source&apos;s headline
         explicitly says the incident was denied or retracted, or that there is no evidence of it.
       </p>
 
-      <h2>Weights</h2>
-      <p>
+      <h2 className={H2}>Weights</h2>
+      <p className={P}>
         Each source carries a weight. By default it is its kind&apos;s number above, and then the
         formula gives exactly those numbers. A source with a different weight scores its own weight
         as the base, and as an additional outlet adds {s.per_extra_outlet} times its weight divided
         by {s.one_outlet}. The cap of {s.press_cap} without official confirmation always holds.
       </p>
-      <table>
+      <table className="mt-4 w-full max-w-[68ch] text-left text-[13px] leading-[18px]">
         <thead>
-          <tr>
-            <th scope="col">Source</th>
-            <th scope="col">Kind</th>
-            <th scope="col">Weight</th>
+          <tr className="border-b border-rule-strong font-mono text-[11px] tracking-[0.06em] text-ink-3 uppercase">
+            <th scope="col" className="py-2 pr-4 font-medium">Source</th>
+            <th scope="col" className="py-2 pr-4 font-medium">Kind</th>
+            <th scope="col" className="py-2 text-right font-medium">Weight</th>
           </tr>
         </thead>
         <tbody>
           {s.sources.map((source) => (
-            <tr key={source.name}>
-              <td>{source.name}</td>
-              <td>{TIER_NAMES[source.tier]}</td>
-              <td>{source.weight}</td>
+            <tr key={source.name} className="border-b border-rule">
+              <td className="py-2 pr-4 font-medium text-ink">{source.name}</td>
+              <td className="py-2 pr-4 text-ink-2">{TIER_NAMES[source.tier]}</td>
+              <td className="py-2 text-right font-mono text-ink tabular">{source.weight}</td>
             </tr>
           ))}
         </tbody>
       </table>
 
-      <h2>Labels</h2>
-      <ul aria-label="Labels">
+      <h2 className={H2}>Labels</h2>
+      <ul aria-label="Labels" className={LIST}>
         <li>
           &ldquo;Confirmed by the company&rdquo;: the affected company published it itself.
           &ldquo;Confirmed by a government agency&rdquo; and &ldquo;Confirmed by security

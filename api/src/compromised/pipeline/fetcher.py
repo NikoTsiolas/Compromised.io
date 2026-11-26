@@ -10,6 +10,8 @@
 """
 
 import asyncio
+import re
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from urllib.parse import urljoin, urlsplit
 
@@ -18,6 +20,7 @@ import httpx
 from compromised.sources import Source
 
 REDIRECT_STATUSES = frozenset({301, 302, 303, 307, 308})
+HEAD_END = re.compile(rb"</head\s*>|<body[\s>]", re.IGNORECASE)
 
 
 class FetchError(Exception):
@@ -67,7 +70,7 @@ async def fetch(
     _check_url(source.endpoint, policy, what="endpoint")
     for attempt in range(1, policy.max_attempts + 1):
         try:
-            return await _attempt(client, source, policy, validators)
+            return await _feed_attempt(client, source, policy, validators)
         except FetchError as exc:
             if not exc.transient or attempt == policy.max_attempts:
                 raise
@@ -76,12 +79,43 @@ async def fetch(
     raise AssertionError("unreachable")
 
 
-async def _attempt(
-    client: httpx.AsyncClient, source: Source, policy: FetchPolicy, validators: Validators
-) -> FetchResult:
+async def fetch_page(
+    client: httpx.AsyncClient, url: str, policy: FetchPolicy, *, max_bytes: int
+) -> tuple[str, bytes]:
+    """One GET of a page on an allow-listed host: a single attempt, never retried, reading only
+    up to the end of the document head (or ``max_bytes``, whichever comes first).
+
+    Returns the final URL (after re-checked redirects) and the bytes read.
+    """
+    _check_url(url, policy, what="page")
+
+    async def read(response: httpx.Response, final_url: str) -> tuple[str, bytes]:
+        if response.status_code != 200:
+            raise FetchError(f"HTTP {response.status_code}")
+        return final_url, await _read_head(response, max_bytes)
+
+    return await _attempt(lambda: _follow(client, url, policy, {}, read), policy)
+
+
+async def fetch_status_and_body(
+    client: httpx.AsyncClient, url: str, policy: FetchPolicy, *, max_bytes: int
+) -> tuple[int, bytes]:
+    """One GET on an allow-listed host (a single attempt), returning the final status and up to
+    ``max_bytes`` of the body. For small control files such as robots.txt."""
+    _check_url(url, policy, what="url")
+
+    async def read(response: httpx.Response, _url: str) -> tuple[int, bytes]:
+        if response.status_code != 200:
+            return response.status_code, b""
+        return 200, await _read_capped(response, max_bytes)
+
+    return await _attempt(lambda: _follow(client, url, policy, {}, read), policy)
+
+
+async def _attempt[T](run: Callable[[], Awaitable[T]], policy: FetchPolicy) -> T:
     try:
         async with asyncio.timeout(policy.total_timeout):
-            return await _follow(client, source, policy, validators)
+            return await run()
     except TimeoutError:
         raise FetchError(
             f"total timeout ({policy.total_timeout:g}s) exceeded", transient=True
@@ -92,43 +126,68 @@ async def _attempt(
         raise FetchError(f"{type(exc).__name__}: {exc}") from exc
 
 
-async def _follow(
+async def _feed_attempt(
     client: httpx.AsyncClient, source: Source, policy: FetchPolicy, validators: Validators
 ) -> FetchResult:
-    url = source.endpoint
-    headers = {"User-Agent": policy.user_agent}
+    headers = {}
     if validators.etag:
         headers["If-None-Match"] = validators.etag
     if validators.last_modified:
         headers["If-Modified-Since"] = validators.last_modified
+
+    async def read(response: httpx.Response, _url: str) -> FetchResult:
+        status = response.status_code
+        if status == 304:
+            return FetchResult(body=None, validators=validators)
+        if status != 200:
+            raise FetchError(f"HTTP {status}", transient=status == 429 or status >= 500)
+        body = await _read_capped(response, source.max_bytes)
+        return FetchResult(
+            body=body,
+            validators=Validators(
+                etag=response.headers.get("etag"),
+                last_modified=response.headers.get("last-modified"),
+            ),
+        )
+
+    return await _attempt(lambda: _follow(client, source.endpoint, policy, headers, read), policy)
+
+
+async def _follow[T](
+    client: httpx.AsyncClient,
+    url: str,
+    policy: FetchPolicy,
+    extra_headers: dict[str, str],
+    read: Callable[[httpx.Response, str], Awaitable[T]],
+) -> T:
+    """GET ``url``, following redirects by hand and re-checking every target."""
+    headers = {"User-Agent": policy.user_agent, **extra_headers}
     timeout = httpx.Timeout(policy.read_timeout, connect=policy.connect_timeout)
     for _ in range(policy.max_redirects + 1):
         request = client.build_request("GET", url, headers=headers, timeout=timeout)
         response = await client.send(request, stream=True, follow_redirects=False)
         try:
-            status = response.status_code
-            if status in REDIRECT_STATUSES:
+            if response.status_code in REDIRECT_STATUSES:
                 location = response.headers.get("location")
                 if not location:
-                    raise FetchError(f"HTTP {status} redirect without a Location")
+                    raise FetchError(f"HTTP {response.status_code} redirect without a Location")
                 url = urljoin(url, location)
                 _check_url(url, policy, what="redirect target")
                 continue
-            if status == 304:
-                return FetchResult(body=None, validators=validators)
-            if status != 200:
-                raise FetchError(f"HTTP {status}", transient=status == 429 or status >= 500)
-            body = await _read_capped(response, source.max_bytes)
-            return FetchResult(
-                body=body,
-                validators=Validators(
-                    etag=response.headers.get("etag"),
-                    last_modified=response.headers.get("last-modified"),
-                ),
-            )
+            return await read(response, url)
         finally:
             await response.aclose()
     raise FetchError(f"too many redirects (more than {policy.max_redirects})")
+
+
+async def _read_head(response: httpx.Response, max_bytes: int) -> bytes:
+    """Read until the document head has ended, stopping at ``max_bytes`` in any case."""
+    body = bytearray()
+    async for chunk in response.aiter_bytes():
+        body += chunk
+        if HEAD_END.search(body) or len(body) >= max_bytes:
+            break
+    return bytes(body[:max_bytes])
 
 
 async def _read_capped(response: httpx.Response, max_bytes: int) -> bytes:

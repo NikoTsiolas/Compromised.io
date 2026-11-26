@@ -44,6 +44,10 @@ class Settings:
     anthropic_api_key: str | None  # None: no enrichment, rules only (#8)
     enrichment_daily_cap: int
     grouping: Grouping = field(default_factory=Grouping)
+    # Show the images publishers put in their own feeds. "off" removes them from every response.
+    publisher_images: bool = True
+    # Source ids whose images are never shown, whatever the registry says.
+    publisher_images_off_for: frozenset[str] = frozenset()
 
 
 def load() -> Settings:
@@ -62,6 +66,13 @@ def load() -> Settings:
         grouping=Grouping.from_env(),
         anthropic_api_key=os.environ.get("ANTHROPIC_API_KEY") or None,
         enrichment_daily_cap=_int("ENRICHMENT_DAILY_CAP", 500),
+        publisher_images=os.environ.get("PUBLISHER_IMAGES", "on").strip().lower()
+        not in ("off", "0", "false", "no"),
+        publisher_images_off_for=frozenset(
+            s.strip()
+            for s in os.environ.get("PUBLISHER_IMAGES_OFF_FOR", "").split(",")
+            if s.strip()
+        ),
     )
 
 

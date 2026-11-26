@@ -107,7 +107,7 @@ def test_events_carry_category_commentary_flag_organization_and_logo_key(client)
     assert {
         k: event[k]
         for k in event
-        if k not in {"id", "sources", "source_count", "published_at", "trust"}
+        if k not in {"id", "sources", "source_count", "published_at", "trust", "image"}
     } == {
         "title": ONEPASSWORD_BC,
         "first_seen_at": "2026-11-26T14:54:07Z",
@@ -244,3 +244,46 @@ def test_the_scoring_rules_state_the_formulas_numbers_and_every_sources_weight(c
     assert {"name": "Ransomware.live", "tier": "attacker_claim", "weight": 20} in rules["sources"]
     assert {"name": "The Record", "tier": "press", "weight": 50} in rules["sources"]
     assert {"name": "CISA", "tier": "official", "weight": 90} in rules["sources"]
+
+
+# --- publisher images (#9) ----------------------------------------------------------------------
+
+
+DOTNET_IMAGE = (
+    "https://eu-images.contentstack.com/v3/assets/blt6d90778a997de1cd/blt62eb1a39d76dff3b/"
+    "6b06d44d51725d29015e8423/Gorodenkoff-developer-coding-shutterstock.png"
+    "?width=720&quality=80&disable=upscale"
+)
+
+
+def _event(client, title, tab="all"):
+    events = client.get("/v1/events", params={"tab": tab, "limit": 100}).json()["events"]
+    return next(e for e in events if e["title"] == title)
+
+
+def test_an_event_carries_its_publishers_feed_image_with_the_publishers_name(client):
+    assert _event(client, DOTNET)["image"] == {"url": DOTNET_IMAGE, "publisher": "Dark Reading"}
+    # BleepingComputer's feed has no images.
+    assert _event(client, ONEPASSWORD_BC)["image"] is None
+
+
+def test_attacker_claims_never_carry_an_image(client):
+    events = client.get("/v1/events", params={"tab": "ransomware", "limit": 100}).json()["events"]
+    assert events and all(e["image"] is None for e in events)
+
+
+def test_one_switch_turns_publisher_images_off_everywhere(conn, database_url, monkeypatch):
+    ingest(
+        conn, sample_source("darkreading"), real_sample("darkreading.xml"), fetched_at=FETCHED_AT
+    )
+    monkeypatch.setenv("PUBLISHER_IMAGES", "off")
+    with TestClient(create_app(database_url=database_url)) as off:
+        for tab in ("all", "research"):
+            events = off.get("/v1/events", params={"tab": tab}).json()["events"]
+            assert events and all(e["image"] is None for e in events)
+
+
+def test_publisher_images_can_be_switched_off_for_one_source(client, monkeypatch, database_url):
+    monkeypatch.setenv("PUBLISHER_IMAGES_OFF_FOR", "darkreading")
+    with TestClient(create_app(database_url=database_url)) as off:
+        assert _event(off, DOTNET)["image"] is None
