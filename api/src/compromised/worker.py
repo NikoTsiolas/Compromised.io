@@ -76,7 +76,7 @@ async def run_once(
                 s,
                 policy,
                 validators[s.id],
-                _rate_since(s, rows.get(s.id, {}).get("last_success_at"), now),
+                _rate_window(s, rows.get(s.id, {}).get("last_success_at"), now),
             )
             for s in sources
         )
@@ -87,20 +87,31 @@ async def run_once(
     }
 
 
-def _rate_since(source: Source, last_success: datetime | None, now: datetime) -> datetime:
-    """MSRC entries revised from this moment on are looked up: those since the last successful
-    check, and on a first run those within the backfill window."""
+@dataclass(frozen=True)
+class RateWindow:
+    """MSRC entries first published since ``released_after`` (the backfill window) and revised
+    since ``since`` (the last successful check, or the window on a first run) are looked up."""
+
+    since: datetime
+    released_after: datetime
+
+
+def _rate_window(source: Source, last_success: datetime | None, now: datetime) -> RateWindow:
     oldest = now - timedelta(days=source.backfill_days or 30)
-    return max(last_success, oldest) if last_success else oldest
+    return RateWindow(
+        since=max(last_success, oldest) if last_success else oldest, released_after=oldest
+    )
 
 
-async def _fetch(client, source, policy, validators, rate_since) -> Fetched | FetchError:
+async def _fetch(client, source, policy, validators, window: RateWindow) -> Fetched | FetchError:
     try:
         result = await fetch(client, source, policy, validators)
         if source.format != "msrc" or result.not_modified:
             return Fetched(result)
         try:
-            cves = msrc.cves_to_rate(msrc.parse(result.body), since=rate_since)
+            cves = msrc.cves_to_rate(
+                msrc.parse(result.body), since=window.since, released_after=window.released_after
+            )
         except ParseError:
             return Fetched(result)  # ingest reports the parse error
         return Fetched(result, await msrc.lookup(client, policy, cves))

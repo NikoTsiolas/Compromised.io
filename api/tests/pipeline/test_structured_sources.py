@@ -5,7 +5,7 @@ Every input is a real captured sample (tests/fixtures/real) unless its name says
 Expected values were read by hand from the raw fixture files.
 """
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -194,6 +194,7 @@ def test_msrc_entries_are_kept_only_for_listed_products_rated_critical_or_exploi
         "product": "Microsoft Office Visio",
         "severity": "Critical",
         "exploited": False,
+        "revised_at": "2026-11-24T16:00:00+00:00",
     }
     visio = events[VISIO]
     assert (visio.affected_organization, visio.category, visio.tabs) == (
@@ -235,13 +236,15 @@ def test_a_stored_msrc_entry_whose_rating_changes_is_rescoped(conn):
 def test_only_msrc_entries_for_listed_products_are_sent_for_rating():
     items = msrc.parse(real_sample("msrc-update-guide.xml"))
 
-    assert msrc.cves_to_rate(items, since=datetime(2026, 10, 27, tzinfo=UTC)) == [
+    window = datetime(2026, 10, 27, tzinfo=UTC)
+    assert msrc.cves_to_rate(items, since=window, released_after=window) == [
         "CVE-2026-112732",
         "CVE-2026-69291",
         "CVE-2026-72965",
     ]
     # Entries last revised before ``since`` were rated when they first appeared.
-    assert msrc.cves_to_rate(items, since=datetime(2026, 11, 24, tzinfo=UTC)) == ["CVE-2026-112732"]
+    since = datetime(2026, 11, 24, tzinfo=UTC)
+    assert msrc.cves_to_rate(items, since=since, released_after=window) == ["CVE-2026-112732"]
 
 
 def test_ratings_are_read_from_a_real_single_cve_sug_answer():
@@ -328,3 +331,31 @@ def test_a_malformed_structured_response_is_refused_and_stores_nothing(conn, sou
 def test_a_malformed_sug_answer_is_refused():
     with pytest.raises(ParseError):
         msrc.parse_ratings(b"<html>Service unavailable</html>")
+
+
+def test_an_msrc_cve_first_published_over_30_days_ago_is_not_imported_however_recently_revised(
+    conn,
+):
+    # Synthetic: two Windows CVEs, both revised on 23 Nov and both rated Critical. One was first
+    # published on 13 Oct (44 days before the fetch), the other on 10 Nov.
+    body = synthetic_sample("msrc-revisions.xml")
+    items = msrc.parse(body)
+    since = FETCHED_AT - timedelta(days=30)
+    assert msrc.cves_to_rate(items, since=since, released_after=since) == ["CVE-2026-90002"]
+
+    ingest(
+        conn,
+        by_id("msrc-update-guide"),
+        body,
+        fetched_at=FETCHED_AT,
+        ratings=msrc.parse_ratings(synthetic_sample("msrc-sug-revisions.json")),
+    )
+
+    [event] = storage.list_events(conn).events
+    assert event.title == (
+        "Microsoft Update Guide: Windows Synthetic Test Service Elevation of Privilege"
+        " Vulnerability (CVE-2026-90002)"
+    )
+    # Dated by its first publication; the newest revision is kept as metadata.
+    assert event.published_at == datetime(2026, 11, 10, 16, 0, tzinfo=UTC)
+    assert metadata_by_title(conn)[event.title]["revised_at"] == "2026-11-23T16:00:00+00:00"
