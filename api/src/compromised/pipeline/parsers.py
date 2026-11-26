@@ -1,5 +1,6 @@
 """Parsers: raw response bytes -> parsed items. One adapter per registry ``format``."""
 
+import re
 from collections.abc import Callable
 from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
@@ -8,9 +9,29 @@ import feedparser
 
 from compromised.records import ParsedItem
 
+# Byte-order mark, XML declaration, whitespace, comments and processing instructions, then a
+# DOCTYPE. Matching stops at the first element, so a DOCTYPE quoted inside an article is fine.
+DOCTYPE_IN_PROLOG = re.compile(
+    rb"^(?:\xef\xbb\xbf)?(?:\s|<\?.*?\?>|<!--.*?-->)*<!DOCTYPE", re.DOTALL | re.IGNORECASE
+)
+
+
+class ParseError(Exception):
+    """The response is not a feed this adapter can read safely."""
+
 
 def parse_rss(body: bytes) -> list[ParsedItem]:
+    """RSS/Atom via feedparser, which does not resolve external entities.
+
+    As a second guard, a document type declaration in the prolog (where entities are declared)
+    is refused outright: none of the registry's feeds sends one.
+    """
+    if DOCTYPE_IN_PROLOG.match(body):
+        raise ParseError("document type declarations are not accepted")
     feed = feedparser.parse(body)
+    if not feed.get("version"):
+        reason = feed.get("bozo_exception") or "no RSS or Atom root element"
+        raise ParseError(f"not a feed: {reason}")
     items = []
     for entry in feed.entries:
         metadata = {}

@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"
+	xmlns:content="http://purl.org/rss/1.0/modules/content/"
+	xmlns:wfw="http://wellformedweb.org/CommentAPI/"
+	xmlns:dc="http://purl.org/dc/elements/1.1/"
+	xmlns:atom="http://www.w3.org/2005/Atom"
+	xmlns:sy="http://purl.org/rss/1.0/modules/syndication/"
+	xmlns:slash="http://purl.org/rss/1.0/modules/slash/"
+	>
+
+<channel>
+	<title>Krebs on Security</title>
+	<atom:link href="https://krebsonsecurity.com/feed/" rel="self" type="application/rss+xml" />
+	<link>https://krebsonsecurity.com</link>
+	<description>In-depth security news and investigation</description>
+	<lastBuildDate>Sat, 21 Nov 2026 00:36:39 +0000</lastBuildDate>
+	<language>en-US</language>
+	<sy:updatePeriod>
+	hourly	</sy:updatePeriod>
+	<sy:updateFrequency>
+	1	</sy:updateFrequency>
+	<generator>https://wordpress.org/?v=6.6.9</generator>
+	<item>
+		<title>CTO of &#8216;RansomwareHelp&#8217; Indicted for Wire Fraud</title>
+		<link>https://krebsonsecurity.com/2026/11/cto-of-ransomwarehelp-indicted-for-wire-fraud/</link>
+					<comments>https://krebsonsecurity.com/2026/11/cto-of-ransomwarehelp-indicted-for-wire-fraud/#comments</comments>
+		
+		<dc:creator><![CDATA[BrianKrebs]]></dc:creator>
+		<pubDate>Sat, 21 Nov 2026 00:36:39 +0000</pubDate>
+				<category><![CDATA[A Little Sunshine]]></category>
+		<category><![CDATA[Ne'er-Do-Well News]]></category>
+		<category><![CDATA[Ransomware]]></category>
+		<category><![CDATA[Web Fraud 2.0]]></category>
+		<category><![CDATA[Juan Ricardo Palacio Escobar]]></category>
+		<category><![CDATA[LockBit]]></category>
+		<category><![CDATA[Paul Ihme]]></category>
+		<category><![CDATA[ransomwarehelp.com]]></category>
+		<category><![CDATA[Soteria]]></category>
+		<guid isPermaLink="false">https://krebsonsecurity.com/?p=74696</guid>
+
+					<description><![CDATA[The chief technology officer and co-founder of ransomwarehelp.com, a six year old Florida business that claimed to use "advanced cryptographic tools" to restore data locked by ransomware, has been charged with wire fraud after an FBI sting operation found the company was simply paying the attackers for a decryption key and charging victims a markup for work that was never performed.]]></description>
+										<content:encoded><![CDATA[<p>The chief technology officer and co-founder of <strong>ransomwarehelp.com</strong>, a six year old Florida business that claimed to use &#8220;advanced cryptographic tools&#8221; to restore data locked by ransomware, has been charged with wire fraud after an FBI sting operation found the company was simply paying the attackers for a decryption key and charging victims a markup for work that was never performed.</p>
+<div id="attachment_74706" style="width: 759px" class="wp-caption aligncenter"><img fetchpriority="high" decoding="async" aria-describedby="caption-attachment-74706" class=" wp-i [truncated for fixture]]]></content:encoded>
+					
+					<wfw:commentRss>https://krebsonsecurity.com/2026/11/cto-of-ransomwarehelp-indicted-for-wire-fraud/feed/</wfw:commentRss>
+			<slash:comments>13</slash:comments>
+		
+		
+			</item>
+		<item>
+		<title>Attackers Used Optimizely to A/B Test Malware on Top Websites</title>
+		<link>https://krebsonsecurity.com/2026/11/attackers-used-optimizely-to-a-b-test-malware-on-top-websites/</link>
+					<comments>https://krebsonsecurity.com/2026/11/attackers-used-optimizely-to-a-b-test-malware-on-top-websites/#comments</comments>
+		
+		<dc:creator><![CDATA[BrianKrebs]]></dc:creator>
+		<pubDate>Wed, 18 Nov 2026 02:52:04 +0000</pubDate>
+				<category><![CDATA[A Little Sunshine]]></category>
+		<category><![CDATA[Data Breaches]]></category>
+		<category><![CDATA[Security Tools]]></category>
+		<category><![CDATA[Web Fraud 2.0]]></category>
+		<category><![CDATA[content security policy]]></category>
+		<category><![CDATA[Coruna]]></category>
+		<category><![CDATA[crawler.ninja]]></category>
+		<category><![CDATA[DarkSword]]></category>
+		<category><![CDATA[DecryptAds]]></category>
+		<category><![CDATA[Infoblox]]></category>
+		<category><![CDATA[javascript]]></category>
+		<category><![CDATA[Optimizely]]></category>
+		<category><![CDATA[Report URI]]></category>
+		<category><![CDATA[Scott Helme]]></category>
+		<category><![CDATA[Zach Edwards]]></category>
+		<guid isPermaLink="false">https://krebsonsecurity.com/?p=74672</guid>
+
+					<description><![CDATA[At least 178 top web destinations unwittingly served a variety of malware exploits against visitors over the past 24 hours thanks to a security vulnerability involving Optimizely, a company that helps websites customize user experiences and test out new features. Experts say the incident, which saw data-stealing malicious software silently injected into sites like the BBC, CNN, Equifax, Ledger and Zoom, was exacerbated by the reality that few popular websites enforce strict rules on the sources of third-party content.]]></description>
+										<content:encoded><![CDATA[<p>At least 178 top web destinations unwittingly served a variety of malware exploits against visitors over the past 24 hours thanks to a security vulnerability involving <strong>Optimizely</strong>, a company that helps websites customize user experiences and test out new features. Experts say the incident, which saw data-stealing malicious software silently injected into sites like the <strong>BBC</strong>, <strong>CNN</strong>, <strong>Equifax</strong>, <strong>Ledger</strong> and <strong>Zoom</strong>, was exacerbated by the reality that few popular websites enforce strict rules on the sou [truncated for fixture]]]></content:encoded>
+					
+					<wfw:commentRss>https://krebsonsecurity.com/2026/11/attackers-used-optimizely-to-a-b-test-malware-on-top-websites/feed/</wfw:commentRss>
+			<slash:comments>23</slash:comments>
+		
+		
+			</item>
+		<item>
+		<title>Who Runs the Ransomware Group Qilin?</title>
+		<link>https://krebsonsecurity.com/2026/11/who-runs-the-ransomware-group-qilin/</link>
+					<comments>https://krebsonsecurity.com/2026/11/who-runs-the-ransomware-group-qilin/#comments</comments>
+		
+		<dc:creator><![CDATA[BrianKrebs]]></dc:creator>
+		<pubDate>Wed, 11 Nov 2026 18:06:01 +0000</pubDate>
+				<category><![CDATA[A Little Sunshine]]></category>
+		<category><![CDATA[Breadcrumbs]]></category>
+		<category><![CDATA[Ne'er-Do-Well News]]></category>
+		<category><![CDATA[Ransomware]]></category>
+		<category><![CDATA[Aleksey Mikhailovich Yakovtsev]]></category>
+		<category><![CDATA[aleksey1990yakov@mail.ru]]></category>
+		<category><![CDATA[Alexbigboss44]]></category>
+		<category><![CDATA[Constella Intelligence]]></category>
+		<category><![CDATA[Flashpoint]]></category>
+		<category><![CDATA[Haise]]></category>
+		<category><![CDATA[Intel 471]]></category>
+		<category><![CDATA[IntelHawk]]></category>
+		<category><![CDATA[Leo Bogod]]></category>
+		<category><![CDATA[mail-30a@mail.ru]]></category>
+		<category><![CDATA[NCC Group]]></category>
+		<category><![CDATA[Qilin]]></category>
+		<category><![CDATA[RAMP]]></category>
+		<category><![CDATA[Rjun]]></category>
+		<category><![CDATA[SpyCloud]]></category>
+		<guid isPermaLink="false">https://krebsonsecurity.com/?p=74550</guid>
+
+					<description><![CDATA[The cybercrime group Qilin has emerged as the world's most active ransomware affiliate program, claiming at least 365 victim organizations in the past three months alone. But even top Russian hackers make operational security mistakes, and the administrator of Qilin has made a few key missteps over the last decade that all point to a 36-year-old man living in St. Petersburg, Russia.]]></description>
+										<content:encoded><![CDATA[<p>The cybercrime group <strong>Qilin</strong> has emerged as the world&#8217;s most active ransomware affiliate program, claiming at least 365 victim organizations in the past three months alone. But even top Russian hackers make operational security mistakes, and the administrator of Qilin has made a few key missteps over the last decade that all point to a 36-year-old man living in St. Petersburg, Russia.</p>
+<p>Operating since September 2022, the Russia-based ransomware group Qilin is the currently the most industrious ransomware-as-a-service gang, according to <a href="https://insights.nc [truncated for fixture]]]></content:encoded>
+					
+					<wfw:commentRss>https://krebsonsecurity.com/2026/11/who-runs-the-ransomware-group-qilin/feed/</wfw:commentRss>
+			<slash:comments>28</slash:comments>
+		
+		
+			</item>
+	</channel>
+</rss>
+
+<!--
+Performance optimized by W3 Total Cache. Learn more: https://www.boldgrid.com/w3-total-cache/?utm_source=w3tc&utm_medium=footer_comment&utm_campaign=free_plugin
+
+Object Caching 21/21 objects using Memcached
+Page Caching using Memcached (User agent is rejected) 
+Database Caching using Memcached
+
+Served from: krebsonsecurity.com @ 2026-11-26 09:46:31 by W3 Total Cache
+-->

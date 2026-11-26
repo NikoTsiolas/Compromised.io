@@ -59,11 +59,64 @@ def reset_for_tests(conn: psycopg.Connection) -> None:
 
 
 def upsert_source(conn: psycopg.Connection, source: Source) -> None:
+    """Mirror a registry entry into the sources table, keeping its health columns."""
     conn.execute(
-        "insert into sources (id, name, endpoint) values (%s, %s, %s)"
-        " on conflict (id) do update set name = excluded.name, endpoint = excluded.endpoint",
-        (source.id, source.name, source.endpoint),
+        "insert into sources (id, name, endpoint, tier, weight, interval_seconds)"
+        " values (%s, %s, %s, %s, %s, %s)"
+        " on conflict (id) do update set name = excluded.name, endpoint = excluded.endpoint,"
+        " tier = excluded.tier, weight = excluded.weight,"
+        " interval_seconds = excluded.interval_seconds",
+        (
+            source.id,
+            source.name,
+            source.endpoint,
+            str(source.tier),
+            source.weight,
+            source.interval_seconds,
+        ),
     )
+
+
+def stored_validators(conn: psycopg.Connection, source_id: str) -> tuple[str | None, str | None]:
+    """(ETag, Last-Modified) of the source's last stored full response."""
+    row = conn.execute(
+        "select etag, last_modified from sources where id = %s", (source_id,)
+    ).fetchone()
+    return (row[0], row[1]) if row else (None, None)
+
+
+def record_success(
+    conn: psycopg.Connection,
+    source_id: str,
+    at: datetime,
+    *,
+    etag: str | None,
+    last_modified: str | None,
+) -> None:
+    conn.execute(
+        "update sources set last_attempt_at = %s, last_success_at = %s,"
+        " consecutive_failures = 0, etag = %s, last_modified = %s where id = %s",
+        (at, at, etag, last_modified, source_id),
+    )
+
+
+def record_failure(conn: psycopg.Connection, source_id: str, at: datetime, error: str) -> None:
+    conn.execute(
+        "update sources set last_attempt_at = %s, last_error = %s, last_error_at = %s,"
+        " consecutive_failures = consecutive_failures + 1 where id = %s",
+        (at, error[:500], at, source_id),
+    )
+
+
+def source_rows(conn: psycopg.Connection, source_ids: list[str]) -> dict[str, dict]:
+    """Stored health columns by source id; sources never checked are absent."""
+    with conn.cursor(row_factory=dict_row) as cur:
+        rows = cur.execute(
+            "select id, last_attempt_at, last_success_at, last_error, last_error_at,"
+            " consecutive_failures from sources where id = any(%s)",
+            (source_ids,),
+        ).fetchall()
+    return {r["id"]: r for r in rows}
 
 
 def record_exists(conn: psycopg.Connection, record: SourceRecord) -> bool:

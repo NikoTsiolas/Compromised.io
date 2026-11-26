@@ -18,6 +18,9 @@ TRACKING_PARAMS = {"fbclid", "gclid", "mc_cid", "mc_eid"}
 BOILERPLATE_TAIL = re.compile(
     r"(\s*(\[(\.\.\.|…)\]|\.\.\.|…)\s*$)|(\s*The post .* appeared first on .*$)", re.DOTALL
 )
+# A tag left unterminated where a body was cut off ("... <a href="https://..."): the parser
+# returns it as text. "<" followed by a space ("versions < 2.4") is not a tag and stays.
+DANGLING_TAG = re.compile(r"<[A-Za-z!/?][^<>]*$")
 
 
 def normalize(item: ParsedItem, *, source_id: str, fetched_at: datetime) -> SourceRecord | None:
@@ -79,7 +82,7 @@ def _strip_tags(fragment: str) -> str:
     stripper = _TextExtractor()
     stripper.feed(fragment)
     stripper.close()
-    return stripper.text()
+    return DANGLING_TAG.sub("", stripper.text())
 
 
 def excerpt(summary_html: str) -> str:
