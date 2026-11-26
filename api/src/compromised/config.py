@@ -56,7 +56,7 @@ def load() -> Settings:
         ),
         user_agent=os.environ.get(
             "USER_AGENT",
-            "CompromisedBot/0.1 (+https://github.com/NikoTsiolas/Compromised.io)",
+            "Compromised/0.1 (+https://github.com/NikoTsiolas/Compromised.io)",
         ),
         environment=os.environ.get("ENVIRONMENT", "development"),
         grouping=Grouping.from_env(),
