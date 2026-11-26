@@ -28,6 +28,9 @@ in `app/globals.css` that this table names.
 | `technical-details.tsx` | FAQ accordion (`faq-accordion`) | The `0fr -> 1fr` grid-row opening and the flipping chevron; state from the shadcn Collapsible. |
 | `new-events-bar.tsx` | Notification widget (`notify-widget`) | The pill and its rolling "N new" swap only. |
 | `theme-switch.tsx` | Theme switch (`theme-switch`) | Restyled; driven by next-themes. |
+| `bottom-tab-bar.tsx`, `bottom-tab-bar.css` | Tab bar (`tab-bar`, TabBar) | The Feed's phone and tablet bar (#16). Kept: icons until chosen, the name opening in a 0fr -> 1fr column, one tile chasing the chosen item on a spring (bounce 50), concentric softened corners. Changed: links in a `<nav>` with `aria-current` instead of a tablist, every item named for screen readers, our tokens, fixed above the safe area. |
+| `glide-tip.tsx` | Liquid tooltip (`glide-tip`, GlideTip) | The "Link copied" pill over a post's Share button (#16). Kept: one spring for the drop's progress driving height, width and lift; the words revealed inside the pill. Dropped: the goo filter, the row of buttons and the sideways glide, hover. |
+| `feed-skeleton.tsx`, `feed-skeleton.css` | Load cards (`load-cards`, LoadCards) | The Feed's loading state (#16): post-shaped skeletons easing in out of a blur, a light running over the bars. Its "develop" into content is not used (the server streams the posts). |
 
 MIT-licensed Bencho blocks (for example Stacked bars, used by the exploitation chart) stay with
 the code that uses them and carry their copyright notice there.

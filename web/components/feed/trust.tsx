@@ -9,8 +9,15 @@ import { cn } from "@/lib/utils";
 
 export function Trust({
   trust,
+  layout = "inline",
   className,
 }: {
+  /**
+   * "inline": one sentence that wraps ("label · 70/100 · Sources: ..."). "post": the Feed's
+   * layout from Option A, label left and score right on one row, sources beneath. Same text
+   * and order either way; only the separators are hidden.
+   */
+  layout?: "inline" | "post";
   /**
    * `null` or `undefined`: the API sent no trust, as for commentary (a newsletter or podcast is
    * not an incident). Nothing is shown in its place: no label, no score, no placeholder.
@@ -22,6 +29,7 @@ export function Trust({
 
   const { status, label, score, sources } = trust;
   const claimed = status === "claimed";
+  const post = layout === "post";
 
   // Inline text, so a long label or source list wraps like a sentence on narrow screens.
   return (
@@ -29,7 +37,12 @@ export function Trust({
       data-slot="trust"
       data-status={status}
       aria-label="Trust"
-      className={cn("text-[13px] leading-[18px] text-ink-3", className)}
+      data-layout={layout}
+      className={cn(
+        "text-[13px] leading-[18px] text-ink-3",
+        post && "grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-4 gap-y-0.5",
+        className,
+      )}
     >
       <Badge
         variant="outline"
@@ -43,16 +56,16 @@ export function Trust({
         <span aria-hidden className="trust-glyph mr-1.5 align-[0px]" data-status={status} />
         {label}
       </Badge>
-      <Separator />
+      <Separator hidden={post} />
       <span
-        className="whitespace-nowrap font-mono"
+        className={cn("whitespace-nowrap font-mono", post && "col-start-2 row-start-1 justify-self-end")}
         aria-label={`Confidence score ${score} out of 100`}
       >
         <span className="text-[15px] leading-4 font-bold text-ink tabular">{score}</span>
         <span className="text-xs leading-4">/100</span>
       </span>
-      <Separator />
-      <span>
+      <Separator hidden={post} />
+      <span className={cn(post && "col-span-2")}>
         Sources: <span className="text-ink-2">{sources.join(", ")}</span>
       </span>
     </p>
@@ -60,9 +73,9 @@ export function Trust({
 }
 
 /** A middle dot between the parts; spaced so the text reads "label · 70/100 · Sources: …". */
-function Separator() {
+function Separator({ hidden = false }: { hidden?: boolean }) {
   return (
-    <span aria-hidden className="text-ink-3">
+    <span aria-hidden className={cn("text-ink-3", hidden && "hidden")}>
       {" · "}
     </span>
   );

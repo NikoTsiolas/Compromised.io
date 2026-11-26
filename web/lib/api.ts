@@ -176,6 +176,9 @@ export type MostReported = {
   items: { name: string; key: string | null; logo_key: string | null; count: number }[];
 };
 
+/** The most events one request may ask for (the API's storage.MAX_PAGE_SIZE). */
+export const MAX_PAGE_SIZE = 100;
+
 const API_URL = process.env.API_URL ?? "http://127.0.0.1:8000";
 
 export async function getStatus(): Promise<IngestionStatus> {

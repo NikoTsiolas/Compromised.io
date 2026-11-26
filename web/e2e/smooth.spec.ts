@@ -6,7 +6,7 @@ import { offline, expect, test, type Page } from "./test";
 offline();
 
 
-async function cumulativeLayoutShift(page: Page): Promise<number> {
+async function cumulativeLayoutShift(page: Page, path = "/"): Promise<number> {
   await page.addInitScript(() => {
     (window as unknown as { __cls: number }).__cls = 0;
     new PerformanceObserver((list) => {
@@ -18,7 +18,7 @@ async function cumulativeLayoutShift(page: Page): Promise<number> {
       }
     }).observe({ type: "layout-shift", buffered: true });
   });
-  await page.goto("/", { waitUntil: "networkidle" });
+  await page.goto(path, { waitUntil: "networkidle" });
   // Scroll through the page so every lazy picture loads, then come back up.
   const height = await page.evaluate(() => document.documentElement.scrollHeight);
   for (let y = 0; y < height; y += 400) {
@@ -37,8 +37,22 @@ test("the homepage barely shifts while it loads on desktop", async ({ page }, in
   expect(cls).toBeLessThan(0.02);
 });
 
+test("the Feed barely shifts while it loads on desktop", async ({ page }, info) => {
+  const cls = await cumulativeLayoutShift(page, "/feed");
+  info.annotations.push({ type: "CLS Feed desktop", description: cls.toFixed(4) });
+  console.log(`CLS Feed desktop: ${cls.toFixed(4)}`);
+  expect(cls).toBeLessThan(0.02);
+});
+
 test.describe("on a phone", () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+
+  test("the Feed barely shifts while it loads", async ({ page }, info) => {
+    const cls = await cumulativeLayoutShift(page, "/feed");
+    info.annotations.push({ type: "CLS Feed phone", description: cls.toFixed(4) });
+    console.log(`CLS Feed phone: ${cls.toFixed(4)}`);
+    expect(cls).toBeLessThan(0.02);
+  });
 
   test("the homepage barely shifts while it loads", async ({ page }, info) => {
     const cls = await cumulativeLayoutShift(page);

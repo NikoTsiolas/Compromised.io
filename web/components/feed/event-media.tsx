@@ -28,7 +28,8 @@ export function EventMedia({
   logo: Logo | null | undefined;
   organization: string | null | undefined;
   fallbackLabel: string;
-  size: "lead" | "card" | "thumb";
+  /** "post": the Feed's one picture size; photo and tile share the same box (#16). */
+  size: "lead" | "card" | "thumb" | "post";
   ratio?: number;
   /** The lead image loads eagerly; every other image lazily. */
   priority?: boolean;
@@ -52,6 +53,7 @@ export function EventMedia({
   const picture = (
     <AspectRatio
       ratio={ratio}
+      data-size={size}
       className={cn("overflow-hidden rounded-[2px] bg-surface", className)}
     >
       {showImage ? (
@@ -95,7 +97,7 @@ export function EventMedia({
       )}
     </AspectRatio>
   );
-  if (size === "lead") return picture;
+  if (size === "lead" || size === "post") return picture;
   // Small pictures (feed rows always, cards on phones) carry their credit on a line of its own
   // beneath them, always reserved, so the row is the same height whether the picture loads,
   // fails or never existed.

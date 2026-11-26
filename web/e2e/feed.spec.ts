@@ -90,7 +90,10 @@ test("an event covered by several outlets names them all under Technical details
 }) => {
   await page.goto("/");
   const story = lead(page);
-  await expect(story).toContainText("BleepingComputer +2 sources");
+  // Named once, in the trust line (#16; there used to be a second "+2 sources" line).
+  await expect(story.getByLabel("Trust")).toContainText(
+    "Sources: BleepingComputer, Security Affairs, The Hacker News",
+  );
 
   await story.getByRole("button", { name: "Technical details" }).click();
   const security = story.getByRole("link", {
@@ -220,50 +223,15 @@ test("technical details show the extracted fields or a quiet empty state, never 
   await expect(page.getByText("Sample data")).toHaveCount(0);
 });
 
-test("section tabs come from the API, each with its own URL, and filter the feed", async ({
+test("the section tabs live in the Feed now; Featured points there for every event", async ({
   page,
 }) => {
+  // Category filtering is tested on the Feed (feed-tab.spec.ts), where the tabs moved in #16.
   await page.goto("/");
-  const tab = (name: string) => page.getByRole("tab", { name });
-  await expect(page.getByRole("tab")).toHaveText([
-    "All",
-    "Breaches",
-    "Ransomware",
-    "Under attack",
-    "Update now",
-    "Research",
-    "Trending",
-  ]);
-  await expect(tab("All")).toHaveAttribute("aria-selected", "true");
-
-  await tab("Research").click();
-  await expect(page).toHaveURL(/\?tab=research$/);
-  await expect(tab("Research")).toHaveAttribute("aria-selected", "true");
-  await expect(featured(page)).toHaveCount(0);
-  await expect(headlines(page)).toHaveText([
-    "SYS010 malware abuses browser management to spy on Gmail, Outlook",
-  ]);
-
-  await tab("Under attack").click();
-  await expect(page).toHaveURL(/\?tab=under-attack$/);
-  await expect(headlines(page)).toHaveText([SYNTHETIC_ZERO_DAY]);
-
-  await tab("Breaches").click();
-  await expect(headlines(page)).toHaveText([
-    FLIGHT_CENTRE,
-    ONEPASSWORD,
-    SYNTHETIC_MARKUP,
-    SYNTHETIC_ADOBE,
-    SYNTHETIC_SLACK,
-  ]);
-
-  // Trending's order depends on the clock: see search.spec.ts and the API seam.
-  await tab("Trending").click();
-  await expect(page).toHaveURL(/\?tab=trending$/);
-
-  await tab("All").click();
-  await expect(page).toHaveURL(/\/$/);
-  await expect(eventRows(page)).toHaveCount(7);
+  await expect(page.getByRole("tab")).toHaveCount(0);
+  await page.getByRole("link", { name: "Every event, newest first, in the Feed" }).click();
+  await expect(page).toHaveURL(/\/feed$/);
+  await expect(page.getByRole("navigation", { name: "Categories" })).toBeVisible();
 });
 
 test("text from the API is rendered as text, never as markup", async ({
@@ -404,11 +372,11 @@ test.describe("at phone width", () => {
       page.getByRole("switch", { name: "Dark theme" }),
     ).toBeVisible();
 
-    const tabs = page.getByRole("tablist", { name: "Sections" });
-    const scrolls = await tabs.evaluate(
-      (el) => el.parentElement!.scrollWidth > el.parentElement!.clientWidth,
-    );
-    expect(scrolls).toBe(true);
+    // Both destinations stay reachable at phone width; the sideways category row moved to the
+    // Feed (#16, feed-tab.spec.ts).
+    await expect(
+      page.getByRole("navigation", { name: "Primary" }).getByRole("link", { name: "Feed" }),
+    ).toBeVisible();
 
     const toggle = lead(page).getByRole("button", {
       name: "Technical details",

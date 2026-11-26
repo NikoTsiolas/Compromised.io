@@ -176,3 +176,32 @@ test("most reported organisations counts the events named in the last 30 days", 
     "1 events",
   );
 });
+
+test("the Feed's widgets, and the phone's Charts view, show the same real figures", async ({
+  page,
+}) => {
+  // Desktop: the Feed's right-hand rail (#16) is filled from the same API as Featured's.
+  await page.goto("/feed");
+  const recent = rail(page)
+    .getByRole("region", { name: "Recently exploited" })
+    .getByRole("listitem");
+  await expect(recent).toHaveCount(4);
+  await expect(recent.first()).toContainText("CVE-0000-0201");
+  await expect(
+    rail(page)
+      .getByRole("region", { name: "Most reported organisations" })
+      .getByRole("listitem")
+      .filter({ hasText: "Contoso Pharmacy" }),
+  ).toContainText("1 events");
+
+  // Phone: the widgets wait behind the tab bar's Charts.
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto("/feed?view=charts");
+  await expect(rail(page)).toBeVisible();
+  await expect(
+    rail(page).getByRole("region", { name: "Recently exploited" }).getByRole("listitem").first(),
+  ).toContainText("CVE-0000-0201");
+  await expect(
+    rail(page).getByRole("region", { name: "Exploited flaws by month" }),
+  ).not.toContainText("No figures yet");
+});

@@ -1,5 +1,5 @@
 // The homepage while it loads: the same grid, boxes and line heights as the real page
-// (tabs, the lead story and its picture, three cards, the widget rail, feed rows), so when the
+// (the lead story and its picture, three cards, the widget rail, feed rows), so when the
 // content arrives nothing jumps. On shadcn Skeleton.
 //
 // The bars breathe in colour, not opacity, after the Bencho "Skeleton morph" block (Bencho Pro
@@ -17,12 +17,6 @@ function Bar({ className, style }: { className?: string; style?: React.CSSProper
 export function HomeSkeleton() {
   return (
     <div aria-busy="true" aria-label="Loading events">
-      <div className="flex h-11 items-center gap-6">
-        {[28, 64, 80, 84, 76, 64, 64].map((w, i) => (
-          <Bar key={i} className="h-3.5" style={{ width: w }} />
-        ))}
-      </div>
-      <div className="h-0.5 bg-rule-strong" />
       <div className="h-11 border-b border-rule" />
       <div className="home-grid">
         <div className="home-featured min-w-0 pt-6 sm:pt-8">

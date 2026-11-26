@@ -1,6 +1,7 @@
-// The homepage below the masthead, shared by the real page and the sample preview so both show
-// exactly the same components: section tabs, the new-events slot, then a grid of the featured
-// stories, the widget rail and the feed. On desktop the rail runs beside both and can sit on
+// The Featured tab below the masthead, shared by the real page and the sample preview so both
+// show exactly the same components: the new-events slot, then a grid of the featured stories,
+// the widget rail and a short list of further top stories (the category tabs live in the Feed
+// since #16; the full list is the Feed). On desktop the rail runs beside both and can sit on
 // either side; below 1024px it stacks between the featured stories and the feed.
 import { ViewTransition } from "react";
 
@@ -9,41 +10,31 @@ import { NewEventsBar } from "@/components/bencho-pro/new-events-bar";
 import { MarkSeen } from "@/components/bencho-pro/text-fade/arrival-fade";
 import { Featured } from "@/components/feed/featured";
 import { FeedList } from "@/components/feed/feed-list";
-import { SectionTabs } from "@/components/feed/section-tabs";
-import type { Tab } from "@/lib/api";
 import { selectFeatured } from "@/lib/featured";
-import { DEFAULT_TAB, type FeedItem } from "@/lib/feed";
+import type { FeedItem } from "@/lib/feed";
+import { FEED_PATH } from "@/lib/feed-url";
+
+/** How many further stories Featured lists below its cards; the Feed has the rest. */
+export const FEATURED_LIST_LENGTH = 6;
 
 export function HomeView({
   items,
-  tabs,
-  tab,
-  withFeatured,
   widgets,
-  olderHref,
   now,
   polling = true,
 }: {
   items: FeedItem[];
-  tabs: Tab[];
-  tab: string;
-  /** The featured section shows on the first page of the All tab only. */
-  withFeatured: boolean;
   widgets: RailWidget[];
-  olderHref?: string;
   now?: Date;
   /** Off on the sample preview, which has nothing to poll. */
   polling?: boolean;
 }) {
   const newest = items[0];
-  const label = tabs.find((t) => t.id === tab)?.label ?? "All";
-  const featured = withFeatured
-    ? selectFeatured(items, { now })
-    : { lead: null, cards: [], rest: items };
+  const featured = selectFeatured(items, { now });
+  const list = featured.rest.slice(0, FEATURED_LIST_LENGTH);
 
   return (
     <>
-      <SectionTabs tabs={tabs} active={tab} />
       {polling && (
         <NewEventsBar
           key={newest?.id ?? "none"}
@@ -53,9 +44,8 @@ export function HomeView({
       )}
       <MarkSeen ids={items.map((i) => i.id)} />
       <div className="home-grid">
-        {/* Switching tabs crossfades the stories; the rail beside them does not move. */}
         <div className="home-featured min-w-0">
-          <ViewTransition key={tab} name="home-featured" share="auto" enter="auto" default="none">
+          <ViewTransition name="home-featured" share="auto" enter="auto" default="none">
             <div>
               {featured.lead && (
                 <Featured key={featured.lead.id} featured={featured} now={now} />
@@ -64,22 +54,29 @@ export function HomeView({
           </ViewTransition>
         </div>
         <WidgetRail widgets={widgets} />
-        <section aria-label={`${label} events`} className="home-feed min-w-0">
-          <ViewTransition key={tab} name="home-feed" share="auto" enter="auto" default="none">
+        <section aria-label="All events" className="home-feed min-w-0">
+          <ViewTransition name="home-feed" share="auto" enter="auto" default="none">
           <div>
-          {featured.lead && featured.rest.length > 0 && (
+          {featured.lead && list.length > 0 && (
             <h2 className="mt-8 border-b border-rule-strong pb-2 font-mono text-[11px] leading-4 font-medium tracking-[0.06em] text-ink-3 uppercase">
               Latest
             </h2>
           )}
           <FeedList
-            items={featured.rest}
+            items={list}
             now={now}
             // The featured section may hold every item; the empty state is for no items at all.
-            empty={items.length === 0 ? emptyFor(tab, label) : undefined}
+            empty={
+              items.length === 0
+                ? {
+                    title: "No events yet",
+                    description: "Events appear here as soon as sources report them.",
+                  }
+                : undefined
+            }
             more={
-              olderHref
-                ? { href: olderHref, label: tab === "trending" ? "More trending events" : "Older events" }
+              items.length > 0
+                ? { href: FEED_PATH, label: "Every event, newest first, in the Feed" }
                 : undefined
             }
           />
@@ -89,18 +86,4 @@ export function HomeView({
       </div>
     </>
   );
-}
-
-function emptyFor(tab: string, label: string) {
-  if (tab === "trending") {
-    return {
-      title: "Nothing is trending right now",
-      description:
-        "Trending ranks events by how many independent sources covered them in the last 72 hours.",
-    };
-  }
-  return {
-    title: tab === DEFAULT_TAB ? "No events yet" : `Nothing under ${label} yet`,
-    description: "Events appear here as soon as sources report them.",
-  };
 }

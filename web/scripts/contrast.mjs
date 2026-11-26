@@ -48,6 +48,13 @@ const PAIRS = [
   ["c-accent", "c-surface", "Spike columns (non-text)", 3],
   ["chart-grey", "c-surface", "Other chart columns (non-text)", 3],
   ["chip-text", "chip-worst", "Image credit on the lightest picture", 4.5],
+  // The Feed (#16).
+  ["c-ink-2", "c-bg", "Post action row (outlets, Details, Share, Watch)", 4.5],
+  ["c-ink", "tab-bar", "Tab bar icons on the bar", 4.5],
+  ["c-ink", "c-bg", "Tab bar: chosen item's name on its tile", 4.5],
+  ["c-ink", "c-surface", "Watch pill, nav highlight, advice box", 4.5],
+  ["c-ink-3", "c-surface", "Advice label, details terms", 4.5],
+  ["c-bg", "c-ink", "Link copied pill", 4.5],
   ...[1, 2, 3, 4, 5].flatMap((n) => [
     ["c-ink", `tile-${n}`, `Tile ${n}: logo or lettermark`, 3],
     ["c-ink-2", `tile-${n}`, `Tile ${n}: organisation caption`, 4.5],
@@ -62,6 +69,8 @@ const dark = { ...light, ...tokens("\\.dark") };
 light["chart-grey"] = mix(light["c-ink"], 48, light["c-surface"]);
 dark["chart-grey"] = mix(dark["c-ink"], 38, dark["c-surface"]);
 for (const t of [light, dark]) {
+  // The tab bar's ground (bottom-tab-bar.css): 9% ink over the page.
+  t["tab-bar"] = mix(t["c-ink"], 9, t["c-bg"]);
 
   // Image credit chip: #111111 at 75% over the lightest possible picture (white).
   t["chip-worst"] = mix("#111111", 75, "#ffffff");

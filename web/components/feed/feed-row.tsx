@@ -15,6 +15,7 @@ import {
   Kicker,
   MediaMorph,
   SourceNames,
+  storyImage,
   summaryText,
 } from "@/components/feed/story-parts";
 import { Trust } from "@/components/feed/trust";
@@ -33,7 +34,7 @@ export function FeedRow({ item, now }: { item: FeedItem; now?: Date }) {
       <div className="col-start-2 row-start-1 sm:col-start-1 sm:row-span-2">
         <MediaMorph id={item.id}>
           <EventMedia
-            image={item.image}
+            image={storyImage(item)}
             logo={item.logo}
             organization={item.organization}
             fallbackLabel={categoryName(item) ?? "Security incident"}
@@ -78,10 +79,13 @@ export function FeedRow({ item, now }: { item: FeedItem; now?: Date }) {
         <div className="mt-2.5 flex flex-col gap-1.5 text-[13px] leading-[18px] text-ink-3">
           <Trust trust={item.trust} />
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-            <SourceNames item={item} />
-            <span aria-hidden>·</span>
-            <DetailsLink item={item} />
-            <span aria-hidden>·</span>
+            {!item.trust && (
+              <>
+                <SourceNames item={item} />
+                <span aria-hidden>·</span>
+              </>
+            )}
+            <DetailsLink item={item} separator="after" />
             <DetailsToggle item={item} />
           </div>
         </div>

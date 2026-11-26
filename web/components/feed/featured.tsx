@@ -17,6 +17,7 @@ import {
   MediaMorph,
   SourceNames,
   sourceCount,
+  storyImage,
   summaryText,
 } from "@/components/feed/story-parts";
 import { Trust } from "@/components/feed/trust";
@@ -66,7 +67,7 @@ function Lead({ item, now }: { item: FeedItem; now?: Date }) {
       <div className="md:order-2">
         <MediaMorph id={item.id}>
           <EventMedia
-            image={item.image}
+            image={storyImage(item)}
             logo={item.logo}
             organization={item.organization}
             fallbackLabel={categoryName(item) ?? "Security incident"}
@@ -112,10 +113,13 @@ function Lead({ item, now }: { item: FeedItem; now?: Date }) {
         <div className="mt-4 flex flex-col gap-2 border-t border-rule pt-3 text-[13px] leading-[18px] text-ink-3">
           <Trust trust={item.trust} />
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <SourceNames item={item} />
-            <span aria-hidden>·</span>
-            <DetailsLink item={item} />
-            <span aria-hidden>·</span>
+            {!item.trust && (
+              <>
+                <SourceNames item={item} />
+                <span aria-hidden>·</span>
+              </>
+            )}
+            <DetailsLink item={item} separator="after" />
             <DetailsToggle item={item} />
           </div>
         </div>
@@ -134,7 +138,7 @@ function Card({ item, now }: { item: FeedItem; now?: Date }) {
       <div className="col-start-2 row-start-1 sm:order-first">
         <MediaMorph id={item.id}>
           <EventMedia
-            image={item.image}
+            image={storyImage(item)}
             logo={item.logo}
             organization={item.organization}
             fallbackLabel={categoryName(item) ?? "Security incident"}
@@ -172,8 +176,7 @@ function Card({ item, now }: { item: FeedItem; now?: Date }) {
           <Trust trust={item.trust} />
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <SourceNames item={item} />
-            <span aria-hidden>·</span>
-            <DetailsLink item={item} />
+            <DetailsLink item={item} separator={item.trust ? undefined : "before"} />
           </div>
         </div>
       </div>

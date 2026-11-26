@@ -13,13 +13,14 @@ import {
   categoryName,
   Kicker,
   MediaMorph,
+  storyImage,
   summaryText,
   TechnicalFacts,
 } from "@/components/feed/story-parts";
 import { Trust } from "@/components/feed/trust";
 import type { FeedItem } from "@/lib/feed";
 
-// The homepage's section heading ("Latest").
+// Featured's section heading ("Latest").
 const H2 =
   "mt-10 border-b border-rule-strong pb-2 font-mono text-[11px] leading-4 font-medium tracking-[0.06em] text-ink-3 uppercase";
 
@@ -49,7 +50,7 @@ export function EventView({ item }: { item: FeedItem }) {
 
       <MediaMorph id={item.id}>
         <EventMedia
-          image={item.image}
+          image={storyImage(item)}
           logo={item.logo}
           organization={item.organization}
           fallbackLabel={categoryName(item) ?? "Security incident"}

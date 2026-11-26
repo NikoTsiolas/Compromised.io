@@ -1,0 +1,43 @@
+/* From the Bencho "Load cards" block (Pro licence, see README.md): skeletons ease in out of a
+   blur, and a light runs across each waiting bar. Mapped onto our tokens. */
+.lcd-card {
+  animation: lcd-in 420ms var(--ease-out) both;
+}
+@keyframes lcd-in {
+  from {
+    opacity: 0;
+    filter: blur(6px);
+    translate: 0 8px;
+  }
+}
+.lcd-bar {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--c-ink) 7%, var(--c-bg));
+}
+.lcd-bar::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--c-bg) 70%, transparent),
+    transparent
+  );
+  translate: -100% 0;
+  animation: lcd-shine 1.3s ease-in-out infinite;
+}
+@keyframes lcd-shine {
+  to {
+    translate: 100% 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lcd-card,
+  .lcd-bar::after {
+    animation: none;
+  }
+}

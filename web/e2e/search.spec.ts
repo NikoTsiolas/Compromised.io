@@ -83,9 +83,14 @@ test.describe("on a phone", () => {
 });
 
 test("the Trending tab lists ranked events or says nothing is trending", async ({ page }) => {
-  await page.goto("/?tab=trending");
-  await expect(page.getByRole("tab", { name: "Trending" })).toHaveAttribute("aria-selected", "true");
-  const region = page.getByRole("region", { name: "Trending events" });
+  // The category tabs live in the Feed since #16.
+  await page.goto("/feed?tab=trending");
+  await expect(
+    page
+      .getByRole("navigation", { name: "Categories" })
+      .getByRole("link", { name: "Trending", exact: true }),
+  ).toHaveAttribute("aria-current", "page");
+  const region = page.getByRole("region", { name: "Trending posts" });
   // Trending depends on the clock (the last 72 hours), so either state is right here; the API
   // seam checks the order (api/tests/api/test_trending.py).
   await expect(

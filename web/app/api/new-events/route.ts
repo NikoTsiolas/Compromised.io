@@ -15,7 +15,8 @@ export async function GET(request: Request) {
 
   let count = 0;
   try {
-    const page = await listEvents("all", undefined, MAX_COUNTED);
+    const tab = params.get("tab") || "all";
+    const page = await listEvents(tab, undefined, MAX_COUNTED);
     count = page.events.filter((event) => {
       const t = Date.parse(event.published_at);
       return t > publishedAt || (t === publishedAt && event.id > id);

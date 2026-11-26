@@ -69,6 +69,14 @@ export function Kicker({ item, className }: { item: FeedItem; className?: string
   );
 }
 
+/**
+ * The publisher picture a story may show. Attacker claims never show one, whatever a source
+ * sent (a claims tracker's images are leak-site screenshots): they get the designed tile.
+ */
+export function storyImage(item: FeedItem): FeedItem["image"] {
+  return item.trust?.status === "claimed" ? null : (item.image ?? null);
+}
+
 /** The plain-language AI summary, labelled; else the publisher's own excerpt, unlabelled. */
 export function summaryText(item: FeedItem): { text: string; ai: boolean } | null {
   if (item.summary) return { text: item.summary, ai: true };
@@ -100,18 +108,20 @@ export function sourceCount(item: FeedItem): number {
   return Math.max(1, item.sources.length);
 }
 
-/** "BleepingComputer +2 sources": the publisher always named beside the trust label. */
+/**
+ * Where the sources are named when the trust line cannot name them. The trust line already
+ * names every source it counted ("Sources: ..."), so an event with trust names them there and
+ * nowhere else; only an event with no trust (commentary) names its publishers here, once each.
+ */
 export function SourceNames({ item }: { item: FeedItem }) {
-  const others = item.sources.length - 1;
+  if (item.trust) return null;
+  const names = [...new Set(item.sources.map((s) => s.publisher).filter(Boolean))];
+  if (names.length === 0 && item.publisher) names.push(item.publisher);
+  if (names.length === 0) return null;
   return (
-    <span>
-      <span className="text-ink-2">{item.publisher}</span>
-      {others > 0 && (
-        <span>
-          {" "}
-          +{others} {others === 1 ? "source" : "sources"}
-        </span>
-      )}
+    <span data-slot="source-names">
+      {names.length === 1 ? "Source: " : "Sources: "}
+      <span className="text-ink-2">{names.join(", ")}</span>
     </span>
   );
 }
@@ -120,17 +130,29 @@ export function SourceNames({ item }: { item: FeedItem }) {
  * The small "Details" link to the event's own page (#11). The headline keeps opening the
  * publisher. Its name is just "Details": every story is an article named by its headline, which
  * gives the link its context (and keeps the headline the only link named after it).
- * Sample events on /preview have no page and show no link.
+ * Sample events on /preview have no page and show no link, and then no separator either
+ * (`separator` puts a dot before or after the link only when the link is shown).
  */
-export function DetailsLink({ item }: { item: FeedItem }) {
+export function DetailsLink({
+  item,
+  separator,
+}: {
+  item: FeedItem;
+  separator?: "before" | "after";
+}) {
   if (!hasEventPage(item.id)) return null;
+  const dot = <span aria-hidden>·</span>;
   return (
-    <Link
-      href={eventPath(item.id)}
-      className="-my-3 inline-flex min-h-11 items-center text-[13px] leading-[18px] text-ink-3 underline-offset-4 hover:text-ink hover:underline sm:my-0 sm:min-h-0"
-    >
-      Details
-    </Link>
+    <>
+      {separator === "before" && dot}
+      <Link
+        href={eventPath(item.id)}
+        className="-my-3 inline-flex min-h-11 items-center text-[13px] leading-[18px] text-ink-3 underline-offset-4 hover:text-ink hover:underline sm:my-0 sm:min-h-0"
+      >
+        Details
+      </Link>
+      {separator === "after" && dot}
+    </>
   );
 }
 
@@ -144,6 +166,11 @@ export function MediaMorph({ id, children }: { id: string; children: ReactNode }
       {children}
     </ViewTransition>
   );
+}
+
+/** Number of distinct publishers that reported the event (never fewer than one). */
+export function outletCount(item: FeedItem): number {
+  return Math.max(1, new Set(item.sources.map((s) => s.publisher)).size);
 }
 
 export function DetailsToggle({ item }: { item: FeedItem }) {

@@ -1,6 +1,13 @@
 // The sample-data preview shows the components later tickets fill, with invented values, under a
 // banner that cannot be missed. It is built only when SAMPLE_PREVIEW=1 (never in production).
-import { offline, expect, test } from "./test";
+import { PNG } from "./images";
+import { offline, expect, test, type Page } from "./test";
+
+// The sample claim carries a picture on purpose; serve a real one, so only the rule can hide it.
+const serveClaimPicture = (page: Page) =>
+  page.route("https://images.example.com/sample/claim-screenshot.png", (route) =>
+    route.fulfill({ status: 200, contentType: "image/png", body: PNG }),
+  );
 
 offline();
 
@@ -69,4 +76,37 @@ test("the chart tooltip also appears on hover", async ({ page }) => {
   const chart = page.getByRole("region", { name: "Exploited flaws by month" });
   await chart.locator("[data-month][data-spike]").first().hover();
   await expect(chart.getByRole("tooltip")).toContainText("Notable");
+});
+
+test("the Feed preview carries the same banner and shows Option A posts with sample values", async ({
+  page,
+}) => {
+  await serveClaimPicture(page);
+  await page.goto("/preview/feed");
+  await expect(page.getByRole("note", { name: "Sample data notice" })).toContainText(
+    "None of it is real.",
+  );
+  const posts = page.getByRole("region", { name: "All posts" }).getByRole("article");
+  await expect(posts.first()).toBeVisible();
+  await expect(page.getByText("Advice from source").first()).toBeVisible();
+  // Attacker claims never show a photo: the tile, whatever a source sent.
+  const claim = posts.filter({ has: page.locator('[data-slot=trust][data-status="claimed"]') }).first();
+  await expect(claim.locator("[data-slot=aspect-ratio] img")).toHaveCount(0);
+  await expect(claim.locator("[data-slot=aspect-ratio] [data-media]")).toHaveCount(1);
+  for (const link of await posts.getByRole("heading").getByRole("link").all()) {
+    expect(await link.getAttribute("href")).toMatch(/^https:\/\/example\.com\//);
+  }
+});
+
+test("on Featured too, an attacker claim gets the tile even when a source sent a picture", async ({
+  page,
+}) => {
+  await serveClaimPicture(page);
+  await page.goto("/preview");
+  const claim = page
+    .getByRole("article")
+    .filter({ has: page.locator('[data-slot=trust][data-status="claimed"]') })
+    .first();
+  await expect(claim.locator("[data-slot=aspect-ratio] img")).toHaveCount(0);
+  await expect(claim.locator("[data-slot=aspect-ratio] [data-media]")).toHaveCount(1);
 });

@@ -1,9 +1,11 @@
-// Search results (#10): the header's search lands here. The page only places shared parts: the
-// masthead, the search form, then the results as the feed's own list (FeedList), so a change to
-// how the feed lists events reaches search too. Everything from the API is rendered as text.
+// Search results (#10): the header's search and the phone tab bar's Search (#16) land here. The
+// page only places shared parts: the masthead, the search form, then the results as the same
+// list Featured uses (FeedList, one FeedRow per event), so a change to how events are listed
+// reaches search too; the tab bar below 1024px. Everything from the API is rendered as text.
 import type { Metadata } from "next";
 import { Suspense, ViewTransition } from "react";
 
+import { BottomTabBar } from "@/components/bencho-pro/bottom-tab-bar";
 import { FeedRowsSkeleton } from "@/components/bencho-pro/home-skeleton";
 import { FeedList } from "@/components/feed/feed-list";
 import { IngestionIndicator } from "@/components/ingestion-status";
@@ -23,7 +25,7 @@ import { withLogo } from "@/lib/logos";
 
 export const metadata: Metadata = { title: "Search · Compromised" };
 
-// The homepage's section heading ("Latest").
+// Featured's section heading ("Latest").
 const H2 =
   "mt-8 border-b border-rule-strong pb-2 font-mono text-[11px] leading-4 font-medium tracking-[0.06em] text-ink-3 uppercase";
 
@@ -39,7 +41,8 @@ export default function SearchPage({ searchParams }: PageProps<"/search">) {
           </Suspense>
         }
       />
-      <main className="mx-auto max-w-[1240px] px-4 pt-6 pb-16 sm:px-6 sm:pt-8 lg:px-10">
+      {/* Below 1024px the page keeps room for the tab bar, so it never covers a result. */}
+      <main className="mx-auto max-w-[1240px] px-4 pt-6 pb-28 sm:px-6 sm:pt-8 lg:px-10 lg:pb-16">
         <h1 className="sr-only">Search</h1>
         <Suspense fallback={<FormSkeleton />}>
           <Form searchParams={searchParams} />
@@ -61,6 +64,7 @@ export default function SearchPage({ searchParams }: PageProps<"/search">) {
           </Suspense>
         </section>
       </main>
+      <BottomTabBar current="search" />
     </>
   );
 }

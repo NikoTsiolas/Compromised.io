@@ -3,10 +3,11 @@
 //   BASE_URL=http://127.0.0.1:3000 node scripts/capture-checkpoint.mjs
 //   BASE_URL=... EVENT_PATH=/events/3 ONLY=event LOOKS=light,dark,phone-light,phone-dark node ...
 //
-// EVENT_PATH adds one event's page (#11) as "event"; ONLY and LOOKS keep just the named pages
-// and looks.
-// Needs a running web app built with SAMPLE_PREVIEW=1 (for /preview) and an API with real
-// ingested events. Full-page images of the real feed and the sample-data preview, each at
+// EVENT_PATH adds one event's page (#11) as "event"; SEARCH_PATH (default "/search") sets the
+// search page's query (#10); ONLY and LOOKS keep just the named pages and looks.
+// Needs a running web app built with SAMPLE_PREVIEW=1 (for /preview and /preview/feed) and an
+// API with real ingested events. Full-page images of Featured, the Feed and search, real and
+// sample, each at
 // desktop, phone and tablet width in light and dark. OUT_DIR writes them elsewhere (to review
 // before committing). Times are shown as a reader in London would see them.
 import { mkdirSync } from "node:fs";
@@ -23,10 +24,15 @@ mkdirSync(out, { recursive: true });
 
 const only = (list, names) =>
   names ? list.filter((x) => names.split(",").includes(x.name)) : list;
+// Featured and the Feed (#16), on the real feed and on the sample-data preview; search (#10) and
+// one event page (#11) on the real feed.
 const pages = only(
   [
-    { name: "feed", path: "/" },
-    { name: "sample-preview", path: "/preview" },
+    { name: "featured", path: "/" },
+    { name: "feed", path: "/feed" },
+    { name: "search", path: process.env.SEARCH_PATH ?? "/search" },
+    { name: "sample-featured", path: "/preview" },
+    { name: "sample-feed", path: "/preview/feed" },
     ...(process.env.EVENT_PATH ? [{ name: "event", path: process.env.EVENT_PATH }] : []),
   ],
   process.env.ONLY,
@@ -79,12 +85,12 @@ for (const look of looks) {
       null,
       { timeout: 30_000 },
     );
-    // Open one row's Technical details so the expand is part of the record.
+    // Open one story's technical details so the expand is part of the record.
     const toggle = page
-      .getByRole("region", { name: /events$/ })
-      .getByRole("button", { name: "Technical details" })
+      .getByRole("region", { name: /(events|posts)$/ })
+      .getByRole("button", { name: /^(Technical details|Details)$/ })
       .first();
-    if (await toggle.count()) await toggle.click();
+    if ((await toggle.count()) && (await toggle.isVisible())) await toggle.click();
     // Let lazy pictures below the fold load before the full-page capture.
     await page.evaluate(async () => {
       for (const img of document.querySelectorAll("img")) img.loading = "eager";

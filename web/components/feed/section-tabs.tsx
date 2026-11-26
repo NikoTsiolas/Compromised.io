@@ -1,5 +1,6 @@
 "use client";
 
+// The Feed's categories on phones (#16; tablet and desktop list them in the left column).
 // Section navigation on the shadcn Tabs primitive (line variant), restyled as Swiss underline
 // tabs over the heavy 2px rule. Each tab is a real link with its own URL. On phones the row
 // scrolls sideways (X Explore and Substack search tabs on Mobbin). One underline slides from
@@ -10,11 +11,11 @@ import { Tabs as TabsPrimitive } from "@base-ui/react/tabs";
 
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Tab } from "@/lib/api";
-import { DEFAULT_TAB } from "@/lib/feed";
+import { feedHref } from "@/lib/feed-url";
 
-export function SectionTabs({ tabs, active }: { tabs: Tab[]; active: string }) {
+export function SectionTabs({ tabs, active }: { tabs: Tab[]; active: string | null }) {
   return (
-    <Tabs value={active} className="gap-0">
+    <Tabs value={active ?? ""} className="gap-0">
       <div className="-mx-4 overflow-x-auto px-4 [scrollbar-width:none] sm:mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden">
         <TabsList
           variant="line"
@@ -27,10 +28,7 @@ export function SectionTabs({ tabs, active }: { tabs: Tab[]; active: string }) {
               value={tab.id}
               nativeButton={false}
               render={
-                <Link
-                  href={tab.id === DEFAULT_TAB ? "/" : `/?tab=${tab.id}`}
-                  scroll={false}
-                />
+                <Link href={feedHref({ tab: tab.id })} scroll={false} />
               }
               className="h-11 flex-none rounded-none border-0 px-0 text-sm font-medium text-ink-3 transition-colors duration-(--motion-fast) after:hidden hover:text-ink focus-visible:ring-0 data-active:font-bold data-active:text-ink dark:text-ink-3 dark:data-active:text-ink"
             >
