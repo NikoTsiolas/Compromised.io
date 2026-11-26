@@ -1,4 +1,50 @@
-# Design checkpoint: Featured and Feed (ticket #16)
+# Design checkpoint: tickets #10, #11, #15 and #16 merged
+
+Screenshots taken on 2026-11-26 from a production build (`SAMPLE_PREVIEW=1`) of branch
+`merge-tickets-10-11-15-16`, as a reader in London sees them, with reduced motion. The two-tab
+layout of #16 with the other three tickets carried into it: **Featured** (`/`) and the **Feed**
+(`/feed`) with the real widget figures of #15 (also behind the phone tab bar's Charts), Trending
+switched on in the Feed and the real **search** page of #10 (reached from the header and the
+tab bar's Search), and one **event page** of #11 (`/events/4`, the 1Password event three outlets
+reported), linked from Featured's lead, cards and list and from the Feed's open Details panel.
+
+The real pages are a fresh database filled on that date by one fetch of every feed in the
+registry (Security Affairs from a capture made minutes earlier, so it was not fetched twice;
+The Hacker News and Google Threat Intelligence unreachable from this machine's DNS; CISA
+advisories 403; MSRC 400, issue #17), the CISA KEV catalog (1,805 entries), and two article-preview
+passes for Security Affairs and BleepingComputer (five pages each). The search images show
+`/search?q=breach`, which includes incidents kept out of every tab, each marked "Not shown in the
+feed". The sample-data routes (`/preview`, `/preview/feed`) show the same components with
+invented values under their banner; search and event pages have no sample route.
+
+| | Light | Dark | Phone light | Phone dark | Tablet light | Tablet dark |
+|---|---|---|---|---|---|---|
+| Featured, real (`/`) | [featured-light](featured-light.png) | [featured-dark](featured-dark.png) | [featured-phone-light](featured-phone-light.png) | [featured-phone-dark](featured-phone-dark.png) | [featured-tablet-light](featured-tablet-light.png) | [featured-tablet-dark](featured-tablet-dark.png) |
+| Feed, real (`/feed`) | [feed-light](feed-light.png) | [feed-dark](feed-dark.png) | [feed-phone-light](feed-phone-light.png) | [feed-phone-dark](feed-phone-dark.png) | [feed-tablet-light](feed-tablet-light.png) | [feed-tablet-dark](feed-tablet-dark.png) |
+| Search, real (`/search?q=breach`) | [search-light](search-light.png) | [search-dark](search-dark.png) | [search-phone-light](search-phone-light.png) | [search-phone-dark](search-phone-dark.png) | [search-tablet-light](search-tablet-light.png) | [search-tablet-dark](search-tablet-dark.png) |
+| Event page, real (`/events/4`) | [event-light](event-light.png) | [event-dark](event-dark.png) | [event-phone-light](event-phone-light.png) | [event-phone-dark](event-phone-dark.png) | [event-tablet-light](event-tablet-light.png) | [event-tablet-dark](event-tablet-dark.png) |
+| Featured, sample (`/preview`) | [sample-featured-light](sample-featured-light.png) | [sample-featured-dark](sample-featured-dark.png) | [sample-featured-phone-light](sample-featured-phone-light.png) | [sample-featured-phone-dark](sample-featured-phone-dark.png) | [sample-featured-tablet-light](sample-featured-tablet-light.png) | [sample-featured-tablet-dark](sample-featured-tablet-dark.png) |
+| Feed, sample (`/preview/feed`) | [sample-feed-light](sample-feed-light.png) | [sample-feed-dark](sample-feed-dark.png) | [sample-feed-phone-light](sample-feed-phone-light.png) | [sample-feed-phone-dark](sample-feed-phone-dark.png) | [sample-feed-tablet-light](sample-feed-tablet-light.png) | [sample-feed-tablet-dark](sample-feed-tablet-dark.png) |
+
+Desktop 1440px, phone 390px at 2x, tablet 820px, full page. In each Featured and Feed image the
+first story's technical details are open (in the Feed the open panel also shows "Open the event
+page"). To regenerate: run a web build with `SAMPLE_PREVIEW=1` against an API with real events,
+then
+
+    BASE_URL=http://localhost:3000 EVENT_PATH=/events/<id> SEARCH_PATH="/search?q=breach" \
+      node web/scripts/capture-checkpoint.mjs
+
+What the real pages show on this date: 10 events on the All tab, 3 with a publisher photo
+(Security Affairs' Flight Centre, BleepingComputer's 1Password, The Record's FIFA) and 7 tiles.
+Dark Reading's two All-tab stories (.NET, Binance) show tiles: its images are off by default in
+the registry since this merge, because its stock photos include the banned hooded-figure
+imagery. "Most reported organisations" lists Flight Centre, 1Password, FIFA, .NET and Inception;
+no country appears any more (Security Affairs' Switzerland story now has an unknown
+organisation). The widget images of #15 below (`widgets-*.png`) were not regenerated.
+
+## Earlier: Featured and Feed (ticket #16)
+
+The images this section names were replaced by the merged set above on 2026-11-26.
 
 Screenshots for the owner's sign-off, taken on 2026-11-26 from a production build
 (`SAMPLE_PREVIEW=1`), as a reader in London sees them, with reduced motion so nothing is caught
@@ -47,8 +93,8 @@ existing `PUBLISHER_IMAGES_OFF_FOR=darkreading` switch removes it.
 | Featured | unchanged look | Lead, three cards, up to six further stories, the widget rail. The category tabs moved to the Feed; a link leads to the Feed for every event. |
 | Sources named once | both tabs | The trust line names the sources; the separate "+N sources" line is gone. Stories with no trust (commentary) name their publishers once instead. |
 
-Search and Trending belong to #10: Trending in the Feed and the tab bar's Search lead to a quiet
-"coming soon" (`/search` is a placeholder page #10 replaces).
+Search and Trending belong to #10: Trending in the Feed and the tab bar's Search led to a quiet
+"coming soon" (`/search` was a placeholder page). Both were replaced by #10's at the merge above.
 
 ## Measured
 
@@ -295,7 +341,8 @@ their value above the column, so colour is never the only signal.
 
 ## Event page (ticket #11), 2026-11-26
 
-`event-light.png`, `event-dark.png` and `event-phone-light.png`: the page for the real 1Password
+(These images were replaced by the merged set at the top on 2026-11-26.) `event-light.png`,
+`event-dark.png` and `event-phone-light.png`: the page for the real 1Password
 event, which three outlets reported (BleepingComputer, Security Affairs, The Hacker News). A
 production build against a database seeded from every real RSS capture in
 `api/tests/fixtures/real` (no live fetch, no AI summaries, so the summary is the earliest
