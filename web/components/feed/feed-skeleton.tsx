@@ -13,7 +13,7 @@ export function FeedSkeleton() {
       {[0, 1, 2, 3].map((i) => (
         <div
           key={i}
-          className="grid gap-2 border-b border-rule py-4 sm:grid-cols-[72px_minmax(0,1fr)] sm:gap-x-6 lg:grid-cols-[88px_minmax(0,1fr)_176px]"
+          className="grid gap-2 border-b border-rule py-4 sm:grid-cols-[72px_minmax(0,1fr)] sm:gap-x-6 lg:grid-cols-[88px_minmax(0,1fr)_200px]"
         >
           <Skeleton className="h-3 w-12 bg-rule" />
           <div className="flex flex-col gap-2">

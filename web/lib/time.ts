@@ -13,7 +13,9 @@ export function formatOriginal(iso: string): string {
   return `${original.format(new Date(iso))} UTC`;
 }
 
-const relative = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
+// numeric: "always", so an event 42 hours old reads "1 day ago", never "yesterday" under an older
+// day heading.
+const relative = new Intl.RelativeTimeFormat("en", { numeric: "always" });
 const UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
   ["year", 365 * 24 * 3600],
   ["month", 30 * 24 * 3600],
@@ -23,7 +25,7 @@ const UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
   ["minute", 60],
 ];
 
-/** "12 minutes ago", "yesterday", "just now" */
+/** "12 minutes ago", "1 day ago", "just now" */
 export function formatRelative(iso: string, now: Date = new Date()): string {
   const seconds = Math.round((new Date(iso).getTime() - now.getTime()) / 1000);
   for (const [unit, size] of UNITS) {

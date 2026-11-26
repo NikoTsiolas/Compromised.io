@@ -17,7 +17,7 @@ export function FeedRow({ item, now }: { item: FeedItem; now?: Date }) {
   return (
     <Item
       render={<article aria-labelledby={headingId} />}
-      className="grid grid-cols-1 items-start gap-0 rounded-none border-0 px-0 py-3.5 sm:grid-cols-[72px_minmax(0,1fr)] sm:gap-x-6 sm:py-4 lg:grid-cols-[88px_minmax(0,1fr)_176px]"
+      className="grid grid-cols-1 items-start gap-0 rounded-none border-0 px-0 py-3.5 sm:grid-cols-[72px_minmax(0,1fr)] sm:gap-x-6 sm:py-4 lg:grid-cols-[88px_minmax(0,1fr)_200px]"
     >
       {/* time gutter; on phones it becomes the line above the kicker */}
       <p className="mb-1.5 flex items-baseline gap-2 font-mono text-xs leading-4 text-ink-3 sm:mb-0 sm:flex-col sm:gap-0.5 sm:pt-[3px]">
