@@ -1,7 +1,8 @@
 // Which events the featured section shows. Chosen by rule, never by hand.
 //
 // Today's rule ("newest-named"): the newest event with a named organisation that is not an
-// attacker claim. Source counts and trust status arrive with the grouping and scoring tickets;
+// attacker claim, preferring one with a publisher picture if it is no more than PICTURE_WINDOW
+// older than that newest one, so a picture never lets old news displace today's. Source counts and trust status arrive with the grouping and scoring tickets;
 // once they do, switch FEATURED_RULE to "most-sources-24h": the event with the most independent
 // sources in the last 24 hours that is confirmed or credibly reported. Either way the next three
 // events in feed order become the cards, and the feed continues with the rest.
@@ -11,6 +12,7 @@ export type FeaturedRule = "newest-named" | "most-sources-24h";
 
 export const FEATURED_RULE: FeaturedRule = "newest-named";
 export const CARD_COUNT = 3;
+export const PICTURE_WINDOW_HOURS = 24;
 
 export type Featured = {
   lead: FeedItem | null;
@@ -37,11 +39,19 @@ function pickLead(items: FeedItem[], rule: FeaturedRule, now: Date): FeedItem | 
         Date.parse(i.publishedAt) >= since &&
         (i.trust?.status === "confirmed" || i.trust?.status === "reported"),
     );
-    // Stable sort keeps feed order (newest first) among equals.
-    const best = [...recent].sort((a, b) => outlets(b) - outlets(a))[0];
+    // Stable sort keeps feed order (newest first) among equals; a picture breaks a tie.
+    const best = [...recent].sort(
+      (a, b) => outlets(b) - outlets(a) || Number(Boolean(b.image)) - Number(Boolean(a.image)),
+    )[0];
     if (best) return best;
   }
-  return candidates[0] ?? null;
+  const newest = candidates[0];
+  if (!newest) return null;
+  const since = Date.parse(newest.publishedAt) - PICTURE_WINDOW_HOURS * 3600 * 1000;
+  const pictured = candidates.find(
+    (i) => i.image && Date.parse(i.publishedAt) >= since,
+  );
+  return pictured ?? newest;
 }
 
 /** `items` arrive newest first, as the feed lists them. */

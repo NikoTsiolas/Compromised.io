@@ -188,3 +188,9 @@ def test_one_switch_turns_publisher_images_off_everywhere(conn, database_url, mo
         for tab in ("all", "research"):
             events = off.get("/v1/events", params={"tab": tab}).json()["events"]
             assert events and all(e["image"] is None for e in events)
+
+
+def test_publisher_images_can_be_switched_off_for_one_source(client, monkeypatch, database_url):
+    monkeypatch.setenv("PUBLISHER_IMAGES_OFF_FOR", "darkreading")
+    with TestClient(create_app(database_url=database_url)) as off:
+        assert _event(off, DOTNET)["image"] is None

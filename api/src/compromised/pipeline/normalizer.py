@@ -77,10 +77,11 @@ IMAGE_URL_LIMIT = 2048
 
 
 def image_url(url: str | None) -> str | None:
-    """The feed image's URL if it is a plain https URL; anything else is dropped, not repaired.
+    """The feed image's URL in its https form; anything else is dropped, not repaired.
 
-    The browser loads it straight from the publisher, so http (mixed content), other schemes,
-    .onion hosts, credentials in the URL and oversized values are all refused.
+    The browser loads it straight from the publisher, so an http address is stored as the https
+    form of the same address (the page falls back to its tile if the publisher does not serve
+    it), and other schemes, .onion hosts, credentials and oversized values are refused.
     """
     if not url:
         return None
@@ -92,7 +93,8 @@ def image_url(url: str | None) -> str | None:
         host = (parts.hostname or "").lower()
     except ValueError:
         return None
-    if parts.scheme.lower() != "https" or not host or host.endswith(".onion"):
+    scheme = parts.scheme.lower()
+    if scheme not in ("http", "https") or not host or host.endswith(".onion"):
         return None
     if parts.username or parts.password:
         return None

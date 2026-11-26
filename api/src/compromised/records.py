@@ -44,6 +44,7 @@ class EventSource:
     excerpt: str
     published_at: datetime
     image_url: str | None = None
+    source_id: str = ""
 
 
 @dataclass(frozen=True)

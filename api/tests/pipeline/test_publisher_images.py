@@ -63,13 +63,15 @@ def test_a_publishers_own_feed_image_is_kept_as_its_url(conn, source_id, headlin
     assert _image_of(conn, headline) == image_url
 
 
-def test_images_offered_over_plain_http_are_not_kept(conn):
-    # The Record's enclosures are http://cms.therecord.media/... in the captured feed.
+def test_images_offered_over_plain_http_are_kept_in_their_https_form(conn):
+    # The Record's enclosures are http://cms.therecord.media/... in the captured feed. The browser
+    # loads the https form; if the publisher does not serve it, the page falls back to the tile.
     ingest(conn, by_id("therecord"), real_sample("therecord.xml"), fetched_at=FETCHED_AT)
 
-    assert (
-        _image_of(conn, "UK’s long-awaited National Cyber Action Plan delayed until December")
-        is None
+    assert _image_of(
+        conn, "UK’s long-awaited National Cyber Action Plan delayed until December"
+    ) == (
+        "https://cms.therecord.media/uploads/westminster_alexander_martin_the_record_133745e9ba.jpg"
     )
 
 

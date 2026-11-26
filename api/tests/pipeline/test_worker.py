@@ -43,6 +43,10 @@ class FakeSources:
         self.overrides: dict[str, httpx.Response] = {}
 
     def __call__(self, request: httpx.Request) -> httpx.Response:
+        if str(request.url) not in BY_ENDPOINT:
+            # robots.txt or an article page asked for a preview image: unreachable here, which
+            # makes the preview step fetch nothing (pipeline/test_article_previews.py covers it).
+            return httpx.Response(503)
         self.requests.append(request)
         source_id = BY_ENDPOINT[str(request.url)]
         if source_id in self.overrides:

@@ -14,7 +14,7 @@ from pydantic import BaseModel, PlainSerializer
 from compromised import config, health, storage
 from compromised.pipeline.classifier import CATEGORIES
 from compromised.pipeline.scope import TABS
-from compromised.sources import REGISTRY
+from compromised.sources import REGISTRY, by_id
 
 # Query values accepted for ?tab=, one per feed tab.
 TabId = StrEnum("TabId", {tab_id: tab_id for tab_id in TABS})
@@ -87,10 +87,19 @@ class StatusOut(BaseModel):
     sources: list[SourceHealthOut]
 
 
-def _image(event) -> ImageOut | None:
+def _image(event, settings: config.Settings) -> ImageOut | None:
+    """The earliest source's image, skipping sources whose images are switched off."""
+    if not settings.publisher_images:
+        return None
     for source in event.sources:
-        if source.image_url:
-            return ImageOut(url=source.image_url, publisher=source.publisher)
+        if not source.image_url or source.source_id in settings.publisher_images_off_for:
+            continue
+        try:
+            if not by_id(source.source_id).publisher_images:
+                continue
+        except KeyError:
+            pass  # a source no longer in the registry keeps its stored image
+        return ImageOut(url=source.image_url, publisher=source.publisher)
     return None
 
 
@@ -130,7 +139,7 @@ def create_app(database_url: str | None = None) -> FastAPI:
                     {
                         **asdict(e),
                         "category_label": CATEGORIES[e.category],
-                        "image": _image(e) if settings.publisher_images else None,
+                        "image": _image(e, settings),
                     }
                 )
                 for e in page.events

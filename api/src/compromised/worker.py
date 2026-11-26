@@ -22,6 +22,7 @@ import psycopg
 from compromised import config, storage
 from compromised.pipeline import ParseError, ingest
 from compromised.pipeline.fetcher import FetchError, FetchPolicy, FetchResult, Validators, fetch
+from compromised.pipeline.previews import fill_previews
 from compromised.sources import REGISTRY, Source, allowed_hosts
 
 log = logging.getLogger("compromised.worker")
@@ -63,10 +64,28 @@ async def run_once(
         storage.upsert_source(conn, source)
         validators[source.id] = Validators(*storage.stored_validators(conn, source.id))
     fetched = await asyncio.gather(*(_fetch(client, s, policy, validators[s.id]) for s in sources))
-    return {
+    outcomes = {
         source.id: _store(conn, source, result, now)
         for source, result in zip(sources, fetched, strict=True)
     }
+    # Records are stored before any article page is asked for a preview image, so a preview
+    # can never hold up or undo ingestion. Publishers are worked through in parallel, each one
+    # politely in sequence.
+    await asyncio.gather(*(_previews(conn, client, policy, s) for s in sources))
+    return outcomes
+
+
+async def _previews(conn, client, policy, source: Source) -> None:
+    try:
+        outcome = await fill_previews(conn, client, policy, source)
+    except Exception:  # never let a preview problem reach ingestion or other sources
+        log.exception("previews failed", extra={"source": source.id})
+        return
+    if outcome.attempted:
+        log.info(
+            "previews",
+            extra={"source": source.id, "pages": outcome.attempted, "found": outcome.found},
+        )
 
 
 async def _fetch(client, source, policy, validators) -> FetchResult | FetchError:

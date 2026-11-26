@@ -255,8 +255,8 @@ def _sources_for(cur, event_ids: list[int]) -> dict[int, list[EventSource]]:
     if not event_ids:
         return {}
     rows = cur.execute(
-        "select r.event_id, s.name, r.original_url, r.headline, r.excerpt, r.published_at,"
-        " r.image_url"
+        "select r.event_id, s.id as source_id, s.name, r.original_url, r.headline, r.excerpt,"
+        " r.published_at, r.image_url"
         " from source_records r join sources s on s.id = r.source_id"
         " where r.event_id = any(%s) order by r.published_at, r.id",
         (event_ids,),
@@ -271,6 +271,7 @@ def _sources_for(cur, event_ids: list[int]) -> dict[int, list[EventSource]]:
                 excerpt=r["excerpt"],
                 published_at=r["published_at"],
                 image_url=r["image_url"],
+                source_id=r["source_id"],
             )
         )
     return out
@@ -291,3 +292,29 @@ def _decode_cursor(cursor: str) -> tuple[datetime, int]:
         return published_at, int(event_id)
     except (binascii.Error, UnicodeDecodeError, ValueError) as exc:
         raise InvalidCursor(cursor) from exc
+
+
+# --- article previews (pipeline.previews) ------------------------------------------------------
+
+
+def records_awaiting_preview(
+    conn: psycopg.Connection, source_id: str, *, limit: int
+) -> list[tuple[int, str]]:
+    """The source's newest records with no image that have never been asked for a preview."""
+    rows = conn.execute(
+        "select id, original_url from source_records"
+        " where source_id = %s and image_url is null and preview_state is null"
+        " order by published_at desc, id desc limit %s",
+        (source_id, limit),
+    ).fetchall()
+    return [(r[0], r[1]) for r in rows]
+
+
+def save_preview(
+    conn: psycopg.Connection, record_id: int, image_url: str | None, state: str, at: datetime
+) -> None:
+    conn.execute(
+        "update source_records set image_url = coalesce(%s, image_url), preview_state = %s,"
+        " preview_attempted_at = %s where id = %s",
+        (image_url, state, at, record_id),
+    )
