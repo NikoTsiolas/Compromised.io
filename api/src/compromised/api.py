@@ -12,9 +12,10 @@ from psycopg_pool import ConnectionPool
 from pydantic import BaseModel, PlainSerializer
 
 from compromised import config, health, storage
+from compromised.pipeline import verifier
 from compromised.pipeline.classifier import CATEGORIES
 from compromised.pipeline.scope import TABS
-from compromised.sources import REGISTRY
+from compromised.sources import REGISTRY, TIER_WEIGHT, Tier
 
 # Query values accepted for ?tab=, one per feed tab.
 TabId = StrEnum("TabId", {tab_id: tab_id for tab_id in TABS})
@@ -37,6 +38,16 @@ class SourceOut(BaseModel):
     published_at: UtcTimestamp
 
 
+class TrustOut(BaseModel):
+    """Verification status, its reader-facing label, the 0-100 score and the publishers the
+    score counted. Always sent and shown together: the score never stands alone."""
+
+    status: str  # confirmed | reported | claimed | investigating | disputed
+    label: str
+    score: int
+    sources: list[str]
+
+
 class EventOut(BaseModel):
     id: int
     title: str
@@ -54,6 +65,26 @@ class EventOut(BaseModel):
     enrichment: str  # "ai" when the model's reply was accepted, "rules" otherwise
     source_count: int
     sources: list[SourceOut]  # earliest first; the first one's headline is the title
+    trust: TrustOut | None  # None only before the event's first assessment
+
+
+class ScoredSourceOut(BaseModel):
+    name: str
+    tier: str
+    weight: int
+
+
+class ScoringOut(BaseModel):
+    """The confidence formula's numbers, as the code uses them ("How we score")."""
+
+    claim_only: int
+    one_outlet: int
+    per_extra_outlet: int
+    press_cap: int
+    official: int
+    official_and_press: int
+    disputed: int
+    sources: list[ScoredSourceOut]
 
 
 class TabOut(BaseModel):
@@ -120,11 +151,28 @@ def create_app(database_url: str | None = None) -> FastAPI:
                         **asdict(e),
                         "category_label": CATEGORIES[e.category],
                         "source_count": len(e.sources),
+                        "trust": _trust(e),
                     }
                 )
                 for e in page.events
             ],
             next_cursor=page.next_cursor,
+        )
+
+    @app.get("/v1/scoring", response_model=ScoringOut)
+    def scoring(response: Response):
+        response.headers["Cache-Control"] = "public, max-age=300"
+        return ScoringOut(
+            claim_only=TIER_WEIGHT[Tier.ATTACKER_CLAIM],
+            one_outlet=TIER_WEIGHT[Tier.PRESS],
+            per_extra_outlet=verifier.PER_EXTRA_OUTLET,
+            press_cap=verifier.PRESS_CAP,
+            official=TIER_WEIGHT[Tier.OFFICIAL],
+            official_and_press=verifier.OFFICIAL_AND_PRESS,
+            disputed=verifier.DISPUTED,
+            sources=[
+                ScoredSourceOut(name=s.name, tier=str(s.tier), weight=s.weight) for s in REGISTRY
+            ],
         )
 
     @app.get("/v1/tabs", response_model=list[TabOut])
@@ -160,3 +208,14 @@ def create_app(database_url: str | None = None) -> FastAPI:
         return {"ok": True}
 
     return app
+
+
+def _trust(event) -> dict | None:
+    if event.status is None:
+        return None
+    return {
+        "status": event.status,
+        "label": event.status_label,
+        "score": event.score,
+        "sources": list(event.score_sources),
+    }

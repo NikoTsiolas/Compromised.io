@@ -64,11 +64,12 @@ def reset_for_tests(conn: psycopg.Connection) -> None:
 def upsert_source(conn: psycopg.Connection, source: Source) -> None:
     """Mirror a registry entry into the sources table, keeping its health columns."""
     conn.execute(
-        "insert into sources (id, name, endpoint, tier, weight, interval_seconds)"
-        " values (%s, %s, %s, %s, %s, %s)"
+        "insert into sources (id, name, endpoint, tier, weight, interval_seconds, government,"
+        " organization) values (%s, %s, %s, %s, %s, %s, %s, %s)"
         " on conflict (id) do update set name = excluded.name, endpoint = excluded.endpoint,"
         " tier = excluded.tier, weight = excluded.weight,"
-        " interval_seconds = excluded.interval_seconds",
+        " interval_seconds = excluded.interval_seconds, government = excluded.government,"
+        " organization = excluded.organization",
         (
             source.id,
             source.name,
@@ -76,6 +77,8 @@ def upsert_source(conn: psycopg.Connection, source: Source) -> None:
             str(source.tier),
             source.weight,
             source.interval_seconds,
+            source.government,
+            source.organization,
         ),
     )
 
@@ -323,6 +326,33 @@ def save_classification(conn: psycopg.Connection, event_id: int, facts, tabs) ->
     )
 
 
+def save_trust(conn: psycopg.Connection, event_id: int, assessment) -> None:
+    """Store an event's verification status, label, score and the publishers the score counted
+    (pipeline.verifier.Assessment)."""
+    conn.execute(
+        "update events set status = %s, status_label = %s, score = %s, score_sources = %s"
+        " where id = %s",
+        (
+            assessment.status,
+            assessment.label,
+            assessment.score,
+            list(assessment.sources),
+            event_id,
+        ),
+    )
+
+
+def registered_sources(conn: psycopg.Connection, source_ids) -> dict[str, dict]:
+    """The registry mirror's name, tier, weight, government flag and organization, by id."""
+    with conn.cursor(row_factory=dict_row) as cur:
+        rows = cur.execute(
+            "select id, name, tier, weight, government, organization from sources"
+            " where id = any(%s)",
+            (list(source_ids),),
+        ).fetchall()
+    return {r["id"]: r for r in rows}
+
+
 def save_action_line(conn: psycopg.Connection, event_id: int, action_line: str | None) -> None:
     conn.execute("update events set action_line = %s where id = %s", (action_line, event_id))
 
@@ -468,7 +498,8 @@ def list_events(
     with conn.cursor(row_factory=dict_row) as cur:
         rows = cur.execute(
             "select id, title, published_at, first_seen_at, category, commentary, organization,"
-            " organization_key, logo_key, tabs, summary, action_line, enrichment_state"
+            " organization_key, logo_key, tabs, summary, action_line, enrichment_state,"
+            " status, status_label, score, score_sources"
             f" from events {where}"
             " order by published_at desc, id desc limit %s",
             [*params, limit + 1],
@@ -492,6 +523,10 @@ def list_events(
             summary=r["summary"],
             action_line=r["action_line"],
             enrichment="ai" if r["enrichment_state"] == "enriched" else "rules",
+            status=r["status"],
+            status_label=r["status_label"],
+            score=r["score"],
+            score_sources=tuple(r["score_sources"]),
         )
         for r in rows
     ]

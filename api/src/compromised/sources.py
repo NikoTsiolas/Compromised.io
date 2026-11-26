@@ -37,6 +37,11 @@ class Source:
     # Items published more than this many days before a fetch are never imported, so a first
     # run backfills only that far (structured sources hold months or years of entries).
     backfill_days: int | None = None
+    # Who an official source speaks for (#7, the trust label's wording): a government agency, or
+    # a vendor, named by its catalog key, that confirms only what concerns its own organization
+    # or products. Its posts about anyone else are security research.
+    government: bool = False
+    organization: str | None = None
 
     def __post_init__(self):
         if self.weight < 0:
@@ -97,15 +102,24 @@ CISCO_TALOS = _rss(
     "https://blog.talosintelligence.com/rss/",
     Tier.OFFICIAL,
     30,
+    organization="cisco",
     max_bytes=4 * MB,  # full text in feed, 1.1 MB on 2026-11-26
 )
-UNIT_42 = _rss("unit42", "Unit 42", "https://unit42.paloaltonetworks.com/feed/", Tier.OFFICIAL, 30)
+UNIT_42 = _rss(
+    "unit42",
+    "Unit 42",
+    "https://unit42.paloaltonetworks.com/feed/",
+    Tier.OFFICIAL,
+    30,
+    organization="palo-alto-networks",
+)
 GOOGLE_THREAT_INTEL = _rss(
     "google-threat-intelligence",
     "Google Threat Intelligence",
     "https://feeds.feedburner.com/threatintelligence/pvexyqv7v0v",
     Tier.OFFICIAL,
     60,
+    organization="google",
     max_bytes=6 * MB,  # full articles in feed, up to 90 KB each across 20 items
 )
 
@@ -118,6 +132,7 @@ CISA_KEV = Source(
     interval_seconds=60 * MIN,
     max_bytes=8 * MB,  # the whole catalog, 1.9 MB on 2026-11-26
     backfill_days=30,
+    government=True,
 )
 
 RANSOMWARE_LIVE = Source(
@@ -137,6 +152,7 @@ CISA_ADVISORIES = _rss(
     "https://www.cisa.gov/cybersecurity-advisories/all.xml",
     Tier.OFFICIAL,
     30,
+    government=True,
     backfill_days=30,
 )
 MSRC_UPDATE_GUIDE = Source(
@@ -148,6 +164,7 @@ MSRC_UPDATE_GUIDE = Source(
     interval_seconds=60 * MIN,
     max_bytes=16 * MB,  # about 5,800 items, 3.3 MB on 2026-11-26
     backfill_days=30,
+    organization="microsoft",
 )
 
 REGISTRY: tuple[Source, ...] = (

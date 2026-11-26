@@ -14,6 +14,7 @@ export default function Home({ searchParams }: PageProps<"/">) {
     <>
       <header>
         <h1>Compromised</h1>
+        <Link href="/how-we-score">How we score</Link>
         <Suspense fallback={null}>
           <IngestionIndicator />
         </Suspense>
@@ -102,6 +103,15 @@ async function Feed({
                 {" ("}
                 {formatRelative(event.published_at)}
                 {")"}
+                {event.trust && (
+                  <p aria-label="Trust">
+                    {event.trust.label}
+                    {" · "}
+                    {event.trust.score}/100
+                    {" · Sources: "}
+                    {event.trust.sources.join(", ")}
+                  </p>
+                )}
                 {event.summary && <p>AI summary: {event.summary}</p>}
                 {event.action_line && <p>Action: {event.action_line}</p>}
                 {event.source_count > 1 && (
