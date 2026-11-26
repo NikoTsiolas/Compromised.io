@@ -8,3 +8,10 @@
 - 2026-11-26: Components and references must come from shadcn, the Mobbin MCP and the Bencho MCP. Niko repeated this three times.
 - 2026-11-26: Niko mentioned an "Impeccable" library he uses. Nothing by that name was installed on the machine; unresolved.
 - 2026-11-26: Design checkpoint: the homepage feed is built first with real ingested data, and Niko signs off the look before other pages are built.
+
+## Reference gathering on 2026-11-26
+A subagent used all three required tools and wrote `design-references.md` in the research notes folder (see [Working agreements](working-agreements.md)).
+- 2026-11-26: Mobbin: 20 references kept from 15 searches. Closest matches: NYT's Latest list and filter flow, Matter's compact rows, T1 Energy's monospace dates, Perplexity's source count and source panel, Fey's "Consider with caution" label, and Hashnode, Better Stack and SCMP for timelines. Mobbin returned no FT or Reuters screens and nothing like a "N new events" bar.
+- 2026-11-26: Bencho: 6 blocks recorded (notify-widget, faq-accordion, theme-switch, seek, rolling-counter, gauge; the gauge was recommended against). Three need a Bencho Pro licence; whether Niko holds one was unknown.
+- 2026-11-26: shadcn: 19 components listed with Tailwind v4 and next-themes setup. Its docs disagreed on whether Toast is deprecated in favour of Sonner.
+- 2026-11-26: Proposed direction, not yet seen by Niko: text-only rows divided by thin lines, a monospace time column on the left, company name and plain-language summary first; #111111 on #F6F5F1, reversed in dark mode; muted red #A3322C only for live items and attacker claims; trust label and score as one component that distinguishes statuses by square markers, not colour. Colour contrast had not been measured.
