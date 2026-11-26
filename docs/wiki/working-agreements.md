@@ -18,3 +18,4 @@
 - Niko said the project is public and open source. On this date the GitHub repository's visibility was still private and it had no licence file; which licence, and when to switch visibility, were not yet decided.
 - Niko confirmed he holds Bencho Pro and has the Bencho connector attached; Pro blocks may be used. This answers the open question above.
 - Mistake recorded: Claude committed an agent worktree folder as an embedded repository (`9ef7e61`) and removed it in the next commit (`c7f92ed`), adding `.claude/` to `.gitignore`.
+- 2026-11-26: Niko chose the MIT licence. A LICENSE file was added on `mvp` with the copyright line "2026 Niko Tsiolas", a name taken from his GitHub handle and not confirmed by him. Repository visibility was still private.
