@@ -53,7 +53,8 @@ def migrate(database_url: str) -> list[str]:
 
 def reset_for_tests(conn: psycopg.Connection) -> None:
     conn.execute(
-        "truncate source_records, events, sources, enrichment_usage restart identity cascade"
+        "truncate source_record_revisions, source_records, events, sources, enrichment_usage"
+        " restart identity cascade"
     )
 
 
@@ -263,17 +264,41 @@ def insert_record(conn: psycopg.Connection, record: SourceRecord, event_id: int)
     )
 
 
-def update_record_metadata(conn: psycopg.Connection, record: SourceRecord) -> int | None:
-    """Replace the stored metadata of the record with the same source and guid, when it differs.
+def append_record_revision(conn: psycopg.Connection, record: SourceRecord) -> int | None:
+    """Append a revision to the stored record with the same source and guid, holding the
+    metadata fields whose values differ from its effective metadata (``EFFECTIVE_METADATA``).
 
-    Returns the record's event id if anything changed, else None. Headline and link are kept.
+    The stored record itself is never changed. Returns the record's event id if a revision was
+    appended, else None (nothing stored under that guid, or nothing changed).
     """
-    row = conn.execute(
-        "update source_records set metadata = %s"
-        " where source_id = %s and guid = %s and metadata <> %s returning event_id",
-        (Jsonb(record.metadata), record.source_id, record.guid, Jsonb(record.metadata)),
-    ).fetchone()
-    return row[0] if row else None
+    with conn.cursor(row_factory=dict_row) as cur:
+        row = cur.execute(
+            f"select r.id, r.event_id, {EFFECTIVE_METADATA} as metadata from source_records r"
+            " where r.source_id = %s and r.guid = %s",
+            (record.source_id, record.guid),
+        ).fetchone()
+    if row is None:
+        return None
+    changed = {k: v for k, v in record.metadata.items() if row["metadata"].get(k) != v}
+    if not changed:
+        return None
+    revised_at = record.metadata.get("revised_at")
+    conn.execute(
+        "insert into source_record_revisions (record_id, fetched_at, revised_at, metadata)"
+        " values (%s, %s, %s, %s)",
+        (row["id"], record.fetched_at, revised_at, Jsonb(changed)),
+    )
+    return row["event_id"]
+
+
+def record_revisions(conn: psycopg.Connection, record_id: int) -> list[dict]:
+    """A record's revisions in the order they were appended: fetched_at, revised_at, metadata."""
+    with conn.cursor(row_factory=dict_row) as cur:
+        return cur.execute(
+            "select fetched_at, revised_at, metadata from source_record_revisions"
+            " where record_id = %s order by id",
+            (record_id,),
+        ).fetchall()
 
 
 def save_classification(conn: psycopg.Connection, event_id: int, facts, tabs) -> None:
@@ -373,25 +398,37 @@ def awaiting_enrichment(conn: psycopg.Connection, limit: int, max_rejected: int)
 # --- reads ------------------------------------------------------------------------------------
 
 
+# The only place that knows about revisions: the effective metadata of the source record ``r``
+# is its own, overlaid with its revisions' changed fields in the order they were appended
+# (jsonb_object_agg keeps the last value of a repeated key). Everything the pipeline derives
+# from metadata (extractor, classifier, scope, the vulnerability gate, later #7) reads records
+# through ``event_records`` / ``record_by_id`` and so sees the latest rating.
+EFFECTIVE_METADATA = (
+    "(r.metadata || coalesce((select jsonb_object_agg(e.key, e.value order by v.id)"
+    " from source_record_revisions v cross join jsonb_each(v.metadata) e"
+    " where v.record_id = r.id), '{}'::jsonb))"
+)
+
 _RECORD_COLUMNS = (
-    "source_id, guid, canonical_url, original_url, headline, excerpt, published_at, fetched_at,"
-    " metadata, cves"
+    "r.source_id, r.guid, r.canonical_url, r.original_url, r.headline, r.excerpt,"
+    f" r.published_at, r.fetched_at, {EFFECTIVE_METADATA} as metadata, r.cves"
 )
 
 
 def event_records(conn: psycopg.Connection, event_id: int) -> list[SourceRecord]:
-    """An event's source records, earliest first."""
+    """An event's source records, earliest first, with their effective metadata."""
     return _records(
         conn,
-        f"select {_RECORD_COLUMNS} from source_records where event_id = %s"
-        " order by published_at, id",
+        f"select {_RECORD_COLUMNS} from source_records r where r.event_id = %s"
+        " order by r.published_at, r.id",
         event_id,
     )
 
 
 def record_by_id(conn: psycopg.Connection, record_id: int) -> SourceRecord:
+    """A source record with its effective metadata."""
     [record] = _records(
-        conn, f"select {_RECORD_COLUMNS} from source_records where id = %s", record_id
+        conn, f"select {_RECORD_COLUMNS} from source_records r where r.id = %s", record_id
     )
     return record
 

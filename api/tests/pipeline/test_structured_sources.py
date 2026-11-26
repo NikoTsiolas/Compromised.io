@@ -7,6 +7,7 @@ Expected values were read by hand from the raw fixture files.
 
 from datetime import UTC, datetime, timedelta
 
+import psycopg
 import pytest
 
 from compromised import storage
@@ -231,6 +232,41 @@ def test_a_stored_msrc_entry_whose_rating_changes_is_rescoped(conn):
     assert events[VISIO].tabs == ("all", "under-attack", "update-now")
     assert metadata_by_title(conn)[VISIO]["exploited"] is True
     assert len(events[VISIO].sources) == 1
+
+
+def stored_row(conn, guid) -> str:
+    """The stored source record exactly as the database holds it, every column."""
+    return conn.execute(
+        "select row_to_json(r)::text from source_records r where guid = %s", (guid,)
+    ).fetchone()[0]
+
+
+def test_a_re_rating_is_appended_and_the_original_record_never_changes(conn):
+    ingest_msrc(conn, real_sample("msrc-sug.json"))
+    before = stored_row(conn, "CVE-2026-112732")
+
+    # Synthetic: a later fetch reports Visio as exploited.
+    later = FETCHED_AT + timedelta(hours=1)
+    ingest_msrc(conn, synthetic_sample("msrc-sug-exploited.json"), fetched_at=later)
+    # The same rating again appends nothing.
+    ingest_msrc(conn, synthetic_sample("msrc-sug-exploited.json"), fetched_at=later)
+
+    assert stored_row(conn, "CVE-2026-112732") == before
+    record_id = conn.execute(
+        "select id from source_records where guid = 'CVE-2026-112732'"
+    ).fetchone()[0]
+    original = conn.execute(
+        "select metadata from source_records where id = %s", (record_id,)
+    ).fetchone()[0]
+    revisions = storage.record_revisions(conn, record_id)
+    # Both ratings, in order: the original's, then the revision's.
+    assert (original["severity"], original["exploited"]) == ("Critical", False)
+    assert [(r["fetched_at"], r["metadata"]) for r in revisions] == [(later, {"exploited": True})]
+    # The database refuses to change or remove a revision.
+    with pytest.raises(psycopg.errors.RaiseException, match="never altered or deleted"):
+        conn.execute("update source_record_revisions set metadata = '{}'")
+    with pytest.raises(psycopg.errors.RaiseException, match="never altered or deleted"):
+        conn.execute("delete from source_record_revisions")
 
 
 def test_only_msrc_entries_for_listed_products_are_sent_for_rating():

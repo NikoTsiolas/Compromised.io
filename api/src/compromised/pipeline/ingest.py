@@ -70,8 +70,9 @@ def ingest(
             assignment = deduplicator.assign(conn, record)
             if assignment is None:
                 if source.format == "msrc":
-                    # A new revision may change Microsoft's rating of an entry already stored.
-                    changed = storage.update_record_metadata(conn, record)
+                    # A new revision may change Microsoft's rating of an entry already stored:
+                    # appended as a revision, the stored record itself never changes.
+                    changed = storage.append_record_revision(conn, record)
                     if changed is not None:
                         scope.refresh_event(conn, changed)
                 continue
