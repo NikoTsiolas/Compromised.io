@@ -18,7 +18,7 @@ test("each source shows when it was last checked successfully", async ({
   const sources = page
     .getByRole("list", { name: "Sources" })
     .getByRole("listitem");
-  await expect(sources).toHaveCount(10);
+  await expect(sources).toHaveCount(14);
 
   const bleeping = sources.filter({ hasText: "BleepingComputer" });
   await expect(bleeping).toHaveAttribute("data-state", "ok");

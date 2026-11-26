@@ -1,0 +1,7 @@
+{
+ "@odata.context": "Synthetic test data shaped like an MSRC SUG API response; not a real capture",
+ "value": [
+  {"cveNumber": "CVE-2026-90001", "tag": "Windows Synthetic Test Component", "severity": "Critical", "exploited": "Yes"},
+  {"cveNumber": "CVE-2026-90002", "tag": "Windows Synthetic Test Service", "severity": "Critical", "exploited": "No"}
+ ]
+}

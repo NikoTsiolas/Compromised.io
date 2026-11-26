@@ -1,7 +1,7 @@
-"""Parsers: raw response bytes -> parsed items. One adapter per registry ``format``."""
+"""RSS and Atom parsing, shared by every feed source. The structured sources' adapters are in
+pipeline.adapters and pipeline.msrc; pipeline.ingest maps each registry ``format`` to one."""
 
 import re
-from collections.abc import Callable
 from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
 
@@ -63,6 +63,3 @@ def _published(entry) -> datetime | None:
         return None
     # RFC 2822 "-0000" means "UTC, origin zone unknown" and parses as naive.
     return parsed if parsed.tzinfo else parsed.replace(tzinfo=UTC)
-
-
-PARSERS: dict[str, Callable[[bytes], list[ParsedItem]]] = {"rss": parse_rss}

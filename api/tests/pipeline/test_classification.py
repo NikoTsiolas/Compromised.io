@@ -4,49 +4,31 @@ Every input here is a real captured sample (tests/fixtures/real) unless its name
 Expected values come from reading each real headline and excerpt by hand.
 """
 
-import json
 from datetime import UTC, datetime
 
 import pytest
 
-from compromised import storage
+from compromised import sources, storage
 from compromised.pipeline import ingest, scope
-from compromised.records import SourceRecord
 from compromised.sources import BLEEPINGCOMPUTER
 from tests.samples import real_sample, sample_source, synthetic_sample
 
-
-def kev_record(entry) -> SourceRecord:
-    """A CISA KEV entry as its adapter (#4) should hand it over: vendor and product as
-    structured metadata, the vulnerability name as headline."""
-    return SourceRecord(
-        source_id="cisa-kev",
-        guid=entry["cveID"],
-        canonical_url=f"https://nvd.nist.gov/vuln/detail/{entry['cveID']}",
-        original_url=f"https://nvd.nist.gov/vuln/detail/{entry['cveID']}",
-        headline=entry["vulnerabilityName"],
-        excerpt=entry["shortDescription"],
-        published_at=datetime(2026, 11, 25, tzinfo=UTC),
-        fetched_at=datetime(2026, 11, 26, tzinfo=UTC),
-        metadata={"vendor": entry["vendorProject"], "product": entry["product"]},
-    )
+FETCHED_AT = datetime(2026, 11, 26, 14, 54, 7, tzinfo=UTC)
 
 
-def test_structured_vendor_and_product_fields_name_the_affected_product():
-    entries = json.loads(real_sample("cisa-kev.json"))["vulnerabilities"]
+def test_structured_vendor_and_product_fields_name_the_affected_product(conn):
+    ingest(conn, sources.CISA_KEV, real_sample("cisa-kev.json"), fetched_at=FETCHED_AT)
 
-    facts = [scope.facts_for([kev_record(e)]) for e in entries]
+    events = sorted(storage.list_events(conn, limit=100).events, key=lambda e: e.id)
 
-    assert [(f.organization, f.organization_key, f.category, f.exploited) for f in facts] == [
-        ("Juniper Networks", "juniper", "active_exploitation", True),
-        ("Xen Orchestra", None, "active_exploitation", True),
-        ("AK-SM 800A Series", None, "active_exploitation", True),
+    assert [(e.affected_organization, e.organization_key, e.category) for e in events] == [
+        ("Juniper Networks", "juniper", "active_exploitation"),
+        ("Xen Orchestra", None, "active_exploitation"),
+        ("AK-SM 800A Series", None, "active_exploitation"),
     ]
     # None of the three is a product on the "people use" list.
-    assert [scope.tabs_for(f) for f in facts] == [frozenset()] * 3
+    assert [e.tabs for e in events] == [()] * 3
 
-
-FETCHED_AT = datetime(2026, 11, 26, 14, 54, 7, tzinfo=UTC)
 
 NONE: list[str] = []
 ALL_AND_BREACHES = ["all", "breaches"]
@@ -224,55 +206,26 @@ EXPECTED = {
             RESEARCH,
         ),
     },
-    # Attacker claims: the victim comes from the headline template; Ransomware tab only.
+    # Attacker claims: the victim comes from the adapter's structured field; Ransomware tab only.
+    # (MSRC entries need Microsoft's rating first: see test_structured_sources.py.)
     "ransomware-live": {
-        "🏴‍☠️ Metaencryptor has just published a new victim : Exceptional Healthcare Inc.": (
+        "Metaencryptor claims Exceptional Healthcare Inc. as a ransomware victim": (
             "ransomware",
             False,
             "Exceptional Healthcare Inc.",
             ["ransomware"],
         ),
-        "🏴‍☠️ Orova has just published a new victim : Technology Investment Joint Stock"
-        " CompanyTACORP": (
+        "Orova claims Technology Investment Joint Stock CompanyTACORP as a ransomware victim": (
             "ransomware",
             False,
             "Technology Investment Joint Stock CompanyTACORP",
             ["ransomware"],
         ),
-        "🏴‍☠️ Orova has just published a new victim : E Xing Precision Design": (
+        "Orova claims E Xing Precision Design as a ransomware victim": (
             "ransomware",
             False,
             "E Xing Precision Design",
             ["ransomware"],
-        ),
-    },
-    # Products people use, but the feed states neither critical severity nor exploitation.
-    "msrc-update-guide": {
-        "CVE-2026-112732 Microsoft Office Visio Remote Code Execution Vulnerability": (
-            "vulnerability",
-            False,
-            "Microsoft Office",
-            NONE,
-        ),
-        "CVE-2026-69291 Windows Volume Manager Extension Driver Remote Code Execution"
-        " Vulnerability": ("vulnerability", False, "Windows", NONE),
-        "CVE-2026-78462 Visual Studio Code Security Feature Bypass Vulnerability": (
-            "vulnerability",
-            False,
-            "Visual Studio Code",
-            NONE,
-        ),
-        "CVE-2026-72965 Windows WebClient Service Elevation of Privilege Vulnerability": (
-            "vulnerability",
-            False,
-            "Windows",
-            NONE,
-        ),
-        "CVE-2026-87697 .NET Remote Code Execution Vulnerability": (
-            "vulnerability",
-            False,
-            ".NET",
-            NONE,
         ),
     },
 }

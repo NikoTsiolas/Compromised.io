@@ -20,13 +20,19 @@ import httpx
 import psycopg
 
 from compromised import config, storage
-from compromised.pipeline import ParseError, ingest
+from compromised.pipeline import ParseError, ingest, msrc
 from compromised.pipeline.fetcher import FetchError, FetchPolicy, FetchResult, Validators, fetch
 from compromised.sources import REGISTRY, Source, allowed_hosts
 
 log = logging.getLogger("compromised.worker")
 
 TICK_SECONDS = 15
+
+
+@dataclass(frozen=True)
+class Fetched:
+    result: FetchResult
+    ratings: dict[str, msrc.Rating] | None = None  # MSRC only: Microsoft's ratings (SUG API)
 
 
 @dataclass(frozen=True)
@@ -62,25 +68,63 @@ async def run_once(
     for source in sources:
         storage.upsert_source(conn, source)
         validators[source.id] = Validators(*storage.stored_validators(conn, source.id))
-    fetched = await asyncio.gather(*(_fetch(client, s, policy, validators[s.id]) for s in sources))
+    rows = storage.source_rows(conn, [s.id for s in sources])
+    fetched = await asyncio.gather(
+        *(
+            _fetch(
+                client,
+                s,
+                policy,
+                validators[s.id],
+                _rate_window(s, rows.get(s.id, {}).get("last_success_at"), now),
+            )
+            for s in sources
+        )
+    )
     return {
         source.id: _store(conn, source, result, now)
         for source, result in zip(sources, fetched, strict=True)
     }
 
 
-async def _fetch(client, source, policy, validators) -> FetchResult | FetchError:
+@dataclass(frozen=True)
+class RateWindow:
+    """MSRC entries first published since ``released_after`` (the backfill window) and revised
+    since ``since`` (the last successful check, or the window on a first run) are looked up."""
+
+    since: datetime
+    released_after: datetime
+
+
+def _rate_window(source: Source, last_success: datetime | None, now: datetime) -> RateWindow:
+    oldest = now - timedelta(days=source.backfill_days or 30)
+    return RateWindow(
+        since=max(last_success, oldest) if last_success else oldest, released_after=oldest
+    )
+
+
+async def _fetch(client, source, policy, validators, window: RateWindow) -> Fetched | FetchError:
     try:
-        return await fetch(client, source, policy, validators)
+        result = await fetch(client, source, policy, validators)
+        if source.format != "msrc" or result.not_modified:
+            return Fetched(result)
+        try:
+            cves = msrc.cves_to_rate(
+                msrc.parse(result.body), since=window.since, released_after=window.released_after
+            )
+        except ParseError:
+            return Fetched(result)  # ingest reports the parse error
+        return Fetched(result, await msrc.lookup(client, policy, cves))
     except FetchError as exc:
         return exc
 
 
 def _store(
-    conn: psycopg.Connection, source: Source, result: FetchResult | FetchError, now: datetime
+    conn: psycopg.Connection, source: Source, fetched: Fetched | FetchError, now: datetime
 ) -> PollOutcome:
-    if isinstance(result, FetchError):
-        return _failed(conn, source, now, str(result))
+    if isinstance(fetched, FetchError):
+        return _failed(conn, source, now, str(fetched))
+    result = fetched.result
     if result.not_modified:
         storage.record_success(
             conn,
@@ -92,7 +136,7 @@ def _store(
         log.info("not modified", extra={"source": source.id})
         return PollOutcome(not_modified=True)
     try:
-        ingested = ingest(conn, source, result.body, fetched_at=now)
+        ingested = ingest(conn, source, result.body, fetched_at=now, ratings=fetched.ratings)
     except ParseError as exc:
         return _failed(conn, source, now, str(exc))
     except Exception as exc:  # one source's bad data must not stop the others
