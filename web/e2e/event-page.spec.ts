@@ -170,3 +170,27 @@ for (const address of ["/events/999999999", "/events/not-an-event"]) {
     await expect(page).toHaveURL(/\/$/);
   });
 }
+
+// Every story's picture carries the view-transition name `event-media-<id>` (MediaMorph), which
+// must be unique on a page, so no event may be shown twice: not across Featured's lead, cards and
+// list, not in the Feed, not in search results. Each story is an article labelled by its
+// headline, whose id holds the event id.
+for (const [name, path] of [
+  ["Featured", "/"],
+  ["the Feed", "/feed"],
+  ["search", "/search"],
+] as const) {
+  test(`${name} shows each event (and so each event's picture) once`, async ({ page }) => {
+    await page.goto(path);
+    await expect(page.getByRole("article").first()).toBeVisible();
+    const ids = await page
+      .locator("article[aria-labelledby]")
+      .evaluateAll((els) =>
+        els
+          .map((el) => el.getAttribute("aria-labelledby")?.match(/^[a-z]+-(\d+)-headline$/)?.[1])
+          .filter((id): id is string => Boolean(id)),
+      );
+    expect(ids.length).toBeGreaterThan(3);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+}
