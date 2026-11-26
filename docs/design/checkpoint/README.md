@@ -1,5 +1,15 @@
 # Homepage design checkpoint (ticket #9), white and smooth revision
 
+**Screenshots replaced on 2026-11-26 after merging #7 (trust labels) with #9.** Every row now
+shows the API's own trust label, its 0-100 score and the sources it counted, in the designed
+trust line (status square, label, score, "Sources: ..."); commentary carries none. The real feed
+in these images is a production build against a database seeded from every real captured sample
+in `api/tests/fixtures/real` (no live fetch), so the All tab holds 5 events: "Reported by N news
+outlets" (50, 70) and a CISA KEV flaw "Flaw confirmed by a government agency" (90). The sample
+preview uses only labels the API can produce. The dark images were previously identical to the
+light ones (the site ignores the system setting); the capture script now chooses dark as the
+theme switch does. The text below describes the earlier capture.
+
 Screenshots for the owner's sign-off, taken on 2026-11-26 from a production build, light first, as
 a reader in London sees them (times are the reader's local time). This revision follows Niko's
 second review: article preview images, a white page, and everything smooth.
@@ -85,8 +95,7 @@ Technical details expand, the new-events bar with rows that never move, light an
 
 Widgets other than source status have no API yet (issue #15). On the real page they say so
 quietly ("No figures yet", "Nothing listed yet") and show no invented values. Fields later tickets
-fill keep their quiet empty states: "Not yet assessed" instead of a trust label and score, the
-publisher's own excerpt (unlabelled) instead of an AI summary, "+N sources" omitted until
+fill keep their quiet empty states: the publisher's own excerpt (unlabelled) instead of an AI summary, "+N sources" omitted until
 grouping (#5).
 
 Note for the owner: a publisher's picture is the publisher's choice. Some use exactly the imagery

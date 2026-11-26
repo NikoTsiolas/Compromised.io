@@ -53,6 +53,14 @@ for (const look of looks) {
     timezoneId: "Europe/London",
     ...options,
   });
+  // Light is the default for every visitor whatever the system setting, so the dark captures
+  // choose dark as the theme switch does (next-themes keeps it under "theme").
+  const theme = name.endsWith("dark") ? "dark" : "light";
+  await context.addInitScript((t) => {
+    try {
+      localStorage.setItem("theme", t);
+    } catch {}
+  }, theme);
   for (const p of pages) {
     const page = await context.newPage();
     await page.goto(base + p.path, { waitUntil: "networkidle" });

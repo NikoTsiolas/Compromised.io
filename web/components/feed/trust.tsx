@@ -23,41 +23,39 @@ export function Trust({
   const { status, label, score, sources } = trust;
   const claimed = status === "claimed";
 
+  // Inline text, so a long label or source list wraps like a sentence on narrow screens.
   return (
-    <div
+    <p
       data-slot="trust"
       data-status={status}
       aria-label="Trust"
-      className={cn(
-        "flex flex-row flex-wrap items-center gap-x-2 gap-y-1 text-[13px] leading-[18px]",
-        className,
-      )}
+      className={cn("text-[13px] leading-[18px] text-ink-3", className)}
     >
       <Badge
         variant="outline"
         className={cn(
-          "h-auto gap-1.5 whitespace-normal border-0 p-0 text-left text-[13px] leading-[18px] font-medium",
+          "inline h-auto whitespace-normal border-0 p-0 text-left align-baseline text-[13px] leading-[18px] font-medium",
           claimed ? "text-red-ink" : "text-ink",
           status === "investigating" && "text-ink-2",
           status === "disputed" && "text-ink-2 line-through decoration-1",
         )}
       >
-        <span aria-hidden className="trust-glyph" data-status={status} />
+        <span aria-hidden className="trust-glyph mr-1.5 align-[0px]" data-status={status} />
         {label}
       </Badge>
       <Separator />
       <span
-        className="inline-flex items-baseline font-mono text-ink-3"
+        className="whitespace-nowrap font-mono"
         aria-label={`Confidence score ${score} out of 100`}
       >
         <span className="text-[15px] leading-4 font-bold text-ink tabular">{score}</span>
         <span className="text-xs leading-4">/100</span>
       </span>
       <Separator />
-      <span className="text-ink-3">
+      <span>
         Sources: <span className="text-ink-2">{sources.join(", ")}</span>
       </span>
-    </div>
+    </p>
   );
 }
 
