@@ -11,20 +11,14 @@ export function Trust({
   trust,
   className,
 }: {
-  /** `undefined` or `null`: not scored yet, shown as a quiet empty state. */
+  /**
+   * `null` or `undefined`: the API sent no trust, as for commentary (a newsletter or podcast is
+   * not an incident). Nothing is shown in its place: no label, no score, no placeholder.
+   */
   trust?: TrustValue | null;
   className?: string;
 }) {
-  if (!trust) {
-    return (
-      <p
-        data-slot="trust"
-        className={cn("text-[13px] leading-[18px] text-ink-3", className)}
-      >
-        Not yet assessed
-      </p>
-    );
-  }
+  if (!trust) return null;
 
   const { status, label, score, sources } = trust;
   const claimed = status === "claimed";

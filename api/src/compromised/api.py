@@ -73,7 +73,7 @@ class EventOut(BaseModel):
     enrichment: str  # "ai" when the model's reply was accepted, "rules" otherwise
     source_count: int
     sources: list[SourceOut]  # earliest first; the first one's headline is the title
-    trust: TrustOut | None  # None only before the event's first assessment
+    trust: TrustOut | None  # None for commentary (not an incident) or before first assessment
     image: ImageOut | None  # the earliest source's feed image; None when off or absent
 
 

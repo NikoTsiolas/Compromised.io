@@ -330,7 +330,15 @@ def save_classification(conn: psycopg.Connection, event_id: int, facts, tabs) ->
 
 def save_trust(conn: psycopg.Connection, event_id: int, assessment) -> None:
     """Store an event's verification status, label, score and the publishers the score counted
-    (pipeline.verifier.Assessment)."""
+    (pipeline.verifier.Assessment), or clear all four when ``assessment`` is None: commentary is
+    not an incident and carries no label or score."""
+    if assessment is None:
+        conn.execute(
+            "update events set status = null, status_label = null, score = null,"
+            " score_sources = '{}' where id = %s",
+            (event_id,),
+        )
+        return
     conn.execute(
         "update events set status = %s, status_label = %s, score = %s, score_sources = %s"
         " where id = %s",

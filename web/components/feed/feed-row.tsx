@@ -72,8 +72,12 @@ export function FeedRow({ item, now }: { item: FeedItem; now?: Date }) {
         )}
         <ActionLine item={item} />
         <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[13px] leading-[18px] text-ink-3">
-          <Trust trust={item.trust} />
-          <span aria-hidden>·</span>
+          {item.trust && (
+            <>
+              <Trust trust={item.trust} />
+              <span aria-hidden>·</span>
+            </>
+          )}
           <SourceNames item={item} />
           <span aria-hidden>·</span>
           <DetailsToggle item={item} />

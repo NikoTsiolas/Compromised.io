@@ -132,10 +132,14 @@ def action_line_for(records, facts: EventFacts, ai: dict | None) -> str | None:
 def refresh_event(conn: psycopg.Connection, event_id: int) -> EventFacts:
     records = storage.event_records(conn, event_id)
     ai = storage.enrichment_of(conn, event_id)
-    facts = with_enrichment(facts_for(records), ai)
+    rules = facts_for(records)
+    facts = with_enrichment(rules, ai)
     storage.save_classification(conn, event_id, facts, tabs_for(facts))
     storage.save_action_line(conn, event_id, action_line_for(records, facts, ai))
-    storage.save_trust(conn, event_id, verifier.assess(records, _registry(conn, records)))
+    # Commentary (newsletters, podcasts, opinion) is not an incident: no label and no score.
+    # Decided by the rules' commentary flag, never the model's, as trust never comes from it.
+    assessment = None if rules.commentary else verifier.assess(records, _registry(conn, records))
+    storage.save_trust(conn, event_id, assessment)
     return facts
 
 

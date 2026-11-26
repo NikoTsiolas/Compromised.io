@@ -134,6 +134,33 @@ def test_a_vendor_research_unit_writing_about_others_is_not_the_company(conn):
     assert "the company" not in label
 
 
+TALOS_NEWSLETTER = "Oh, is it Thanksgiving? I hadn’t noticed!"
+TALOS_PODCAST = "Securing Grandma's groceries with Pierre Cadieux"
+TALOS_RESEARCH = "The Great Escape: Tradecraft insights from an agentic swarm"
+
+
+def test_commentary_is_not_an_incident_and_gets_no_label_or_score(conn):
+    # Real Cisco Talos posts: a weekly newsletter and a podcast episode. Neither reports an
+    # incident, so neither may read "Confirmed by security researchers" with a score.
+    ingest_real(conn, "cisco-talos")
+
+    for headline in (TALOS_NEWSLETTER, TALOS_PODCAST):
+        event = event_with(conn, headline)
+        assert event.commentary
+        assert trust(event) == (None, None, None, [])
+
+
+def test_a_research_post_from_the_same_feed_keeps_its_label_and_score(conn):
+    ingest_real(conn, "cisco-talos")
+
+    assert trust(event_with(conn, TALOS_RESEARCH)) == (
+        "confirmed",
+        "Confirmed by security researchers",
+        90,
+        ["Cisco Talos"],
+    )
+
+
 def test_official_confirmation_plus_press_scores_one_hundred(conn):
     ingest_real(conn, "cisa-kev", "securityweek")
 
@@ -161,7 +188,7 @@ def test_only_a_vendors_own_advisory_is_labelled_confirmed_by_the_company(conn):
     ingest_real(conn, *(s.id for s in REGISTRY))
 
     events = storage.list_events(conn, limit=100).events
-    by_company = [e.title for e in events if "the company" in e.status_label]
+    by_company = [e.title for e in events if "the company" in (e.status_label or "")]
     assert len(by_company) == 1
     assert by_company[0].startswith(MSRC_VISIO_PREFIX)
 
@@ -462,5 +489,8 @@ def test_denial_wording_in_the_events_own_first_record_is_not_a_later_dispute(co
 def test_no_real_sample_is_disputed(conn):
     ingest_real(conn, *(s.id for s in REGISTRY))
 
-    statuses = {e.status for e in storage.list_events(conn, limit=100).events}
+    events = storage.list_events(conn, limit=100).events
+    statuses = {e.status for e in events if not e.commentary}
     assert statuses == {"confirmed", "reported", "claimed"}
+    # Commentary carries no status at all (not an incident), so it cannot be disputed either.
+    assert {e.status for e in events if e.commentary} == {None}
