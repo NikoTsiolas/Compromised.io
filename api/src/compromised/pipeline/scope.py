@@ -21,7 +21,7 @@ from dataclasses import dataclass, replace
 import psycopg
 
 from compromised import catalog, storage
-from compromised.pipeline import verifier
+from compromised.pipeline import search_terms, verifier
 from compromised.pipeline.actions import required_action_line
 from compromised.pipeline.classifier import VULNERABILITY_CATEGORIES, classify
 from compromised.pipeline.extractor import extract
@@ -136,11 +136,38 @@ def refresh_event(conn: psycopg.Connection, event_id: int) -> EventFacts:
     facts = with_enrichment(rules, ai)
     storage.save_classification(conn, event_id, facts, tabs_for(facts))
     storage.save_action_line(conn, event_id, action_line_for(records, facts, ai))
+    save_search_terms(conn, event_id, records, facts)
     # Commentary (newsletters, podcasts, opinion) is not an incident: no label and no score.
     # Decided by the rules' commentary flag, never the model's, as trust never comes from it.
     assessment = None if rules.commentary else verifier.assess(records, _registry(conn, records))
     storage.save_trust(conn, event_id, assessment)
     return facts
+
+
+def save_search_terms(conn: psycopg.Connection, event_id: int, records, facts: EventFacts) -> None:
+    """Store the event's CVEs, threat actors and attack vector (pipeline.search_terms) and its
+    full-text search document. Beyond the records' own words, the document names the catalog
+    vendor of the affected product, so "Google" finds a Chrome flaw."""
+    actors = search_terms.threat_actors(records)
+    vector = search_terms.attack_vector(records)
+    names = [*actors, vector or ""]
+    entry = catalog.load().by_key(facts.organization_key) if facts.organization_key else None
+    vendor = catalog.load().by_key(entry.vendor) if entry and entry.vendor else None
+    if vendor:
+        names.append(vendor.name)
+    for record in records:
+        for field in ("vendor", "product"):
+            value = (record.metadata or {}).get(field)
+            if isinstance(value, str):
+                names.append(value)
+    storage.save_search_terms(
+        conn,
+        event_id,
+        cves=search_terms.cves(records),
+        threat_actors=actors,
+        attack_vector=vector,
+        names=" ".join(names),
+    )
 
 
 def _registry(conn, records) -> dict[str, verifier.RegisteredSource]:

@@ -122,6 +122,10 @@ def test_events_carry_category_commentary_flag_organization_and_logo_key(client)
         "summary": None,
         "action_line": None,
         "enrichment": "rules",
+        # Search terms (#10): the employee's GitHub account "was hacked".
+        "cves": [],
+        "threat_actors": [],
+        "attack_vector": "Compromised account",
     }
 
     claim = client.get("/v1/events", params={"tab": "ransomware", "limit": 1}).json()["events"][0]

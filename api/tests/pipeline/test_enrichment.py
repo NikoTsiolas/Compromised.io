@@ -97,6 +97,8 @@ ENRICHMENT_COLUMNS = {
     "ai_organization",
     "ai_action_line",
     "action_line",
+    # the search document includes the summary (#10), so a new summary is searchable
+    "search_vector",
     # classification the model may override, re-derived by scope.refresh_event
     "category",
     "commentary",
