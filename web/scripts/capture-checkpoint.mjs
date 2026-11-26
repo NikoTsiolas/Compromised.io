@@ -3,7 +3,7 @@
 //   BASE_URL=http://127.0.0.1:3000 node scripts/capture-checkpoint.mjs
 //
 // Needs a running web app built with SAMPLE_PREVIEW=1 (for /preview and /preview/feed) and an
-// API with real ingested events. Full-page images of the real feed and the sample-data preview, each at
+// API with real ingested events. Full-page images of Featured and the Feed, real and sample, each at
 // desktop, phone and tablet width in light and dark. OUT_DIR writes them elsewhere (to review
 // before committing). Times are shown as a reader in London would see them.
 import { mkdirSync } from "node:fs";
