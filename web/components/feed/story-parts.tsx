@@ -1,7 +1,7 @@
 // The pieces every story shows, shared by the featured lead, the cards and the feed rows, so
 // the trust label, the "AI summary" label, "Advice from source" and the technical details read
 // the same wherever an event appears. Every string from the API is rendered as React text.
-import { TechnicalDetails } from "@/components/feed/technical-details";
+import { TechnicalDetails } from "@/components/bencho-pro/technical-details";
 import { LocalTime } from "@/components/feed/local-time";
 import { categoryLabel, type FeedItem } from "@/lib/feed";
 

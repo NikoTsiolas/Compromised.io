@@ -22,6 +22,7 @@ files below; nothing outside this folder contains Pro block code.
 | `text-fade/text-fade.tsx`, `text-fade/text-fade.css` | Text fade (`text-fade`, TextReveal) | The blur-rise keyframe, expo-out easing and one-keyframe-many-delays method, with the block's comments. Words split only; press-to-replay removed; tokens mapped to ours. |
 | `text-fade/arrival-fade.tsx` | Text fade (as above) | Plays the fade only for events that arrive after the page loaded. |
 | `arrange/widget-rail.tsx`, `arrange/arrangement.ts` | Reorder list (`liq-arrange`, Arrange) | Pointer drag pinned to its start slot, reorder under the gesture, elastic spring. Goo filter, squash and lean removed; handle, keyboard moves and side switch added. |
+| `technical-details.tsx` | FAQ accordion (`faq-accordion`) | The `0fr -> 1fr` grid-row opening and the flipping chevron; state from the shadcn Collapsible. |
 | `new-events-bar.tsx` | Notification widget (`notify-widget`) | The pill and its rolling "N new" swap only. |
 | `theme-switch.tsx` | Theme switch (`theme-switch`) | Restyled; driven by next-themes. |
 
