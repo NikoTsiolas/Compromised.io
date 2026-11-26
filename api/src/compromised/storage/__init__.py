@@ -157,6 +157,19 @@ def insert_record(conn: psycopg.Connection, record: SourceRecord, event_id: int)
     )
 
 
+def update_record_metadata(conn: psycopg.Connection, record: SourceRecord) -> int | None:
+    """Replace the stored metadata of the record with the same source and guid, when it differs.
+
+    Returns the record's event id if anything changed, else None. Headline and link are kept.
+    """
+    row = conn.execute(
+        "update source_records set metadata = %s"
+        " where source_id = %s and guid = %s and metadata <> %s returning event_id",
+        (Jsonb(record.metadata), record.source_id, record.guid, Jsonb(record.metadata)),
+    ).fetchone()
+    return row[0] if row else None
+
+
 def save_classification(conn: psycopg.Connection, event_id: int, facts, tabs) -> None:
     """Store an event's classification facts (pipeline.scope.EventFacts) and its tabs."""
     conn.execute(

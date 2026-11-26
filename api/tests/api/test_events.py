@@ -74,12 +74,9 @@ def test_each_tab_filters_the_feed(client):
 
     assert tab("breaches") == [FLIGHT_CENTRE, ONEPASSWORD_SA, ONEPASSWORD_BC, FIFA]
     assert tab("ransomware") == [
-        "🏴‍☠️ Metaencryptor has just published a new victim : Exceptional Healthcare Inc.",
-        (
-            "🏴‍☠️ Orova has just published a new victim : Technology Investment Joint Stock"
-            " CompanyTACORP"
-        ),
-        "🏴‍☠️ Orova has just published a new victim : E Xing Precision Design",
+        "Metaencryptor claims Exceptional Healthcare Inc. as a ransomware victim",
+        "Orova claims Technology Investment Joint Stock CompanyTACORP as a ransomware victim",
+        "Orova claims E Xing Precision Design as a ransomware victim",
     ]
     assert tab("under-attack") == [WINDOWS_ZERO_DAY]
     assert tab("update-now") == [WINDOWS_ZERO_DAY, CHROME_CRITICAL]

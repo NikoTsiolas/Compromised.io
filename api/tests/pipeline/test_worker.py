@@ -10,7 +10,7 @@ import httpx
 
 from compromised import health, storage
 from compromised.pipeline.fetcher import FetchPolicy
-from compromised.sources import REGISTRY, allowed_hosts, by_id
+from compromised.sources import MSRC_SUG, REGISTRY, allowed_hosts, by_id
 from compromised.worker import due, run_once
 from tests.samples import real_sample
 
@@ -31,12 +31,20 @@ SAMPLES = {
     "cisco-talos": "cisco-talos.xml",
     "unit42": "unit42.xml",
     "google-threat-intelligence": "google-threat-intelligence.xml",
+    "cisa-advisories": "cisa-advisories.xml",
+    "ransomware-live": "ransomware-live.xml",
+    "cisa-kev": "cisa-kev.json",
+    "msrc-update-guide": "msrc-update-guide.xml",
 }
 BY_ENDPOINT = {by_id(sid).endpoint: sid for sid in SAMPLES}
+# New events per source from one pass over the real samples: every item, except that only one
+# MSRC entry (Visio, rated Critical) passes the product and rating gate.
+NEW_EVENTS = {sid: 3 for sid in SAMPLES} | {"msrc-update-guide": 1}
 
 
 class FakeSources:
-    """Answers each registry endpoint with that source's real sample, unless told otherwise."""
+    """Answers each registry endpoint with that source's real sample, unless told otherwise, and
+    the MSRC SUG API with its real answer for the three listed-product CVEs in the MSRC sample."""
 
     def __init__(self):
         self.requests: list[httpx.Request] = []
@@ -44,6 +52,10 @@ class FakeSources:
 
     def __call__(self, request: httpx.Request) -> httpx.Response:
         self.requests.append(request)
+        if request.url.copy_with(query=None) == httpx.URL(MSRC_SUG.endpoint):
+            if "msrc-sug" in self.overrides:
+                return self.overrides["msrc-sug"]
+            return httpx.Response(200, content=real_sample("msrc-sug.json"))
         source_id = BY_ENDPOINT[str(request.url)]
         if source_id in self.overrides:
             return self.overrides[source_id]
@@ -69,10 +81,13 @@ async def test_one_pass_fetches_every_source_once_politely_and_stores_its_events
     async with fake.client() as client:
         outcomes = await run_once(conn, client=client, policy=POLICY, now=T0)
 
-    assert sorted(str(r.url) for r in fake.requests) == sorted(s.endpoint for s in REGISTRY)
+    feeds = [
+        r for r in fake.requests if r.url.host != "api.msrc.microsoft.com" or "rss" in str(r.url)
+    ]
+    assert sorted(str(r.url) for r in feeds) == sorted(s.endpoint for s in REGISTRY)
     assert {r.headers["user-agent"] for r in fake.requests} == {UA}
-    assert {sid: o.new_events for sid, o in outcomes.items()} == {sid: 3 for sid in SAMPLES}
-    assert len(storage.list_events(conn, limit=100).events) == 30
+    assert {sid: o.new_events for sid, o in outcomes.items()} == NEW_EVENTS
+    assert len(storage.list_events(conn, limit=100).events) == 40
     seen = health_by_id(conn)
     assert {h.state for h in seen.values()} == {"ok"}
     assert seen["darkreading"].last_success_at == T0
@@ -108,7 +123,7 @@ async def test_a_failing_and_a_malformed_source_are_recorded_and_do_not_stop_the
 
     assert outcomes["therecord"].error == "HTTP 503"
     assert outcomes["krebsonsecurity"].error.startswith("not a feed")
-    assert len(storage.list_events(conn, limit=100).events) == 24
+    assert len(storage.list_events(conn, limit=100).events) == 34
     seen = health_by_id(conn, second)
     for failing in ("therecord", "krebsonsecurity"):
         assert seen[failing].state == "failing"
@@ -152,9 +167,58 @@ async def test_each_source_is_due_again_only_after_its_own_interval(conn):
         "krebsonsecurity",
         "cisco-talos",
         "unit42",
+        "cisa-advisories",
+        "ransomware-live",
     }
-    assert len(due(conn, REGISTRY, now=T0 + timedelta(minutes=60))) == 10
+    assert len(due(conn, REGISTRY, now=T0 + timedelta(minutes=60))) == 14
 
 
 def test_every_source_is_due_before_its_first_check(conn):
-    assert len(due(conn, REGISTRY, now=T0)) == 10
+    assert len(due(conn, REGISTRY, now=T0)) == 14
+
+
+def sug_requests(fake):
+    return [r for r in fake.requests if r.url.path.startswith("/sug/")]
+
+
+async def test_msrc_ratings_are_asked_only_for_listed_products_revised_since_the_last_check(conn):
+    fake = FakeSources()
+    async with fake.client() as client:
+        await run_once(
+            conn, client=client, policy=POLICY, sources=[by_id("msrc-update-guide")], now=T0
+        )
+        [first] = sug_requests(fake)
+        fake.requests.clear()
+        fake.overrides["msrc-update-guide"] = httpx.Response(
+            200, content=real_sample("msrc-update-guide.xml")
+        )
+        await run_once(
+            conn,
+            client=client,
+            policy=POLICY,
+            sources=[by_id("msrc-update-guide")],
+            now=T0 + timedelta(hours=1),
+        )
+
+    assert first.url.host == "api.msrc.microsoft.com"
+    assert first.headers["user-agent"] == UA
+    assert first.url.params["$filter"] == (
+        "cveNumber eq 'CVE-2026-112732' or cveNumber eq 'CVE-2026-69291'"
+        " or cveNumber eq 'CVE-2026-72965'"
+    )
+    # Nothing in the feed was revised since the first check: no lookup at all.
+    assert sug_requests(fake) == []
+
+
+async def test_a_failed_msrc_rating_lookup_fails_the_source_so_the_next_pass_retries(conn):
+    fake = FakeSources()
+    fake.overrides["msrc-sug"] = httpx.Response(503)
+    async with fake.client() as client:
+        outcomes = await run_once(
+            conn, client=client, policy=POLICY, sources=[by_id("msrc-update-guide")], now=T0
+        )
+
+    assert outcomes["msrc-update-guide"].error == "HTTP 503"
+    seen = health_by_id(conn)["msrc-update-guide"]
+    assert (seen.state, seen.last_success_at) == ("failing", None)
+    assert storage.list_events(conn, limit=100).events == []
