@@ -5,7 +5,7 @@
 - 2026-11-26: Niko dictates his answers by voice; transcripts can be garbled. Confirm anything ambiguous instead of guessing.
 - 2026-11-26: When Niko says "your call", he wants a researched recommendation with reasons, then a decision, not a menu.
 - 2026-11-26: Niko's own jobs: buy the domain in Cloudflare; create the Anthropic API key; later a Resend account; supply missing logos.
-- 2026-11-26: Research notes and captured feed samples for subagents live outside the repo in `~/.claude/projects/-Users-nikotsiolas-Desktop-Projects-Compromised-io/research/`.
+- 2026-11-26: Research notes and captured feed samples for subagents live outside the repo in a `research/` folder in the project's Claude data directory on Niko's machine (not in the repository).
 
 ## Open questions on 2026-11-26
 - What the "Impeccable" library is.
